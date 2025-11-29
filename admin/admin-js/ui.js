@@ -1,6 +1,6 @@
 /**
  * ui.js
- * Handles Smooth Transitions, Loading Screen, and Sidebar
+ * Handles Smooth Transitions, Loading Screen, Sidebar, AND Logout
  */
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -26,12 +26,14 @@ document.addEventListener("DOMContentLoaded", () => {
   const navLinks = document.querySelectorAll(".nav-sub-item, .nav-item");
 
   navLinks.forEach((link) => {
+    // Check 'onclick' redirects
     if (
       link.getAttribute("onclick") &&
       link.getAttribute("onclick").includes(currentPage)
     ) {
       link.classList.add("active");
     }
+    // Check standard hrefs
     if (link.getAttribute("href") === currentPage) {
       link.classList.add("active");
       const parentDropdown = link.closest(".nav-dropdown");
@@ -49,7 +51,6 @@ window.addEventListener("load", () => {
   const loader = document.getElementById("preloader");
   if (loader) {
     loader.classList.add("loader-hidden");
-    // Remove from DOM after transition to free up memory
     loader.addEventListener("transitionend", () => {
       if (loader.parentNode) {
         loader.parentNode.removeChild(loader);
@@ -64,9 +65,26 @@ window.toggleDropdown = function (id, el) {
   el.classList.toggle("dropdown-open");
 };
 
-function logout() {
-    if(confirm("Are you sure you want to log out?")) {
-        // Clear session if needed
-        window.location.href = "../index.html";
+// --- 4. GLOBAL LOGOUT FUNCTION (FIXED) ---
+window.logout = function () {
+  if (confirm("Are you sure you want to log out?")) {
+    
+    // 1. Sign out from Firebase Auth
+    if (firebase.auth()) {
+        firebase.auth().signOut().then(() => {
+            console.log("Firebase Signed Out");
+        }).catch((error) => {
+            console.error("Sign Out Error", error);
+        });
     }
-}
+
+    // 2. Clear Local Storage (Session Data)
+    // This clears any saved user details so login.js doesn't auto-redirect
+    localStorage.clear();
+    sessionStorage.clear();
+
+    // 3. Redirect to Login Page (Root Folder)
+    // Using ../index.html to go up one level from admin/ folder
+    window.location.href = "../index.html";
+  }
+};

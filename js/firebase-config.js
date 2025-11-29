@@ -1,4 +1,5 @@
-// Firebase configuration - Firestore Only
+// js/firebase-config.js
+
 const firebaseConfig = {
     apiKey: "AIzaSyDlClfbOSKAhalafAQ4ptMRCHkaG-DxDd8",
     authDomain: "zsnhs-24e44.firebaseapp.com",
@@ -10,23 +11,17 @@ const firebaseConfig = {
     measurementId: "G-C9JMD4C5WB"
 };
 
-// Initialize Firebase Services (Firestore Only)
-try {
-    if (!firebase.apps.length) {
-        firebase.initializeApp(firebaseConfig);
-    }
-    
-    console.log('Firebase initialized successfully');
-    
-    // Initialize Firestore only
-    const db = firebase.firestore();
-    
-    // Make services globally available
-    window.db = db;
-    window.firestoreDb = db; // Alias for compatibility
-    
-    console.log('Firestore service initialized');
-    
-} catch (error) {
-    console.error('Firebase initialization error:', error);
+// Initialize Firebase
+if (!firebase.apps.length) {
+    firebase.initializeApp(firebaseConfig);
 }
+
+// Initialize Services
+const auth = firebase.auth();
+const db = firebase.firestore();
+
+// Make them available globally
+window.auth = auth;
+window.db = db;
+
+console.log("✅ Firebase Initialized");

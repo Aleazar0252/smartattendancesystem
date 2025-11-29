@@ -1,0 +1,367 @@
+/* teacher-css/styles.css */
+
+/* --- VARIABLES (Same as Admin) --- */
+:root {
+  --primary-color: #8b0000; /* ZSNHS Red */
+  --primary-dark: #600000;
+  --secondary-color: #f4f6f9;
+  --text-dark: #333333;
+  --text-light: #6c757d;
+  --white: #ffffff;
+  --success: #28a745;
+  --sidebar-width: 260px;
+  --shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+  --transition: all 0.3s ease;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: "Poppins", sans-serif;
+}
+
+body {
+  background-color: var(--secondary-color);
+  color: var(--text-dark);
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* --- PRELOADER --- */
+#preloader {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: white;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  transition: opacity 0.5s ease;
+}
+.spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid #f3f3f3;
+  border-top: 4px solid var(--primary-color);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+.loading-text {
+  margin-top: 15px;
+  color: var(--text-light);
+  font-weight: 500;
+}
+
+/* --- LAYOUT --- */
+.dashboard {
+  display: flex;
+  height: 100%;
+}
+
+/* SIDEBAR */
+.sidebar {
+  width: var(--sidebar-width);
+  background: var(--primary-color); /* Admin style: Red Sidebar */
+  color: white;
+  display: flex;
+  flex-direction: column;
+  padding: 20px;
+  box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+}
+
+.logo {
+  text-align: center;
+  margin-bottom: 40px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  padding-bottom: 20px;
+}
+.logo h1 {
+  font-family: "Playfair Display", serif;
+  font-size: 1.8rem;
+  margin: 10px 0 5px;
+}
+.logo-placeholder {
+  width: 60px;
+  height: 60px;
+  background: white;
+  color: var(--primary-color);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  margin: 0 auto;
+}
+
+.nav-menu h2 {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: rgba(255, 255, 255, 0.6);
+  margin: 20px 0 10px;
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  padding: 12px 15px;
+  margin-bottom: 5px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: var(--transition);
+  color: rgba(255, 255, 255, 0.8);
+  text-decoration: none;
+}
+.nav-item:hover,
+.nav-item.active {
+  background: rgba(255, 255, 255, 0.15);
+  color: white;
+  transform: translateX(5px);
+}
+.nav-item i {
+  width: 30px;
+}
+
+.logout-btn {
+  background: rgba(0, 0, 0, 0.2);
+  margin-top: auto;
+}
+.logout-btn:hover {
+  background: rgba(0, 0, 0, 0.4);
+}
+
+/* MAIN CONTENT */
+.main-content {
+  flex: 1;
+  padding: 30px;
+  overflow-y: auto;
+}
+
+header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 30px;
+}
+.header-title h2 {
+  font-weight: 600;
+  color: var(--text-dark);
+}
+.date-text {
+  color: var(--text-light);
+  font-size: 0.9rem;
+}
+
+.user-profile {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+.user-info {
+  text-align: right;
+}
+.user-info h4 {
+  margin: 0;
+  font-size: 0.95rem;
+}
+.user-info small {
+  color: var(--text-light);
+  font-size: 0.8rem;
+}
+.avatar-circle {
+  width: 45px;
+  height: 45px;
+  background: var(--primary-color);
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  font-size: 1.2rem;
+  box-shadow: var(--shadow);
+}
+
+/* CARDS */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 25px;
+  margin-bottom: 30px;
+}
+.stat-card {
+  background: var(--white);
+  padding: 25px;
+  border-radius: 15px;
+  box-shadow: var(--shadow);
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  transition: var(--transition);
+}
+.stat-card:hover {
+  transform: translateY(-5px);
+}
+
+.icon-box {
+  width: 60px;
+  height: 60px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+}
+.icon-box.blue {
+  background: #e3f2fd;
+  color: #1976d2;
+}
+.icon-box.green {
+  background: #e8f5e9;
+  color: #388e3c;
+}
+.icon-box.orange {
+  background: #fff3e0;
+  color: #f57c00;
+}
+
+.stat-info h3 {
+  font-size: 0.9rem;
+  color: var(--text-light);
+  margin-bottom: 5px;
+}
+.stat-info h2 {
+  font-size: 1.8rem;
+  color: var(--text-dark);
+}
+
+/* TABLES & SECTIONS */
+.card-container {
+  background: white;
+  padding: 25px;
+  border-radius: 15px;
+  box-shadow: var(--shadow);
+}
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 25px;
+}
+.search-box {
+  position: relative;
+}
+.search-box input {
+  padding: 10px 15px 10px 40px;
+  border: 1px solid #eee;
+  border-radius: 25px;
+  width: 250px;
+  background: var(--secondary-color);
+}
+.search-box i {
+  position: absolute;
+  left: 15px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #999;
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.data-table th {
+  text-align: left;
+  padding: 15px;
+  border-bottom: 2px solid #eee;
+  color: var(--text-light);
+  font-weight: 500;
+}
+.data-table td {
+  padding: 15px;
+  border-bottom: 1px solid #f9f9f9;
+}
+.data-table tr:last-child td {
+  border-bottom: none;
+}
+
+.avatar-sm {
+  width: 32px;
+  height: 32px;
+  background: #eee;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8rem;
+  color: #555;
+}
+.status-badge {
+  background: #d4edda;
+  color: #155724;
+  padding: 5px 12px;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+/* EMPTY STATE */
+.empty-state {
+  text-align: center;
+  padding: 50px;
+  color: var(--text-light);
+}
+.empty-state i {
+  font-size: 3rem;
+  margin-bottom: 15px;
+  opacity: 0.5;
+}
+
+/* PROFILE SPECIFIC */
+.profile-card {
+  max-width: 500px;
+  margin: 0 auto;
+  text-align: center;
+}
+.avatar-large {
+  width: 100px;
+  height: 100px;
+  background: var(--primary-color);
+  color: white;
+  border-radius: 50%;
+  margin: 0 auto 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 3rem;
+}
+.profile-details {
+  margin-top: 30px;
+  text-align: left;
+}
+.detail-item {
+  padding: 15px 0;
+  border-bottom: 1px solid #eee;
+}
+.detail-item label {
+  display: block;
+  font-size: 0.85rem;
+  color: var(--text-light);
+}
+.detail-item p {
+  font-weight: 500;
+  margin-top: 5px;
+}

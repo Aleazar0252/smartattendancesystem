@@ -1122,14 +1122,6 @@ function showSuccess(message) {
     }, 3000);
 }
 
-function logout() {
-    if (confirm('Are you sure you want to logout?')) {
-        // In a real app, you would sign out from Firebase Auth here
-        // For now, just reload the page
-        window.location.reload();
-    }
-}
-
 // Refresh data function
 async function refreshData() {
     try {
