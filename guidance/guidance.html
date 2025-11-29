@@ -1,0 +1,651 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ZSBNHS Guidance Portal</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    <!-- SheetJS for Excel Export -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <link rel="stylesheet" href="css/guidance.css">
+</head>
+<body>
+    <!-- Mobile Menu Toggle -->
+    <div class="menu-toggle" id="menuToggle">
+        <i class="fas fa-bars"></i>
+    </div>
+    
+    <div class="dashboard">
+        <!-- Enhanced Sidebar -->
+        <div class="sidebar" id="sidebar">
+            <div class="logo">
+                <img src="https://ui-avatars.com/api/?name=ZSBNHS&background=8B0000&color=fff" alt="School Logo">
+                <h1>ZSNHS</h1>
+            </div>
+            
+            <div class="nav-menu">
+                <h2>Dashboard</h2>
+                <div class="nav-item active" onclick="showSection('overview')">
+                    <i class="fas fa-tachometer-alt"></i>
+                    <span>Overview</span>
+                </div>
+                <div class="nav-item" onclick="showSection('students')">
+                    <i class="fas fa-user-graduate"></i>
+                    <span>Students with Concerns</span>
+                    <div class="notification-badge" id="studentsNotification">0</div>
+                </div>
+                <div class="nav-item" onclick="showSection('parent-contact')">
+                    <i class="fas fa-phone-alt"></i>
+                    <span>Parent Contacts</span>
+                    <div class="notification-badge" id="contactsNotification">0</div>
+                </div>
+                <div class="nav-item" onclick="showSection('appointments')">
+                    <i class="fas fa-calendar-check"></i>
+                    <span>Appointments</span>
+                </div>
+                <div class="nav-item" onclick="showSection('archive')">
+                    <i class="fas fa-archive"></i>
+                    <span>Archive</span>
+                </div>
+                <div class="nav-item" onclick="showSection('reports')">
+                    <i class="fas fa-chart-pie"></i>
+                    <span>Reports</span>
+                </div>
+                 <div class="nav-item" onclick="window.location.href='../Admin-Dashboard/admin_dash.html'">
+                    <i class="fas fa-home"></i>
+                    <span>Home</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Enhanced Main Content -->
+        <div class="main-content">
+            <div class="floating-circle circle-1"></div>
+            <div class="floating-circle circle-2"></div>
+            <div class="floating-circle circle-3"></div>
+            <div class="floating-circle circle-4"></div>
+            
+            <div class="header">
+                <h1>Guidance Counselor Dashboard</h1>
+                <div class="user-profile" id="userProfile">
+                    <img src="https://ui-avatars.com/api/?name=Ms+Rodriguez&background=D4AF37&color=fff" alt="Counselor">
+                    <span id="userName">Loading...</span>
+                    <i class="fas fa-chevron-down"></i>
+                </div>
+            </div>
+            
+            <!-- Dashboard Overview -->
+            <div id="overview-view" class="content-section active">
+                <div class="breadcrumb">
+                    <a href="#" onclick="showSection('overview')">Dashboard</a>
+                    <span class="separator">/</span>
+                    <span>Overview</span>
+                </div>
+                
+                <div class="stats-container">
+                    <div class="stat-card counseling">
+                        <div class="stat-icon">
+                            <i class="fas fa-comments"></i>
+                        </div>
+                        <div class="stat-title">Appointments</div>
+                        <div class="stat-value" id="appointmentsCount">0</div>
+                        <div class="stat-description">Total scheduled</div>
+                    </div>
+                    
+                    <div class="stat-card testing">
+                        <div class="stat-icon">
+                            <i class="fas fa-user-graduate"></i>
+                        </div>
+                        <div class="stat-title">Students</div>
+                        <div class="stat-value" id="studentsCount">0</div>
+                        <div class="stat-description">With concerns</div>
+                    </div>
+                    
+                    <div class="stat-card career">
+                        <div class="stat-icon">
+                            <i class="fas fa-phone-alt"></i>
+                        </div>
+                        <div class="stat-title">Parent Contacts</div>
+                        <div class="stat-value" id="contactsCount">0</div>
+                        <div class="stat-description">Total recorded</div>
+                    </div>
+                    
+                    <div class="stat-card discipline">
+                        <div class="stat-icon">
+                            <i class="fas fa-calendar"></i>
+                        </div>
+                        <div class="stat-title">Upcoming</div>
+                        <div class="stat-value" id="upcomingCount">0</div>
+                        <div class="stat-description">Appointments</div>
+                    </div>
+                </div>
+                
+                <div class="dashboard-grid-2col">
+                    <div class="chart-container">
+                        <div class="chart-header">
+                            <div class="chart-title">Appointment Types</div>
+                            <div class="chart-actions">
+                                <button class="chart-action-btn" onclick="refreshCharts()">
+                                    <i class="fas fa-sync-alt"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="chart-canvas-container">
+                            <canvas id="appointmentTypeChart"></canvas>
+                        </div>
+                    </div>
+                    
+                    <div class="chart-container">
+                        <div class="chart-header">
+                            <div class="chart-title">Monthly Activity</div>
+                            <div class="chart-actions">
+                                <button class="chart-action-btn" onclick="refreshCharts()">
+                                    <i class="fas fa-sync-alt"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="chart-canvas-container">
+                            <canvas id="activityChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="action-bar">
+                    <h2>Recent Appointments</h2>
+                    <div class="action-buttons">
+                        <button class="action-btn btn-secondary" onclick="exportAllData()">
+                            <i class="fas fa-file-excel"></i> Export All Data
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="appointments-grid" id="recentAppointments">
+                    <div class="no-data">Loading appointments...</div>
+                </div>
+            </div>
+            
+            <!-- Students with Concerns View -->
+            <div id="students-view" class="content-section">
+                <div class="breadcrumb">
+                    <a href="#" onclick="showSection('overview')">Dashboard</a>
+                    <span class="separator">/</span>
+                    <span>Students with Concerns</span>
+                </div>
+                
+                <div class="action-bar">
+                    <div class="search-box">
+                        <i class="fas fa-search"></i>
+                        <input type="text" placeholder="Search students..." id="studentSearch">
+                    </div>
+                    <div class="action-buttons">
+                        <button class="action-btn btn-primary" onclick="showAddStudentModal()">
+                            <i class="fas fa-plus"></i> Add Student with Concerns
+                        </button>
+                        <button class="action-btn btn-secondary" onclick="exportStudents()">
+                            <i class="fas fa-file-excel"></i> Export to Excel
+                        </button>
+                        <button class="action-btn btn-outline" onclick="showArchiveModal('students')">
+                            <i class="fas fa-archive"></i> Archive
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="table-responsive">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Student ID</th>
+                                <th>Name</th>
+                                <th>Grade</th>
+                                <th>Section</th>
+                                <th>Parent Name</th>
+                                <th>Contact</th>
+                                <th>Concern Type</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="studentsTable">
+                            <tr>
+                                <td colspan="9" class="no-data">Loading students with concerns...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <!-- Parent Contact Tracking View -->
+            <div id="parent-contact-view" class="content-section">
+                <div class="breadcrumb">
+                    <a href="#" onclick="showSection('overview')">Dashboard</a>
+                    <span class="separator">/</span>
+                    <span>Parent Contacts</span>
+                </div>
+                
+                <div class="parent-contact-card">
+                    <div class="parent-contact-header">
+                        <div class="parent-contact-title">Parent Contact Tracking</div>
+                        <div class="parent-contact-search">
+                            <i class="fas fa-search"></i>
+                            <input type="text" placeholder="Search students..." id="parentContactSearch">
+                        </div>
+                    </div>
+                    
+                    <div class="table-responsive">
+                        <table class="parent-contact-table">
+                            <thead>
+                                <tr>
+                                    <th>Student</th>
+                                    <th>Contact Date</th>
+                                    <th>Method</th>
+                                    <th>Reason</th>
+                                    <th>Follow-up Required</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="parentContactsTable">
+                                <tr>
+                                    <td colspan="7" class="no-data">Loading parent contacts...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                
+                <div class="action-bar">
+                    <h2>Contact Management</h2>
+                    <div class="action-buttons">
+                        <button class="action-btn btn-primary" onclick="showAddContactModal()">
+                            <i class="fas fa-plus"></i> Add Contact Record
+                        </button>
+                        <button class="action-btn btn-secondary" onclick="exportContactReport()">
+                            <i class="fas fa-file-excel"></i> Export to Excel
+                        </button>
+                        <button class="action-btn btn-outline" onclick="showArchiveModal('contacts')">
+                            <i class="fas fa-archive"></i> Archive
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Appointments View -->
+            <div id="appointments-view" class="content-section">
+                <div class="breadcrumb">
+                    <a href="#" onclick="showSection('overview')">Dashboard</a>
+                    <span class="separator">/</span>
+                    <span>Appointments</span>
+                </div>
+                
+                <div class="action-bar">
+                    <div class="search-box">
+                        <i class="fas fa-search"></i>
+                        <input type="text" placeholder="Search appointments..." id="appointmentSearch">
+                    </div>
+                    <div class="action-buttons">
+                        <button class="action-btn btn-primary" onclick="showScheduleModal()">
+                            <i class="fas fa-plus"></i> New Appointment
+                        </button>
+                        <button class="action-btn btn-secondary" onclick="exportAppointments()">
+                            <i class="fas fa-file-excel"></i> Export to Excel
+                        </button>
+                        <button class="action-btn btn-outline" onclick="showArchiveModal('appointments')">
+                            <i class="fas fa-archive"></i> Archive
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="appointments-grid" id="appointmentsList">
+                    <div class="no-data">Loading appointments...</div>
+                </div>
+            </div>
+
+            <!-- Archive View -->
+            <div id="archive-view" class="content-section">
+                <div class="breadcrumb">
+                    <a href="#" onclick="showSection('overview')">Dashboard</a>
+                    <span class="separator">/</span>
+                    <span>Archive</span>
+                </div>
+                
+                <div class="action-bar">
+                    <h2>Archived Records</h2>
+                    <div class="action-buttons">
+                        <button class="action-btn btn-secondary" onclick="exportArchivedData()">
+                            <i class="fas fa-file-excel"></i> Export Archived Data
+                        </button>
+                        <button class="action-btn btn-outline" onclick="clearOldArchives()">
+                            <i class="fas fa-trash"></i> Clear Old Archives
+                        </button>
+                    </div>
+                </div>
+
+                <div class="archive-tabs">
+                    <div class="tab-buttons">
+                        <button class="tab-btn active" onclick="showArchiveTab('students')">Students</button>
+                        <button class="tab-btn" onclick="showArchiveTab('appointments')">Appointments</button>
+                        <button class="tab-btn" onclick="showArchiveTab('contacts')">Parent Contacts</button>
+                    </div>
+                    
+                    <div class="tab-content">
+                        <!-- Archived Students -->
+                        <div id="archive-students" class="tab-pane active">
+                            <div class="table-responsive">
+                                <table class="data-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Student ID</th>
+                                            <th>Name</th>
+                                            <th>Grade</th>
+                                            <th>Section</th>
+                                            <th>Concern Type</th>
+                                            <th>Archived Date</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="archivedStudentsTable">
+                                        <tr>
+                                            <td colspan="7" class="no-data">No archived students found</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        
+                        <!-- Archived Appointments -->
+                        <div id="archive-appointments" class="tab-pane">
+                            <div class="appointments-grid" id="archivedAppointmentsList">
+                                <div class="no-data">No archived appointments found</div>
+                            </div>
+                        </div>
+                        
+                        <!-- Archived Contacts -->
+                        <div id="archive-contacts" class="tab-pane">
+                            <div class="table-responsive">
+                                <table class="data-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Student</th>
+                                            <th>Contact Date</th>
+                                            <th>Method</th>
+                                            <th>Reason</th>
+                                            <th>Archived Date</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="archivedContactsTable">
+                                        <tr>
+                                            <td colspan="6" class="no-data">No archived contacts found</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Reports View -->
+            <div id="reports-view" class="content-section">
+                <div class="breadcrumb">
+                    <a href="#" onclick="showSection('overview')">Dashboard</a>
+                    <span class="separator">/</span>
+                    <span>Reports</span>
+                </div>
+                
+                <div class="dashboard-grid-2col">
+                    <div class="chart-container">
+                        <div class="chart-header">
+                            <div class="chart-title">Student Distribution by Grade</div>
+                        </div>
+                        <div class="chart-canvas-container">
+                            <canvas id="gradeDistributionChart"></canvas>
+                        </div>
+                    </div>
+                    
+                    <div class="chart-container">
+                        <div class="chart-header">
+                            <div class="chart-title">Contact Methods</div>
+                        </div>
+                        <div class="chart-canvas-container">
+                            <canvas id="contactMethodChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="action-bar">
+                    <h2>Report Generation</h2>
+                    <div class="action-buttons">
+                        <button class="action-btn btn-primary" onclick="generateStudentReport()">
+                            <i class="fas fa-file-pdf"></i> Student Report
+                        </button>
+                        <button class="action-btn btn-secondary" onclick="generateContactReport()">
+                            <i class="fas fa-file-excel"></i> Contact Report
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Schedule Appointment Modal -->
+    <div id="scheduleModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title"><i class="fas fa-calendar-plus"></i> Schedule Appointment</h3>
+                <span class="close-btn" onclick="closeModal()">&times;</span>
+            </div>
+            <div class="modal-body">
+                <form id="scheduleForm">
+                    <div class="form-group">
+                        <label>Student Name *</label>
+                        <input type="text" class="form-control" id="appointmentStudent" required placeholder="Enter student name">
+                        <small class="form-text text-muted">Enter the full name of the student with concerns</small>
+                    </div>
+                    <div class="form-group">
+                        <label>Appointment Type *</label>
+                        <select class="form-control form-select" id="appointmentType" required>
+                            <option value="">Select Type...</option>
+                            <option value="Academic Counseling">Academic Counseling</option>
+                            <option value="Career Guidance">Career Guidance</option>
+                            <option value="Personal Counseling">Personal Counseling</option>
+                            <option value="Behavioral Intervention">Behavioral Intervention</option>
+                            <option value="Parent Conference">Parent Conference</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+                    
+                    <div class="responsive-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                        <div class="form-group">
+                            <label>Date *</label>
+                            <input type="date" class="form-control" id="appointmentDate" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Time *</label>
+                            <input type="time" class="form-control" id="appointmentTime" required>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Notes</label>
+                        <textarea class="form-control" id="appointmentNotes" rows="3" placeholder="Brief description of concerns..."></textarea>
+                    </div>
+                    
+                    <div class="form-actions">
+                        <button type="button" class="action-btn btn-outline" onclick="closeModal()">
+                            Cancel
+                        </button>
+                        <button type="submit" class="action-btn btn-primary">
+                            <i class="fas fa-save"></i> Schedule Appointment
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Add Student with Concerns Modal -->
+    <div id="addStudentModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title"><i class="fas fa-user-plus"></i> Add Student with Concerns</h3>
+                <span class="close-btn" onclick="closeModal()">&times;</span>
+            </div>
+            <div class="modal-body">
+                <form id="addStudentForm">
+                    <div class="form-group">
+                        <label>Student ID *</label>
+                        <input type="text" class="form-control" id="studentId" required placeholder="Enter student ID" oninput="validateNumbersOnly(this)">
+                        
+                    </div>
+                    <div class="form-group">
+                        <label>Full Name *</label>
+                        <input type="text" class="form-control" id="studentName" required placeholder="Enter full name" oninput="validateTextOnly(this)">
+                        
+                    </div>
+                    <div class="form-group">
+                        <label>Grade *</label>
+                        <input type="number" class="form-control" id="studentGrade" min="7" max="12" required placeholder="7-12">
+                    </div>
+                    <div class="form-group">
+                        <label>Section *</label>
+                        <input type="text" class="form-control" id="studentSection" required placeholder="Enter section">
+                    </div>
+                    
+                    <!-- Guidance Concern Fields -->
+                    <div class="form-group">
+                        <label>Concern Type *</label>
+                        <input type="text" class="form-control" id="concernType" required placeholder="Enter concern type (e.g., Academic, Behavioral, Emotional)">
+                        <small class="form-text text-muted">Describe the main concern</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Priority Level</label>
+                        <select class="form-control form-select" id="priorityLevel">
+                            <option value="low">Low Priority</option>
+                            <option value="medium" selected>Medium Priority</option>
+                            <option value="high">High Priority</option>
+                            <option value="urgent">Urgent</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Initial Concern Description *</label>
+                        <textarea class="form-control" id="initialConcern" rows="3" required
+                                  placeholder="Detailed description of the student's concerns..."></textarea>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Parent/Guardian Name *</label>
+                        <input type="text" class="form-control" id="parentName" required placeholder="Enter parent/guardian name" oninput="validateTextOnly(this)">
+                        <small class="form-text text-muted">Letters and spaces only</small>
+                    </div>
+                    <div class="form-group">
+                        <label>Contact Number</label>
+                        <input type="tel" class="form-control" id="parentContact" placeholder="Enter contact number" oninput="validatePhoneNumber(this)">
+                        <small class="form-text text-muted">Numbers and + - ( ) only</small>
+                    </div>
+                    <div class="form-group">
+                        <label>Email</label>
+                        <input type="email" class="form-control" id="parentEmail" placeholder="Enter email address">
+                    </div>
+                    
+                    <div class="form-actions">
+                        <button type="button" class="action-btn btn-outline" onclick="closeModal()">
+                            Cancel
+                        </button>
+                        <button type="submit" class="action-btn btn-primary">
+                            <i class="fas fa-save"></i> Add to Guidance Database
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Add Contact Record Modal -->
+    <div id="addContactModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title"><i class="fas fa-plus-circle"></i> Add Parent Contact Record</h3>
+                <span class="close-btn" onclick="closeModal()">&times;</span>
+            </div>
+            <div class="modal-body">
+                <form id="addContactForm">
+                    <div class="form-group">
+                        <label>Student Name *</label>
+                        <input type="text" class="form-control" id="contactStudentName" required placeholder="Enter student name">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Contact Date *</label>
+                        <input type="date" class="form-control" id="contactDate" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Contact Method *</label>
+                        <select class="form-control form-select" id="contactMethod" required>
+                            <option value="">Select Method...</option>
+                            <option value="Phone Call">Phone Call</option>
+                            <option value="Email">Email</option>
+                            <option value="In-Person Meeting">In-Person Meeting</option>
+                            <option value="Text Message">Text Message</option>
+                            <option value="Parent-Teacher Conference">Parent-Teacher Conference</option>
+                            <option value="Home Visit">Home Visit</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Contact Reason *</label>
+                        <input type="text" class="form-control" id="contactReason" required placeholder="Enter contact reason">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Notes *</label>
+                        <textarea class="form-control" id="contactNotes" rows="3" placeholder="Details of the conversation..." required></textarea>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Follow-up Required</label>
+                        <select class="form-control form-select" id="contactFollowUp" required>
+                            <option value="false">No</option>
+                            <option value="true">Yes</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-actions">
+                        <button type="button" class="action-btn btn-outline" onclick="closeModal()">
+                            Cancel
+                        </button>
+                        <button type="submit" class="action-btn btn-primary">
+                            <i class="fas fa-save"></i> Save Contact Record
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Archive Management Modal -->
+    <div id="archiveModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title"><i class="fas fa-archive"></i> Archive Management</h3>
+                <span class="close-btn" onclick="closeModal()">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div id="archiveModalContent">
+                    <!-- Content will be dynamically loaded -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/guidance-app.js"></script>
+</body>
+</html>

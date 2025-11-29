@@ -1,0 +1,650 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teacher Dashboard - EduTrack</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Cinzel:wght@400;700&family=Montserrat:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.1/build/qrcode.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+    
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+    
+    <!-- Session Management -->
+    <script src="js/session-manager.js"></script>
+    <script src="js/teacher-firebase-config.js"></script>
+    <script src="js/auth-guard.js"></script>
+    
+    <link rel="stylesheet" href="css/teacher.css">
+</head>
+<body>
+    <!-- Mobile Menu Button -->
+    <button class="mobile-menu-btn" id="mobileMenuBtn">
+        <i class="fas fa-bars"></i>
+    </button>
+    
+    <!-- Sidebar Overlay for Mobile -->
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+    <!-- Toast Notification Container -->
+    <div class="toast-container">
+        <div id="upload-toast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="toast-header">
+                <strong class="me-auto">Success</strong>
+                <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+            <div class="toast-body" id="toast-message">
+                Profile image updated successfully!
+            </div>
+        </div>
+    </div>
+
+    <!-- Student Edit Modal -->
+    <div class="modal fade student-modal" id="studentEditModal" tabindex="-1" aria-labelledby="studentEditModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="studentEditModalLabel">Edit Student Information</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="studentEditForm">
+                        <input type="hidden" id="editStudentId">
+                        <input type="hidden" id="editStudentClass">
+                        <div class="mb-3">
+                            <label for="editStudentName" class="form-label">Student Name</label>
+                            <input type="text" class="form-control" id="editStudentName" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="editStudentNumber" class="form-label">Student ID</label>
+                            <input type="text" class="form-control" id="editStudentNumber" required>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary-custom" id="saveStudentBtn">Save Changes</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Student Archive Confirmation Modal -->
+    <div class="modal fade student-modal" id="studentArchiveModal" tabindex="-1" aria-labelledby="studentArchiveModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="studentArchiveModalLabel">Confirm Archive</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Are you sure you want to archive <span id="archiveStudentName" class="fw-bold"></span>?</p>
+                    <p class="text-muted">Archived students can be restored later if needed.</p>
+                    <input type="hidden" id="archiveStudentId">
+                    <input type="hidden" id="archiveStudentClass">
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-archive" id="confirmArchiveBtn">Archive Student</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Student Modal -->
+    <div class="modal fade student-modal" id="addStudentModal" tabindex="-1" aria-labelledby="addStudentModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="addStudentModalLabel">Add New Student</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="addStudentForm">
+                        <input type="hidden" id="addStudentClass">
+                        <div class="mb-3">
+                            <label for="addStudentName" class="form-label">Student Name</label>
+                            <input type="text" class="form-control" id="addStudentName" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="addStudentNumber" class="form-label">Student ID</label>
+                            <input type="text" class="form-control" id="addStudentNumber" required>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary-custom" id="addStudentBtn">Add Student</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Attendance Modal -->
+    <div class="modal fade" id="attendanceModal" tabindex="-1" aria-labelledby="attendanceModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="attendanceModalLabel">Take Attendance</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="attendance-options mb-4 d-flex gap-3">
+                        <div class="attendance-option active" id="qrOption">
+                            <i class="fas fa-qrcode"></i>
+                            <h6>QR Code</h6>
+                            <p>Generate QR for students to scan</p>
+                        </div>
+                        <div class="attendance-option" id="manualOption">
+                            <i class="fas fa-pen"></i>
+                            <h6>Manual Entry</h6>
+                            <p>Record attendance manually</p>
+                        </div>
+                    </div>
+                    
+                    <!-- QR Code Section -->
+                    <div id="qrAttendanceSection">
+                        <!-- QR Setup Form -->
+                        <div class="setup-section mb-4">
+                            <h5 class="mb-3">QR Code Setup</h5>
+                            <div class="qr-setup-required">
+                                <p class="mb-1"><strong>Setup Required:</strong> Please configure all fields below!</p>
+                                <span class="setup-status status-incomplete" id="setupStatus">Incomplete</span>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="qrClass" class="form-label">Select Class <span class="text-danger">*</span></label>
+                                    <select class="form-select" id="qrClass" required>
+                                        <option value="">Select a class</option>
+                                    </select>
+                                </div> 
+                                <div class="col-md-6 mb-3">
+                                    <label for="qrSubject" class="form-label">Subject Name <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" id="qrSubject" required>
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <label for="qrDate" class="form-label">Date <span class="text-danger">*</span></label>
+                                    <input type="date" class="form-control" id="qrDate" required>
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <label for="qrTimeIn" class="form-label">Time In</label>
+                                    <input type="time" class="form-control" id="qrTimeIn">
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <label for="qrTimeOut" class="form-label">Time Out</label>
+                                    <input type="time" class="form-control" id="qrTimeOut">
+                                </div>
+                                <div class="col-12">
+                                    <button class="btn btn-primary-custom w-100" id="generateQRBtn" disabled>
+                                        <i class="fas fa-qrcode me-2"></i>Generate QR Code
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- QR Code Display -->
+                        <div class="qr-code-container qr-disabled" id="qrCodeContainer">
+                            <div class="qr-placeholder" id="qrPlaceholder">
+                                <i class="fas fa-qrcode"></i>
+                                <p>Complete the setup above to generate QR code</p>
+                            </div>
+                            <div id="qrCodeDisplay" style="display: none;">
+                                <h5>Class Attendance QR Code</h5>
+                                <div class="qr-code" id="qrCode"></div>
+                                <p class="mt-3">Scan this code to mark attendance</p>
+                                <div class="d-flex justify-content-center mt-3">
+                                    <button class="btn btn-gold me-2" id="refreshQRBtn">
+                                        <i class="fas fa-sync-alt me-1"></i> Refresh Code
+                                    </button>
+                                    <button class="btn btn-primary-custom" id="downloadQRBtn">
+                                        <i class="fas fa-download me-1"></i> Download
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mt-4" id="scanRecordsSection" style="display: none;">
+                            <h5>Scan Records</h5>
+                            <div class="table-responsive">
+                                <table class="table table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th>Student ID</th>
+                                            <th>Name</th>
+                                            <th>Time</th>
+                                            <th>Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="qrScanRecords">
+                                        <tr>
+                                            <td colspan="4" class="text-center text-muted py-4">No scan records yet</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Manual Attendance Section -->
+                    <div id="manualAttendanceSection" style="display: none;">
+                        <div class="setup-section mb-4">
+                            <h5 class="mb-3">Manual Setup</h5>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="manualClass" class="form-label">Select Class <span class="text-danger">*</span></label>
+                                    <select class="form-select" id="manualClass" required>
+                                        <option value="">Select a class</option>
+                                    </select>
+                                </div> 
+                                <div class="col-md-6 mb-3">
+                                    <label for="manualSubject" class="form-label">Subject Name <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" id="manualSubject" required>
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <label for="manualDate" class="form-label">Date <span class="text-danger">*</span></label>
+                                    <input type="date" class="form-control" id="manualDate" required>
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <label for="manualTimeIn" class="form-label">Time In</label>
+                                    <input type="time" class="form-control" id="manualTimeIn">
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <label for="manualTimeOut" class="form-label">Time Out</label>
+                                    <input type="time" class="form-control" id="manualTimeOut">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <h5 class="mb-3">Student Attendance</h5>
+                        <div class="student-list" id="studentAttendanceList">
+                            <div class="table-responsive">
+                                <table class="table table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th>Student ID</th>
+                                            <th>Name</th>
+                                            <th>Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="manualAttendanceTable">
+                                        <!-- Students will be loaded here -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary-custom" id="saveAttendanceBtn">Save Attendance</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Report Generation Modal -->
+    <div class="modal fade" id="reportModal" tabindex="-1" aria-labelledby="reportModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="reportModalLabel">Generate Reports</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="report-options">
+                        <div class="report-option" data-report-type="attendance">
+                            <i class="fas fa-clipboard-check"></i>
+                            <h5>Attendance Report</h5>
+                            <p class="text-muted">Generate attendance reports for classes</p>
+                        </div>
+                        <div class="report-option" data-report-type="sf2">
+                            <i class="fas fa-file-alt"></i>
+                            <h5>SF2 Form</h5>
+                            <p class="text-muted">Generate SF2 Form (Class Register)</p>
+                        </div>
+                    </div>
+                    
+                    <div id="reportOptionsDetail" style="display: none;">
+                        <h5 id="reportDetailTitle" class="mb-3"></h5>
+                        <div id="reportDetailContent"></div>
+                        <button class="btn btn-primary-custom mt-3" id="generateReportBtn">
+                            <i class="fas fa-download me-2"></i>Generate Report
+                        </button>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Section Modal -->
+    <div class="modal fade" id="addSectionModal" tabindex="-1" aria-labelledby="addSectionModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="addSectionModalLabel">Add New Section</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="addSectionForm">
+                        <div class="mb-3">
+                            <label for="sectionName" class="form-label">Section Name</label>
+                            <input type="text" class="form-control" id="sectionName" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="sectionGrade" class="form-label">Grade Level</label>
+                            <select class="form-select" id="sectionGrade" required>
+                                <option value="">Select Grade Level</option>
+                                <option value="7">Grade 7</option>
+                                <option value="8">Grade 8</option>
+                                <option value="9">Grade 9</option>
+                                <option value="10">Grade 10</option>
+                                <option value="11">Grade 11</option>
+                                <option value="12">Grade 12</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="sectionSubject" class="form-label">Subject</label>
+                            <input type="text" class="form-control" id="sectionSubject" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="sectionRoom" class="form-label">Room</label>
+                            <input type="text" class="form-control" id="sectionRoom">
+                        </div>
+                        <div class="mb-3">
+                            <label for="sectionSchedule" class="form-label">Schedule</label>
+                            <input type="text" class="form-control" id="sectionSchedule" placeholder="e.g., MWF 8:00-9:00 AM">
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary-custom" id="saveSectionBtn">Add Section</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- View Attendance Records Modal -->
+    <div class="modal fade" id="viewAttendanceModal" tabindex="-1" aria-labelledby="viewAttendanceModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="viewAttendanceModalLabel">Attendance Records</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <label for="viewAttendanceClass" class="form-label">Select Class</label>
+                            <select class="form-select" id="viewAttendanceClass">
+                                <!-- Classes will be loaded dynamically -->
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label for="viewAttendanceMonth" class="form-label">Month</label>
+                            <select class="form-select" id="viewAttendanceMonth">
+                                <option value="0">January</option>
+                                <option value="1">February</option>
+                                <option value="2">March</option>
+                                <option value="3">April</option>
+                                <option value="4">May</option>
+                                <option value="5">June</option>
+                                <option value="6">July</option>
+                                <option value="7">August</option>
+                                <option value="8">September</option>
+                                <option value="9">October</option>
+                                <option value="10">November</option>
+                                <option value="11">December</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label for="viewAttendanceYear" class="form-label">Year</label>
+                            <select class="form-select" id="viewAttendanceYear">
+                                <!-- Years will be loaded dynamically -->
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-hover">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th>Student Name</th>
+                                    <th>ID</th>
+                                    <!-- Days will be dynamically added here -->
+                                </tr>
+                            </thead>
+                            <tbody id="attendanceRecordsBody">
+                                <!-- Attendance records will be populated here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-primary-custom" id="exportAttendanceBtn">
+                        <i class="fas fa-download me-1"></i> Export to Excel
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sidebar Navigation -->
+    <div class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <h3><i class="fas fa-book-open"></i> EduTrack</h3>
+            <p>Teacher Portal</p>
+        </div>
+        <div class="sidebar-menu">
+            <ul>
+                <li><a href="#" class="nav-link active" data-section="dashboard"><i class="fas fa-home"></i> <span>Dashboard</span></a></li>
+                <li><a href="#" class="nav-link" data-section="profile"><i class="fas fa-user"></i> <span>My Profile</span></a></li>
+                <li><a href="#" class="nav-link" data-section="classes"><i class="fas fa-chalkboard"></i> <span>My Classes</span></a></li>
+                <li><a href="#" class="nav-link" data-section="attendance"><i class="fas fa-clipboard-check"></i> <span>Attendance</span></a></li>
+                <li><a href="#" class="nav-link" data-section="reports"><i class="fas fa-chart-line"></i> <span>Reports</span></a></li>
+                <li><a href="#" class="nav-link" data-section="messages"><i class="fas fa-envelope"></i> <span>Messages</span> <span class="notification-dot"></span></a></li>
+                <li><a href="#" class="nav-link" data-section="settings"><i class="fas fa-cog"></i> <span>Settings</span></a></li>
+                <li><a href="#" class="nav-link" data-section="logout"><i class="fas fa-sign-out-alt"></i> <span>Logout</span></a></li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content" id="mainContent">
+        <!-- Decorative elements -->
+        <div class="decoration decoration-1 floating"></div>
+        <div class="decoration decoration-2 floating" style="animation-delay: 2s;"></div>
+        
+        <!-- Header -->
+        <div class="header">
+            <div class="flourish flourish-1"></div>
+            <div class="flourish flourish-2"></div>
+            <div>
+                <h2 class="ornate-font"><i class="fas fa-chalkboard-teacher me-2"></i>Teacher Dashboard</h2>
+                <p class="mb-0">Welcome back, <span id="header-teacher-name">Teacher</span></p>
+            </div>
+            <div class="user-info">
+                <div id="header-profile-img" style="margin-right: 40px;"></div>
+                 <div>
+                  <div id="header-user-name">Loading...</div>
+                  <small id="header-department">Department</small>
+              </div>
+            </div>
+        </div>
+
+        <!-- Dashboard Section -->
+        <div id="dashboard" class="profile-section active">
+            <div class="dashboard-cards">
+                <!-- Today's Schedule Card -->
+                <div class="card ornate-border card-hover animate-up">
+                    <div class="corner-ornament top-left"></div>
+                    <div class="corner-ornament top-right"></div>
+                    <div class="corner-ornament bottom-left"></div>
+                    <div class="corner-ornament bottom-right"></div>
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <span><i class="fas fa-calendar-day me-2"></i>Today's Schedu le</span>
+                        <span id="current-date">Loading...</span>
+                    </div>
+                    <div class="card-body">
+                        <div class="class-schedule" id="today-schedule">
+                            <!-- Today's classes will be loaded here -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Attendance Summary Card -->
+                <div class="card ornate-border card-hover animate-up delay-1">
+                    <div class="corner-ornament top-left"></div>
+                    <div class="corner-ornament top-right"></div>
+                    <div class="corner-ornament bottom-left"></div>
+                    <div class="corner-ornament bottom-right"></div>
+                    <div class="card-header">
+                        <i class="fas fa-clipboard-list me-2"></i>Attendance Summary
+                    </div>
+                    <div class="card-body">
+                        <div class="profile-stats">
+                            <div class="stat-item">
+                                <div class="stat-value" id="overall-attendance">0%</div>
+                                <div class="stat-label">Overall Attendance</div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="stat-value" id="classes-today">0</div>
+                                <div class="stat-label">Classes Today</div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="stat-value" id="total-students">0</div>
+                                <div class="stat-label">Total Students</div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="stat-value" id="total-classes">0</div>
+                                <div class="stat-label">List of Classes</div>
+                            </div>
+                        </div>
+                        <div class="d-grid">
+                            <button class="btn btn-primary-custom btn-sparkle" id="viewAttendanceReportBtn"><i class="fas fa-clipboard-check me-2"></i>Overall Record</button>
+                        </div>
+                    </div>
+                </div>
+
+                
+            </div>
+
+            
+        </div>
+
+        <!-- Profile Section -->
+        <div id="profile" class="profile-section">
+            <!-- Profile content will be loaded dynamically -->
+        </div>
+
+        <!-- My Classes Section -->
+        <div id="classes" class="profile-section">
+            <!-- Classes content will be loaded dynamically -->
+        </div>
+
+        <!-- Attendance Section -->
+        <div id="attendance" class="profile-section">
+            <!-- Attendance content will be loaded dynamically -->
+        </div>
+
+      
+
+        <!-- Messages Section -->
+        <div id="messages" class="profile-section">
+            <!-- Messages content will be loaded dynamically -->
+        </div>
+
+        <!-- Settings Section -->
+        <div id="settings" class="profile-section">
+            <!-- Settings content will be loaded dynamically -->
+        </div>
+
+        <!-- Logout Section -->
+        <div id="logout" class="profile-section">
+            <!-- Logout content will be loaded dynamically -->
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Teacher-specific scripts -->
+    <script src="js/teacher-firebase-config.js"></script>
+    <script src="js/teacher-app.js"></script>
+
+    <script>
+        // Initialize session and load teacher data - PURE FIRESTORE
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('👨‍🏫 Teacher portal initialized - Pure Firestore');
+            
+            // Check session and load teacher data
+            if (window.sessionManager && window.sessionManager.isLoggedIn()) {
+                const session = window.sessionManager.getSession();
+                console.log('✅ Teacher session:', session);
+                
+                // Update UI with session data immediately
+                updateTeacherUI(session);
+                
+            } else {
+                console.error('❌ No valid session found');
+                window.sessionManager.redirectToLogin('Please login to access teacher portal');
+            }
+        });
+
+        function updateTeacherUI(session) {
+            // Update header elements with session data
+            const headerTeacherName = document.getElementById('header-teacher-name');
+            const headerUserName = document.getElementById('header-user-name');
+            const headerDepartment = document.getElementById('header-department');
+            
+            if (headerTeacherName) headerTeacherName.textContent = session.name || getFullName(session);
+            if (headerUserName) headerUserName.textContent = session.name || getFullName(session);
+            if (headerDepartment) headerDepartment.textContent = session.department || 'Department';
+            
+            // Update avatar with initials
+            const fullName = session.name || getFullName(session);
+            document.getElementById('header-profile-img').src = app.getInitialsAvatar(fullName, 60);
+        }
+
+        // Helper functions to handle name fields
+        function getFullName(session) {
+            if (session.firstName && session.lastName) {
+                return `${session.firstName} ${session.middleName ? session.middleName + ' ' : ''}${session.lastName}`;
+            }
+            return session.name || 'Teacher';
+        }
+
+        // Global logout function
+        function logout() {
+            if (confirm('Are you sure you want to logout?')) {
+                window.sessionManager.clearSession('Logged out successfully');
+            }
+        }
+
+        // Mobile menu functionality
+        document.getElementById('mobileMenuBtn')?.addEventListener('click', function() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('sidebarOverlay');
+            sidebar.classList.toggle('active');
+            overlay.classList.toggle('active');
+            this.innerHTML = sidebar.classList.contains('active') ? '<i class="fas fa-times"></i>' : '<i class="fas fa-bars"></i>';
+        });
+
+        document.getElementById('sidebarOverlay')?.addEventListener('click', function() {
+            const sidebar = document.getElementById('sidebar');
+            const mobileBtn = document.getElementById('mobileMenuBtn');
+            sidebar.classList.remove('active');
+            this.classList.remove('active');
+            mobileBtn.innerHTML = '<i class="fas fa-bars"></i>';
+        });
+    </script>
+</body>
+</html>

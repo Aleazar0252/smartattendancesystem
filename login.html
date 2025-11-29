@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login Page - Thesis Project</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="login.css">
+    
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+</head>
+<body>
+    <div class="particles" id="particles"></div>
+    
+    <div class="container floating">
+        <div class="floating-decoration decoration-1"></div>
+        <div class="floating-decoration decoration-2"></div>
+        
+        <div class="image-section">
+            <div class="university-info">
+                <h1>Zamboanga Sibugay National High School</h1>
+                <p>Center of Academic Excellence</p>
+            </div>
+            <div class="logo">
+                <img src="Settings/img/logo.jpg" alt="School Logo" onerror="this.style.display='none'">
+            </div>
+        </div>
+        
+        <div class="login-section">
+            <div class="login-header">
+                <h2>Welcome Back</h2>
+                <p>Sign in to access your account</p>
+            </div>
+            
+            <div class="error-message" id="errorMessage"></div>
+            <div class="success-message" id="successMessage"></div>
+            
+            <form class="form" id="loginForm">
+                <div class="input-group">
+                    <label for="email">Email Address</label>
+                    <input type="email" id="email" name="email" required placeholder="Enter your email">
+                </div>
+                
+                <div class="input-group">
+                    <label for="password">Password</label>
+                    <div class="password-container">
+                        <input type="password" id="password" name="password" required placeholder="Enter your password">
+                        <i class="fas fa-eye toggle-password" id="togglePassword"></i>
+                    </div>
+                </div>
+                
+                <div class="forgot-password">
+                    <a href="reset-request.html">Forgot Password?</a>
+                </div>
+                
+                <button type="submit" class="submit-btn" id="loginBtn">
+                    <span class="btn-text">Login</span>
+                    <span class="btn-loader">
+                        <i class="fas fa-spinner fa-spin"></i> Logging in...
+                    </span>
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- App Scripts -->
+    <script src="js/firebase-config.js"></script>
+    <script src="js/session-manager.js"></script>
+    <script src="login.js"></script>
+</body>
+</html>

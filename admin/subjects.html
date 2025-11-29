@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Subject Management - ZSNHS</title>
+
+    <link rel="stylesheet" href="admin-css/teacher.css" />
+
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Playfair+Display:wght@700&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+  <body>
+    <div class="dashboard">
+      <div class="sidebar" id="sidebar">
+        <div class="logo">
+          <div class="logo-placeholder">ZSNHS</div>
+          <h1>ZSNHS</h1>
+        </div>
+
+        <div class="nav-menu">
+          <h2>Dashboard</h2>
+          <div class="nav-item" onclick="window.location.href='admin.html'">
+            <i class="fas fa-tachometer-alt"></i> <span>Overview</span>
+          </div>
+
+          <div
+            class="nav-item dropdown-open"
+            onclick="toggleDropdown('academics-dropdown', this)"
+          >
+            <div style="display: flex; align-items: center">
+              <i class="fas fa-graduation-cap"></i>
+              <span>Academics</span>
+            </div>
+            <i class="fas fa-chevron-down chevron-icon"></i>
+          </div>
+          <div class="nav-dropdown show" id="academics-dropdown">
+            <a href="teacher.html" class="nav-sub-item">Teacher Management</a>
+            <a href="subjects.html" class="nav-sub-item">Subjects</a>
+            <a href="sections.html" class="nav-sub-item"
+              >Grade Level & Sections</a
+            >
+            <a href="schedules.html" class="nav-sub-item">Class Schedules</a>
+          </div>
+
+          <div class="nav-item" onclick="window.location.href='guidance.html'">
+            <i class="fas fa-hands-helping"></i> <span>Guidance</span>
+          </div>
+          <div class="nav-item" onclick="window.location.href='parent.html'">
+            <i class="fas fa-users"></i> <span>Parents</span>
+          </div>
+          <div class="nav-item" onclick="window.location.href='reports.html'">
+            <i class="fas fa-chart-pie"></i> <span>Reports</span>
+          </div>
+          <div class="nav-item" onclick="window.location.href='settings.html'">
+            <i class="fas fa-cog"></i> <span>Settings</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="main-content">
+        <div class="header">
+          <h1>Subject Management</h1>
+          <div class="user-profile">
+            <div class="avatar-placeholder">A</div>
+            <span>Admin</span>
+          </div>
+        </div>
+
+        <div class="content-section">
+          <div
+            style="
+              display: flex;
+              justify-content: space-between;
+              align-items: center;
+              margin-bottom: 20px;
+            "
+          >
+            <h2 style="color: var(--primary-color)">Subjects List</h2>
+            <div style="display: flex; gap: 10px">
+              <input
+                type="text"
+                id="search-input"
+                onkeyup="searchSubjects()"
+                placeholder="Search Subject..."
+                style="
+                  padding: 10px;
+                  border: 1px solid #ddd;
+                  border-radius: 5px;
+                  width: 250px;
+                "
+              />
+              <button class="btn btn-primary" onclick="openSubjectModal()">
+                <i class="fas fa-plus"></i> Add Subject
+              </button>
+            </div>
+          </div>
+
+          <table class="teachers-table">
+            <thead>
+              <tr>
+                <th>Subject Name</th>
+                <th>Timestamp</th>
+                <th style="text-align: right">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="subjects-list-body">
+              <tr>
+                <td colspan="3" class="loading-cell">Loading subjects...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div id="subject-modal" class="modal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2 id="modal-title">Add New Subject</h2>
+          <span class="close-modal" onclick="closeModal('subject-modal')"
+            >&times;</span
+          >
+        </div>
+        <div class="modal-body">
+          <form
+            id="subject-form"
+            onsubmit="event.preventDefault(); saveSubject();"
+          >
+            <input type="hidden" id="edit-doc-id" />
+
+            <div class="form-group">
+              <label>Subject Name</label>
+              <input
+                type="text"
+                id="sub-name"
+                class="form-control"
+                placeholder="e.g. Mathematics"
+                required
+              />
+            </div>
+          </form>
+        </div>
+        <div class="modal-footer">
+          <button class="btn" onclick="closeModal('subject-modal')">
+            Cancel
+          </button>
+          <button class="btn btn-primary" onclick="saveSubject()">
+            Save Subject
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
+    <script src="admin-js/admin-config.js"></script>
+    <script>
+      function toggleDropdown(id, el) {
+        document.getElementById(id).classList.toggle("show");
+        el.classList.toggle("dropdown-open");
+      }
+    </script>
+    <script src="admin-js/subjects.js"></script>
+  </body>
+</html>
