@@ -20,3 +20,32 @@ const db = firebase.firestore();
 window.db = db;
 
 console.log('Firebase initialized successfully');
+
+document.addEventListener('DOMContentLoaded', function() {
+        // 1. Get current page filename (e.g., "teacher.html")
+        const currentPage = window.location.pathname.split("/").pop();
+
+        // 2. Find all links in the sidebar
+        const navLinks = document.querySelectorAll('.nav-sub-item');
+
+        navLinks.forEach(link => {
+            // 3. Check if the link's href matches the current page
+            if (link.getAttribute('href') === currentPage) {
+                
+                // Add 'active' class to the link
+                link.classList.add('active');
+
+                // 4. Open the parent dropdown
+                const parentDropdown = link.closest('.nav-dropdown');
+                if (parentDropdown) {
+                    parentDropdown.classList.add('show');
+                    
+                    // 5. Rotate the arrow icon on the main button
+                    const dropdownTrigger = parentDropdown.previousElementSibling;
+                    if (dropdownTrigger) {
+                        dropdownTrigger.classList.add('dropdown-open');
+                    }
+                }
+            }
+        });
+    });

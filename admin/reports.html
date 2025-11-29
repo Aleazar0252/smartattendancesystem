@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>School Reports - ZSNHS</title>
+
+    <link rel="stylesheet" href="admin-css/styles.css" />
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Playfair+Display:wght@700&display=swap"
+      rel="stylesheet"
+    />
+    
+  </head>
+  <body>
+    <div id="preloader">
+      <div class="spinner"></div>
+      <div class="loading-text">ZSNHS...</div>
+    </div>
+    <div class="overlay" id="mobile-overlay"></div>
+    
+    <div class="dashboard">
+      <div class="sidebar" id="sidebar">
+        <div class="logo">
+          <div class="logo-placeholder">ZSNHS</div>
+          <h1>ZSNHS</h1>
+        </div>
+
+        <div class="nav-menu">
+          <h2>Dashboard</h2>
+          
+          <div class="nav-item" onclick="window.location.href='admin.html'">
+            <i class="fas fa-tachometer-alt"></i> <span>Overview</span>
+          </div>
+
+          <div class="nav-item" onclick="toggleDropdown('academics-dropdown', this)">
+            <div style="display:flex; align-items:center; gap: 15px;">
+                <i class="fas fa-graduation-cap"></i> 
+                <span>Academics</span>
+            </div>
+            <i class="fas fa-chevron-down chevron-icon"></i>
+          </div>
+          <div class="nav-dropdown" id="academics-dropdown">
+             <a href="teachers.html" class="nav-sub-item">Teacher Management</a>
+             <a href="subjects.html" class="nav-sub-item">Subjects</a>
+             <a href="sections.html" class="nav-sub-item">Grade Level & Sections</a>
+             <a href="schedules.html" class="nav-sub-item">Class Schedules</a>
+          </div>
+
+          <div class="nav-item" onclick="window.location.href='guidance.html'">
+            <i class="fas fa-hands-helping"></i> <span>Guidance</span>
+          </div>
+          <div class="nav-item" onclick="window.location.href='students.html'">
+            <i class="fas fa-user-graduate"></i> <span>Students</span>
+          </div>
+          <div class="nav-item" onclick="window.location.href='parent.html'">
+            <i class="fas fa-users"></i> <span>Parents</span>
+          </div>
+          <div class="nav-item active" onclick="window.location.href='reports.html'">
+            <i class="fas fa-chart-pie"></i> <span>Reports</span>
+          </div>
+          <div class="nav-item" onclick="window.location.href='settings.html'">
+            <i class="fas fa-cog"></i> <span>Settings</span>
+          </div>
+        </div>
+
+        <div class="logout-container">
+            <button class="logout-btn" onclick="logout()">
+                <i class="fas fa-sign-out-alt"></i> Log out
+            </button>
+        </div>
+      </div>
+
+      <div class="main-content">
+        <div class="header">
+          <i class="fas fa-bars menu-toggle" id="menu-toggle-btn"></i>
+          <h1>School Analytics and Reports</h1>
+          <div class="user-profile">
+            <button class="btn btn-primary" onclick="window.print()">
+              <i class="fas fa-print"></i> Print Report
+            </button>
+          </div>
+        </div>
+
+        <div
+          class="content-section"
+          style="background: transparent; box-shadow: none; padding: 0"
+        >
+          <div class="reports-grid">
+            <div class="report-card">
+              <div class="report-info">
+                <h3>Total Teachers</h3>
+                <div class="number" id="count-teachers">...</div>
+              </div>
+              <div class="report-icon">
+                <i class="fas fa-chalkboard-teacher"></i>
+              </div>
+            </div>
+            <div class="report-card">
+              <div class="report-info">
+                <h3>Guidance Staff</h3>
+                <div class="number" id="count-guidance">...</div>
+              </div>
+              <div class="report-icon"><i class="fas fa-user-shield"></i></div>
+            </div>
+            <div class="report-card">
+              <div class="report-info">
+                <h3>Total Sections</h3>
+                <div class="number" id="count-sections">...</div>
+              </div>
+              <div class="report-icon"><i class="fas fa-cubes"></i></div>
+            </div>
+            <div class="report-card">
+              <div class="report-info">
+                <h3>Total Subjects</h3>
+                <div class="number" id="count-subjects">...</div>
+              </div>
+              <div class="report-icon"><i class="fas fa-book"></i></div>
+            </div>
+          </div>
+
+          <div class="charts-container">
+            <div class="chart-box">
+              <h3 style="margin-bottom: 15px; color: #a52a2a">
+                Sections by Grade Level
+              </h3>
+              <canvas id="gradeLevelChart"></canvas>
+            </div>
+
+            <div class="chart-box">
+              <h3 style="margin-bottom: 15px; color: #a52a2a">
+                Staff Distribution
+              </h3>
+              <div
+                style="height: 250px; display: flex; justify-content: center"
+              >
+                <canvas id="staffChart"></canvas>
+              </div>
+            </div>
+          </div>
+
+          <div class="content-section" style="background: white">
+            <h3 style="margin-bottom: 15px; color: #a52a2a">
+              Recent Sections Added
+            </h3>
+            <table class="teachers-table">
+              <thead>
+                <tr>
+                  <th>Grade Level</th>
+                  <th>Section Name</th>
+                  <th>Date Added</th>
+                </tr>
+              </thead>
+              <tbody id="recent-activity-body">
+                <tr>
+                  <td colspan="3" class="loading-cell">Loading...</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
+    <script src="admin-js/admin-config.js"></script>
+    <script>
+      function toggleDropdown(id, el) {
+        document.getElementById(id).classList.toggle("show");
+        el.classList.toggle("dropdown-open");
+      }
+    </script>
+    <script src="admin-js/ui.js"></script>
+    <script src="admin-js/reports.js"></script>
+  </body>
+</html>

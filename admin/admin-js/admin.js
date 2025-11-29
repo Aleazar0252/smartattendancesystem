@@ -1140,6 +1140,87 @@ async function refreshData() {
     }
 }
 
+/**
+ * admin.js
+ * Logic for the Admin Dashboard Overview
+ * Fetches real-time counts from Firebase 'users' and 'classSessions'
+ */
+
+document.addEventListener('DOMContentLoaded', () => {
+    setTimeout(() => {
+        if (window.db) {
+            console.log("Admin Dashboard: Database connected.");
+            loadDashboardStats();
+        } else {
+            console.error("Firebase DB not initialized.");
+        }
+    }, 500);
+});
+
+async function loadDashboardStats() {
+    const db = window.db;
+
+    try {
+        // Run all queries in parallel for faster loading
+        const [
+            teachersSnap, 
+            guidanceSnap,
+            studentsSnap, 
+            parentsSnap, 
+            classesSnap
+        ] = await Promise.all([
+            // 1. Teachers
+            db.collection('users').where('role', '==', 'teacher').get(),
+            
+            // 2. Guidance (NEW)
+            db.collection('users').where('role', '==', 'guidance').get(),
+
+            // 3. Students (Assuming role="student" in users collection)
+            // If you use a separate 'students' collection, change this to: db.collection('students').get()
+            db.collection('users').where('role', '==', 'student').get(),
+
+            // 4. Parents
+            db.collection('users').where('role', '==', 'parent').get(),
+
+            // 5. Active Classes (Schedules)
+            db.collection('classSessions').get()
+        ]);
+
+        // Update DOM with Animation
+        animateValue("dash-teachers", 0, teachersSnap.size, 1000);
+        animateValue("dash-guidance", 0, guidanceSnap.size, 1000);
+        animateValue("dash-students", 0, studentsSnap.size, 1000);
+        animateValue("dash-parents", 0, parentsSnap.size, 1000);
+        animateValue("dash-classes", 0, classesSnap.size, 1000);
+
+    } catch (error) {
+        console.error("Error loading dashboard stats:", error);
+    }
+}
+
+// --- Animation Helper: Counts up numbers smoothly ---
+function animateValue(id, start, end, duration) {
+    const obj = document.getElementById(id);
+    if (!obj) return;
+    
+    // If the number is 0, just show it immediately
+    if (end === 0) {
+        obj.innerHTML = "0";
+        return;
+    }
+
+    let startTimestamp = null;
+    const step = (timestamp) => {
+        if (!startTimestamp) startTimestamp = timestamp;
+        const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+        obj.innerHTML = Math.floor(progress * (end - start) + start);
+        if (progress < 1) {
+            window.requestAnimationFrame(step);
+        }
+    };
+    window.requestAnimationFrame(step);
+}
+
 // Make functions globally available
 window.showSection = showSection;
 window.showAddTeacherModal = showAddTeacherModal;

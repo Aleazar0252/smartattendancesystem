@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Subject Management - ZSNHS</title>
 
-    <link rel="stylesheet" href="admin-css/teacher.css" />
+    <link rel="stylesheet" href="admin-css/styles.css" />
 
     <link
       rel="stylesheet"
@@ -17,6 +17,12 @@
     />
   </head>
   <body>
+    <div class="overlay" id="mobile-overlay"></div>
+    <div id="preloader">
+      <div class="spinner"></div>
+      <div class="loading-text">ZSNHS...</div>
+    </div>
+
     <div class="dashboard">
       <div class="sidebar" id="sidebar">
         <div class="logo">
@@ -26,23 +32,27 @@
 
         <div class="nav-menu">
           <h2>Dashboard</h2>
-          <div class="nav-item" onclick="window.location.href='admin.html'">
+
+          <div
+            class="nav-item"
+            onclick="window.location.href='admin.html'"
+          >
             <i class="fas fa-tachometer-alt"></i> <span>Overview</span>
           </div>
 
           <div
-            class="nav-item dropdown-open"
+            class="nav-item"
             onclick="toggleDropdown('academics-dropdown', this)"
           >
-            <div style="display: flex; align-items: center">
+            <div style="display: flex; align-items: center; gap: 15px">
               <i class="fas fa-graduation-cap"></i>
               <span>Academics</span>
             </div>
             <i class="fas fa-chevron-down chevron-icon"></i>
           </div>
-          <div class="nav-dropdown show" id="academics-dropdown">
-            <a href="teacher.html" class="nav-sub-item">Teacher Management</a>
-            <a href="subjects.html" class="nav-sub-item">Subjects</a>
+          <div class="nav-dropdown" id="academics-dropdown">
+            <a href="teachers.html" class="nav-sub-item">Teacher Management</a>
+            <a href="subjects.html" class="nav-sub-item active">Subjects</a>
             <a href="sections.html" class="nav-sub-item"
               >Grade Level & Sections</a
             >
@@ -51,6 +61,9 @@
 
           <div class="nav-item" onclick="window.location.href='guidance.html'">
             <i class="fas fa-hands-helping"></i> <span>Guidance</span>
+          </div>
+          <div class="nav-item" onclick="window.location.href='students.html'">
+            <i class="fas fa-user-graduate"></i> <span>Students</span>
           </div>
           <div class="nav-item" onclick="window.location.href='parent.html'">
             <i class="fas fa-users"></i> <span>Parents</span>
@@ -62,10 +75,17 @@
             <i class="fas fa-cog"></i> <span>Settings</span>
           </div>
         </div>
+
+        <div class="logout-container">
+          <button class="logout-btn" onclick="logout()">
+            <i class="fas fa-sign-out-alt"></i> Log out
+          </button>
+        </div>
       </div>
 
       <div class="main-content">
         <div class="header">
+          <i class="fas fa-bars menu-toggle" id="menu-toggle-btn"></i>
           <h1>Subject Management</h1>
           <div class="user-profile">
             <div class="avatar-placeholder">A</div>
@@ -167,6 +187,7 @@
         el.classList.toggle("dropdown-open");
       }
     </script>
+    <script src="admin-js/ui.js"></script>
     <script src="admin-js/subjects.js"></script>
   </body>
 </html>

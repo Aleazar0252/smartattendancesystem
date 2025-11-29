@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Sections Management - ZSNHS</title>
+    <title>Student List - ZSNHS</title>
 
     <link rel="stylesheet" href="admin-css/styles.css" />
 
@@ -22,7 +22,7 @@
       <div class="spinner"></div>
       <div class="loading-text">ZSNHS...</div>
     </div>
-
+    
     <div class="dashboard">
       <div class="sidebar" id="sidebar">
         <div class="logo">
@@ -32,37 +32,29 @@
 
         <div class="nav-menu">
           <h2>Dashboard</h2>
-
-          <div
-            class="nav-item"
-            onclick="window.location.href='admin.html'"
-          >
+          
+          <div class="nav-item" onclick="window.location.href='admin.html'">
             <i class="fas fa-tachometer-alt"></i> <span>Overview</span>
           </div>
 
-          <div
-            class="nav-item"
-            onclick="toggleDropdown('academics-dropdown', this)"
-          >
-            <div style="display: flex; align-items: center; gap: 15px">
-              <i class="fas fa-graduation-cap"></i>
-              <span>Academics</span>
+          <div class="nav-item" onclick="toggleDropdown('academics-dropdown', this)">
+            <div style="display:flex; align-items:center; gap: 15px;">
+                <i class="fas fa-graduation-cap"></i> 
+                <span>Academics</span>
             </div>
             <i class="fas fa-chevron-down chevron-icon"></i>
           </div>
           <div class="nav-dropdown" id="academics-dropdown">
-            <a href="teachers.html" class="nav-sub-item">Teacher Management</a>
-            <a href="subjects.html" class="nav-sub-item">Subjects</a>
-            <a href="sections.html" class="nav-sub-item active"
-              >Grade Level & Sections</a
-            >
-            <a href="schedules.html" class="nav-sub-item">Class Schedules</a>
+             <a href="teachers.html" class="nav-sub-item">Teacher Management</a>
+             <a href="subjects.html" class="nav-sub-item">Subjects</a>
+             <a href="sections.html" class="nav-sub-item">Grade Level & Sections</a>
+             <a href="schedules.html" class="nav-sub-item">Class Schedules</a>
           </div>
 
           <div class="nav-item" onclick="window.location.href='guidance.html'">
             <i class="fas fa-hands-helping"></i> <span>Guidance</span>
           </div>
-          <div class="nav-item" onclick="window.location.href='students.html'">
+          <div class="nav-item active" onclick="window.location.href='students.html'">
             <i class="fas fa-user-graduate"></i> <span>Students</span>
           </div>
           <div class="nav-item" onclick="window.location.href='parent.html'">
@@ -77,16 +69,16 @@
         </div>
 
         <div class="logout-container">
-          <button class="logout-btn" onclick="logout()">
-            <i class="fas fa-sign-out-alt"></i> Log out
-          </button>
+            <button class="logout-btn" onclick="logout()">
+                <i class="fas fa-sign-out-alt"></i> Log out
+            </button>
         </div>
       </div>
 
       <div class="main-content">
         <div class="header">
           <i class="fas fa-bars menu-toggle" id="menu-toggle-btn"></i>
-          <h1>Grade Levels and Sections</h1>
+          <h1>Student Master List</h1>
           <div class="user-profile">
             <div class="avatar-placeholder">A</div>
             <span>Admin</span>
@@ -100,16 +92,13 @@
               justify-content: space-between;
               align-items: center;
               margin-bottom: 20px;
-              flex-wrap: wrap;
-              gap: 10px;
             "
           >
-            <h2 style="color: var(--primary-color)">Sections List</h2>
-
-            <div style="display: flex; gap: 10px; align-items: center">
+            <h2 style="color: var(--primary-color)">Enrolled Students</h2>
+            <div style="display: flex; gap: 10px">
               <select
                 id="filter-grade"
-                onchange="filterSections()"
+                onchange="searchStudents()"
                 style="
                   padding: 10px;
                   border: 1px solid #ddd;
@@ -117,7 +106,7 @@
                   cursor: pointer;
                 "
               >
-                <option value="All">All Grade Levels</option>
+                <option value="All">All Levels</option>
                 <option value="Grade 7">Grade 7</option>
                 <option value="Grade 8">Grade 8</option>
                 <option value="Grade 9">Grade 9</option>
@@ -125,37 +114,35 @@
                 <option value="Grade 11">Grade 11</option>
                 <option value="Grade 12">Grade 12</option>
               </select>
-
               <input
                 type="text"
                 id="search-input"
-                onkeyup="filterSections()"
-                placeholder="Search Section..."
+                onkeyup="searchStudents()"
+                placeholder="Search Name or ID..."
                 style="
                   padding: 10px;
                   border: 1px solid #ddd;
                   border-radius: 5px;
-                  width: 200px;
+                  width: 250px;
                 "
               />
-
-              <button class="btn btn-primary" onclick="openSectionModal()">
-                <i class="fas fa-plus"></i> Add Section
-              </button>
             </div>
           </div>
 
           <table class="teachers-table">
             <thead>
               <tr>
-                <th>Grade Level</th>
-                <th>Section Name</th>
+                <th>Student ID</th>
+                <th>Name</th>
+                <th>Year Level</th>
+                <th>Section</th>
+                <th>Gmail</th>
                 <th style="text-align: right">Actions</th>
               </tr>
             </thead>
-            <tbody id="sections-list-body">
+            <tbody id="students-list-body">
               <tr>
-                <td colspan="3" class="loading-cell">Loading sections...</td>
+                <td colspan="6" class="loading-cell">Loading students...</td>
               </tr>
             </tbody>
           </table>
@@ -163,51 +150,66 @@
       </div>
     </div>
 
-    <div id="section-modal" class="modal">
+    <div id="view-student-modal" class="modal">
       <div class="modal-content">
         <div class="modal-header">
-          <h2 id="modal-title">Add New Section</h2>
-          <span class="close-modal" onclick="closeModal('section-modal')"
+          <h2>Student Profile</h2>
+          <span class="close-modal" onclick="closeModal('view-student-modal')"
             >&times;</span
           >
         </div>
         <div class="modal-body">
-          <form
-            id="section-form"
-            onsubmit="event.preventDefault(); saveSection();"
-          >
-            <input type="hidden" id="edit-doc-id" />
+          <div class="profile-view">
+            <div
+              class="profile-avatar-large"
+              id="view-avatar"
+              style="background-color: #0d47a1"
+            ></div>
+            <h3
+              id="view-fullname"
+              style="color: var(--text-dark); margin-bottom: 5px"
+            ></h3>
+            <span
+              id="view-id"
+              style="color: var(--text-light); font-size: 0.9rem"
+            ></span>
+          </div>
 
-            <div class="form-group">
-              <label>Grade Level</label>
-              <select id="sec-grade" class="form-control">
-                <option value="Grade 7">Grade 7</option>
-                <option value="Grade 8">Grade 8</option>
-                <option value="Grade 9">Grade 9</option>
-                <option value="Grade 10">Grade 10</option>
-                <option value="Grade 11">Grade 11</option>
-                <option value="Grade 12">Grade 12</option>
-              </select>
-            </div>
+          <div class="detail-row">
+            <span class="detail-label">Grade Level:</span>
+            <span class="detail-value" id="view-grade"></span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-label">Section:</span>
+            <span class="detail-value" id="view-section"></span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-label">Email:</span>
+            <span class="detail-value" id="view-email"></span>
+          </div>
 
-            <div class="form-group">
-              <label>Section Name</label>
-              <input
-                type="text"
-                id="sec-name"
-                class="form-control"
-                placeholder="e.g. Rizal, Newton, Einstein"
-                required
-              />
-            </div>
-          </form>
+          <hr style="border: 0; border-top: 1px solid #eee; margin: 15px 0" />
+
+          <div class="detail-row">
+            <span class="detail-label">Added By:</span>
+            <span
+              class="detail-value"
+              id="view-added-by"
+              style="color: #a52a2a; font-weight: 600"
+            ></span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-label">Date Added:</span>
+            <span
+              class="detail-value"
+              id="view-timestamp"
+              style="font-size: 0.9rem; color: #666"
+            ></span>
+          </div>
         </div>
         <div class="modal-footer">
-          <button class="btn" onclick="closeModal('section-modal')">
-            Cancel
-          </button>
-          <button class="btn btn-primary" onclick="saveSection()">
-            Save Section
+          <button class="btn" onclick="closeModal('view-student-modal')">
+            Close
           </button>
         </div>
       </div>
@@ -223,6 +225,6 @@
       }
     </script>
     <script src="admin-js/ui.js"></script>
-    <script src="admin-js/sections.js"></script>
+    <script src="admin-js/students.js"></script>
   </body>
 </html>

@@ -3,10 +3,9 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Guidance Management - ZSNHS</title>
+    <title>Teacher Management - ZSNHS</title>
 
     <link rel="stylesheet" href="admin-css/styles.css" />
-
     <link
       rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
@@ -17,11 +16,12 @@
     />
   </head>
   <body>
+    <div class="overlay" id="mobile-overlay"></div>
     <div id="preloader">
       <div class="spinner"></div>
       <div class="loading-text">ZSNHS...</div>
     </div>
-    <div class="overlay" id="mobile-overlay"></div>
+
     <div class="dashboard">
       <div class="sidebar" id="sidebar">
         <div class="logo">
@@ -44,13 +44,13 @@
             <i class="fas fa-chevron-down chevron-icon"></i>
           </div>
           <div class="nav-dropdown" id="academics-dropdown">
-             <a href="teachers.html" class="nav-sub-item">Teacher Management</a>
+             <a href="teachers.html" class="nav-sub-item active">Teacher Management</a>
              <a href="subjects.html" class="nav-sub-item">Subjects</a>
              <a href="sections.html" class="nav-sub-item">Grade Level & Sections</a>
              <a href="schedules.html" class="nav-sub-item">Class Schedules</a>
           </div>
 
-          <div class="nav-item active" onclick="window.location.href='guidance.html'">
+          <div class="nav-item" onclick="window.location.href='guidance.html'">
             <i class="fas fa-hands-helping"></i> <span>Guidance</span>
           </div>
           <div class="nav-item" onclick="window.location.href='students.html'">
@@ -73,11 +73,11 @@
             </button>
         </div>
       </div>
-
+      
       <div class="main-content">
         <div class="header">
           <i class="fas fa-bars menu-toggle" id="menu-toggle-btn"></i>
-          <h1>Guidance Management</h1>
+          <h1>Teacher Management</h1>
           <div class="user-profile">
             <div class="avatar-placeholder">A</div>
             <span>Admin</span>
@@ -93,12 +93,12 @@
               margin-bottom: 20px;
             "
           >
-            <h2 style="color: var(--primary-color)">Guidance Staff List</h2>
+            <h2 style="color: var(--primary-color)">Teacher List</h2>
             <div style="display: flex; gap: 10px">
               <input
                 type="text"
                 id="search-input"
-                onkeyup="searchGuidance()"
+                onkeyup="searchTeachers()"
                 placeholder="Search by name or ID..."
                 style="
                   padding: 10px;
@@ -107,8 +107,8 @@
                   width: 250px;
                 "
               />
-              <button class="btn btn-primary" onclick="showAddGuidanceModal()">
-                <i class="fas fa-plus"></i> Add Staff
+              <button class="btn btn-primary" onclick="showAddTeacherModal()">
+                <i class="fas fa-plus"></i> Add Teacher
               </button>
             </div>
           </div>
@@ -119,11 +119,11 @@
                 <th>ID</th>
                 <th>Name</th>
                 <th>Email</th>
-                <th>Phone</th>
+                <th>Class Load</th>
                 <th style="text-align: right">Actions</th>
               </tr>
             </thead>
-            <tbody id="guidance-list-body">
+            <tbody id="teachers-list-body">
               <tr>
                 <td colspan="5" class="loading-cell">Loading data...</td>
               </tr>
@@ -133,21 +133,21 @@
       </div>
     </div>
 
-    <div id="add-guidance-modal" class="modal">
+    <div id="add-teacher-modal" class="modal">
       <div class="modal-content">
         <div class="modal-header">
-          <h2>Add New Guidance Staff</h2>
-          <span class="close-modal" onclick="closeModal('add-guidance-modal')"
+          <h2>Add New Teacher</h2>
+          <span class="close-modal" onclick="closeModal('add-teacher-modal')"
             >&times;</span
           >
         </div>
         <div class="modal-body">
           <form
-            id="add-guidance-form"
-            onsubmit="event.preventDefault(); addNewGuidance();"
+            id="add-teacher-form"
+            onsubmit="event.preventDefault(); addNewTeacher();"
           >
             <div class="form-group">
-              <label>Staff ID (Auto-Generated)</label>
+              <label>Teacher ID (Auto-Generated)</label>
               <input
                 type="text"
                 id="new-id"
@@ -233,21 +233,21 @@
           </form>
         </div>
         <div class="modal-footer">
-          <button class="btn" onclick="closeModal('add-guidance-modal')">
+          <button class="btn" onclick="closeModal('add-teacher-modal')">
             Cancel
           </button>
-          <button class="btn btn-primary" onclick="addNewGuidance()">
-            Save Staff
+          <button class="btn btn-primary" onclick="addNewTeacher()">
+            Save Teacher
           </button>
         </div>
       </div>
     </div>
 
-    <div id="view-guidance-modal" class="modal">
+    <div id="view-teacher-modal" class="modal">
       <div class="modal-content">
         <div class="modal-header">
-          <h2>Staff Details</h2>
-          <span class="close-modal" onclick="closeModal('view-guidance-modal')"
+          <h2>Teacher Details</h2>
+          <span class="close-modal" onclick="closeModal('view-teacher-modal')"
             >&times;</span
           >
         </div>
@@ -313,7 +313,53 @@
           </div>
         </div>
         <div class="modal-footer">
-          <button class="btn" onclick="closeModal('view-guidance-modal')">
+          <button class="btn" onclick="closeModal('view-teacher-modal')">
+            Close
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div id="view-schedules-modal" class="modal">
+      <div class="modal-content" style="max-width: 700px">
+        <div class="modal-header">
+          <h2 id="schedules-modal-title">Class Schedules</h2>
+          <span class="close-modal" onclick="closeModal('view-schedules-modal')"
+            >&times;</span
+          >
+        </div>
+        <div class="modal-body">
+          <div id="schedules-loading" style="text-align: center; padding: 20px">
+            <i class="fas fa-spinner fa-spin"></i> Loading schedules...
+          </div>
+          <table
+            class="teachers-table"
+            id="teacher-schedules-table"
+            style="display: none; width: 100%; margin-top: 0"
+          >
+            <thead>
+              <tr>
+                <th>Subject</th>
+                <th>Section</th>
+                <th>Day & Time</th>
+              </tr>
+            </thead>
+            <tbody id="teacher-schedules-body"></tbody>
+          </table>
+          <p
+            id="schedules-empty"
+            style="
+              display: none;
+              text-align: center;
+              color: #666;
+              padding: 20px;
+            "
+          >
+            No schedules assigned to this teacher.
+          </p>
+        </div>
+        <div class="modal-footer">
+          <button class="btn" onclick="closeModal('view-schedules-modal')">
             Close
           </button>
         </div>
@@ -330,6 +376,6 @@
       }
     </script>
     <script src="admin-js/ui.js"></script>
-    <script src="admin-js/guidance.js"></script>
+    <script src="admin-js/teacher.js"></script>
   </body>
 </html>

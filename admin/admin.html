@@ -4,7 +4,9 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Admin Dashboard - ZSNHS</title>
-    <link rel="stylesheet" href="admin-css/admin.css" />
+
+    <link rel="stylesheet" href="admin-css/styles.css" />
+
     <link
       rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
@@ -15,16 +17,17 @@
     />
   </head>
   <body>
-    <div class="particles-container" id="particles"></div>
-
-    <div class="menu-toggle" id="menuToggle">
-      <i class="fas fa-bars"></i>
+    <div id="preloader">
+      <div class="spinner"></div>
+      <div class="loading-text">ZSNHS...</div>
     </div>
+
+    <div class="overlay" id="mobile-overlay"></div>
 
     <div class="dashboard">
       <div class="sidebar" id="sidebar">
         <div class="logo">
-          <div class="logo-placeholder hover-zoom">ZSNHS</div>
+          <div class="logo-placeholder">ZSNHS</div>
           <h1>ZSNHS</h1>
         </div>
 
@@ -35,22 +38,21 @@
             class="nav-item active"
             onclick="window.location.href='admin.html'"
           >
-            <i class="fas fa-tachometer-alt"></i>
-            <span>Overview</span>
+            <i class="fas fa-tachometer-alt"></i> <span>Overview</span>
           </div>
 
           <div
-            class="nav-item dropdown-open"
+            class="nav-item"
             onclick="toggleDropdown('academics-dropdown', this)"
           >
-            <div style="display: flex; align-items: center">
+            <div style="display: flex; align-items: center; gap: 15px">
               <i class="fas fa-graduation-cap"></i>
               <span>Academics</span>
             </div>
             <i class="fas fa-chevron-down chevron-icon"></i>
           </div>
-          <div class="nav-dropdown show" id="academics-dropdown">
-            <a href="teacher.html" class="nav-sub-item">Teacher Management</a>
+          <div class="nav-dropdown" id="academics-dropdown">
+            <a href="teachers.html" class="nav-sub-item">Teacher Management</a>
             <a href="subjects.html" class="nav-sub-item">Subjects</a>
             <a href="sections.html" class="nav-sub-item"
               >Grade Level & Sections</a
@@ -59,21 +61,26 @@
           </div>
 
           <div class="nav-item" onclick="window.location.href='guidance.html'">
-            <i class="fas fa-hands-helping"></i>
-            <span>Guidance</span>
+            <i class="fas fa-hands-helping"></i> <span>Guidance</span>
+          </div>
+          <div class="nav-item" onclick="window.location.href='students.html'">
+            <i class="fas fa-user-graduate"></i> <span>Students</span>
           </div>
           <div class="nav-item" onclick="window.location.href='parent.html'">
-            <i class="fas fa-users"></i>
-            <span>Parents</span>
+            <i class="fas fa-users"></i> <span>Parents</span>
           </div>
           <div class="nav-item" onclick="window.location.href='reports.html'">
-            <i class="fas fa-chart-pie"></i>
-            <span>Reports</span>
+            <i class="fas fa-chart-pie"></i> <span>Reports</span>
           </div>
           <div class="nav-item" onclick="window.location.href='settings.html'">
-            <i class="fas fa-cog"></i>
-            <span>Settings</span>
+            <i class="fas fa-cog"></i> <span>Settings</span>
           </div>
+        </div>
+
+        <div class="logout-container">
+          <button class="logout-btn" onclick="logout()">
+            <i class="fas fa-sign-out-alt"></i> Log out
+          </button>
         </div>
       </div>
 
@@ -83,17 +90,18 @@
         <div class="floating-circle circle-3"></div>
 
         <div class="header">
-          <h1>Admin Overview</h1>
-          <div style="display: flex; align-items: center">
+          <div style="display: flex; align-items: center; gap: 15px">
+            <i class="fas fa-bars menu-toggle" id="menu-toggle-btn"></i>
+            <h1>Admin Overview</h1>
+          </div>
+
+          <div class="user-profile">
             <div class="notification-icon">
               <i class="fas fa-bell"></i>
-              <span class="notification-badge" id="notification-count">3</span>
+              <span class="notification-badge">3</span>
             </div>
-            <div class="user-profile">
-              <div class="avatar-placeholder hover-zoom">A</div>
-              <span id="admin-name">Admin</span>
-              <i class="fas fa-chevron-down"></i>
-            </div>
+            <div class="avatar-placeholder hover-zoom">A</div>
+            <span>Admin</span>
           </div>
         </div>
 
@@ -101,62 +109,60 @@
           <div class="stat-card">
             <i class="fas fa-chalkboard-teacher"></i>
             <h3>Total Teachers</h3>
-            <div class="number">24</div>
+            <div class="number" id="dash-teachers">...</div>
           </div>
+
+          <div class="stat-card">
+            <i class="fas fa-hands-helping"></i>
+            <h3>Guidance Staff</h3>
+            <div class="number" id="dash-guidance">...</div>
+          </div>
+
           <div class="stat-card">
             <i class="fas fa-user-graduate"></i>
             <h3>Total Students</h3>
-            <div class="number">1,250</div>
+            <div class="number" id="dash-students">...</div>
           </div>
+
           <div class="stat-card">
             <i class="fas fa-users"></i>
             <h3>Parents</h3>
-            <div class="number">980</div>
+            <div class="number" id="dash-parents">...</div>
           </div>
+
           <div class="stat-card">
             <i class="fas fa-door-open"></i>
             <h3>Active Classes</h3>
-            <div class="number">45</div>
+            <div class="number" id="dash-classes">...</div>
           </div>
         </div>
 
-        <div class="content-section active">
+        <div class="content-section">
           <h2 style="margin-bottom: 20px; color: var(--primary-color)">
             Quick Actions
           </h2>
-          <div class="form-row">
+          <div style="display: flex; gap: 15px; flex-wrap: wrap">
             <button
               class="btn btn-primary"
               onclick="window.location.href='teacher.html'"
             >
-              Manage Teachers
+              <i class="fas fa-chalkboard-teacher"></i> Manage Teachers
             </button>
             <button class="btn" onclick="window.location.href='subjects.html'">
-              Manage Subjects
+              <i class="fas fa-book"></i> Manage Subjects
             </button>
             <button class="btn" onclick="window.location.href='sections.html'">
-              Manage Sections
+              <i class="fas fa-cubes"></i> Manage Sections
             </button>
           </div>
         </div>
       </div>
-
-      <button class="logout-btn" id="logoutBtn" onclick="logout()">
-        <i class="fas fa-sign-out-alt"></i>
-        Log out
-      </button>
     </div>
 
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
-    <script src="admin-config.js"></script>
+    <script src="admin-js/admin-config.js"></script>
+    <script src="admin-js/ui.js"></script>
     <script src="admin-js/admin.js"></script>
-
-    <script>
-      function toggleDropdown(id, el) {
-        document.getElementById(id).classList.toggle("show");
-        el.classList.toggle("dropdown-open");
-      }
-    </script>
   </body>
 </html>
