@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Student Dashboard</title>
+    <title>My Schedule</title>
     <link rel="stylesheet" href="student-css/styles.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
@@ -16,18 +16,10 @@
             <div class="logo"><div class="logo-placeholder">S</div><h1>ZSNHS</h1></div>
             <div class="nav-menu">
                 <h2>Student Menu</h2>
-                <div class="nav-item active" onclick="window.location.href='student.html'">
-                    <i class="fas fa-tachometer-alt"></i> <span>Dashboard</span>
-                </div>
-                <div class="nav-item" onclick="window.location.href='schedule.html'">
-                    <i class="fas fa-calendar-alt"></i> <span>My Schedule</span>
-                </div>
-                <div class="nav-item" onclick="window.location.href='grades.html'">
-                    <i class="fas fa-star"></i> <span>My Grades</span>
-                </div>
-                <div class="nav-item" onclick="window.location.href='profile.html'">
-                    <i class="fas fa-user"></i> <span>My Profile</span>
-                </div>
+                <div class="nav-item" onclick="window.location.href='student.html'"><i class="fas fa-tachometer-alt"></i> <span>Dashboard</span></div>
+                <div class="nav-item active" onclick="window.location.href='schedule.html'"><i class="fas fa-calendar-alt"></i> <span>My Schedule</span></div>
+                <div class="nav-item" onclick="window.location.href='grades.html'"><i class="fas fa-star"></i> <span>My Grades</span></div>
+                <div class="nav-item" onclick="window.location.href='profile.html'"><i class="fas fa-user"></i> <span>My Profile</span></div>
             </div>
             <div class="logout-container"><button class="logout-btn" onclick="logout()"><i class="fas fa-sign-out-alt"></i> Log out</button></div>
         </div>
@@ -35,26 +27,25 @@
         <div class="main-content">
             <div class="header">
                 <i class="fas fa-bars menu-toggle" id="menu-toggle-btn"></i>
-                <h1>Dashboard</h1>
+                <h1>My Schedule</h1>
                 <div class="user-profile"><div class="avatar-placeholder">S</div><span id="header-user-name">Student</span></div>
             </div>
 
-            <div class="stats-grid">
-                <div class="stat-card">
-                    <i class="fas fa-book"></i>
-                    <h3>My Subjects</h3>
-                    <div class="number" id="stat-subjects">0</div>
-                </div>
-                <div class="stat-card">
-                    <i class="fas fa-chalkboard-teacher"></i>
-                    <h3>My Section</h3>
-                    <div class="number" id="stat-section" style="font-size:1.5rem">...</div>
-                </div>
-            </div>
-
             <div class="content-section">
-                <h2 style="color:var(--primary-color);">Announcements</h2>
-                <p style="color:#666; margin-top:10px;">No new announcements from the admin or guidance office.</p>
+                <p style="margin-bottom:15px;">Schedule for <strong>Grade <span id="disp-grade"></span> - <span id="disp-section"></span></strong></p>
+                <table class="teachers-table">
+                    <thead>
+                        <tr>
+                            <th>Subject</th>
+                            <th>Teacher</th>
+                            <th>Days</th>
+                            <th>Time</th>
+                        </tr>
+                    </thead>
+                    <tbody id="schedule-body">
+                        <tr><td colspan="4">Loading...</td></tr>
+                    </tbody>
+                </table>
             </div>
         </div>
     </div>
@@ -64,6 +55,6 @@
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
     <script src="student-js/student-config.js"></script>
     <script src="student-js/ui.js"></script>
-    <script src="student-js/dashboard.js"></script>
+    <script src="student-js/schedule.js"></script>
 </body>
 </html>

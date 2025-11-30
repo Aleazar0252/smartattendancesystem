@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <title>My Students</title>
+    <title>My Schedules</title>
     <link rel="stylesheet" href="teacher-css/styles.css" />
     <link
       rel="stylesheet"
@@ -30,11 +30,11 @@
             <i class="fas fa-tachometer-alt"></i> <span>Dashboard</span>
           </div>
 
-          <div class="nav-item" onclick="window.location.href='schedules.html'">
+          <div class="nav-item active" onclick="window.location.href='schedules.html'">
             <i class="fas fa-calendar-alt"></i> <span>My Schedules</span>
           </div>
 
-          <div class="nav-item active" onclick="window.location.href='students.html'">
+          <div class="nav-item" onclick="window.location.href='students.html'">
             <i class="fas fa-user-graduate"></i> <span>My Students</span>
           </div>
 
@@ -59,7 +59,7 @@
       <div class="main-content">
         <div class="header">
           <i class="fas fa-bars menu-toggle" id="menu-toggle-btn"></i>
-          <h1>My Students</h1>
+          <h1>My Class Schedules</h1>
           <div class="user-profile">
             <div class="avatar-placeholder">T</div>
             <span id="header-user-name">Teacher</span>
@@ -67,99 +67,22 @@
         </div>
 
         <div class="content-section">
-          <div
-            style="
-              display: flex;
-              justify-content: space-between;
-              margin-bottom: 20px;
-            "
-          >
-            <h2 style="color: var(--primary-color)">Student List</h2>
-            <button class="btn btn-primary" onclick="showModal()">
-              + Add Student
-            </button>
-          </div>
-
           <table class="teachers-table">
             <thead>
               <tr>
-                <th>LRN</th>
-                <th>Name</th>
-                <th>Grade/Section</th>
-                <th>Status</th>
+                <th>Subject</th>
+                <th>Section</th>
+                <th>Days</th>
+                <th>Time</th>
+                <th>Room</th>
               </tr>
             </thead>
-            <tbody id="student-body">
+            <tbody id="schedule-body">
               <tr>
-                <td colspan="4">Loading...</td>
+                <td colspan="5">Loading...</td>
               </tr>
             </tbody>
           </table>
-        </div>
-      </div>
-    </div>
-
-    <div id="add-student-modal" class="modal">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h2>Add New Student</h2>
-          <span class="close-modal" onclick="closeModal('add-student-modal')"
-            >&times;</span
-          >
-        </div>
-        <div class="modal-body">
-          <form
-            id="add-student-form"
-            onsubmit="event.preventDefault(); addStudent();"
-          >
-            <input
-              type="text"
-              id="new-lrn"
-              class="form-control"
-              placeholder="LRN"
-              required
-            />
-            <input
-              type="text"
-              id="new-fname"
-              class="form-control"
-              placeholder="First Name"
-              required
-            />
-            <input
-              type="text"
-              id="new-lname"
-              class="form-control"
-              placeholder="Last Name"
-              required
-            />
-            <input
-              type="text"
-              id="new-grade"
-              class="form-control"
-              placeholder="Grade (e.g. 10)"
-              required
-            />
-            <input
-              type="text"
-              id="new-section"
-              class="form-control"
-              placeholder="Section"
-              required
-            />
-            <div class="modal-footer">
-              <button
-                class="btn"
-                type="button"
-                onclick="closeModal('add-student-modal')"
-              >
-                Cancel
-              </button>
-              <button class="btn btn-primary" type="submit">
-                Save Student
-              </button>
-            </div>
-          </form>
         </div>
       </div>
     </div>
@@ -169,6 +92,6 @@
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
     <script src="teacher-js/teacher-config.js"></script>
     <script src="teacher-js/ui.js"></script>
-    <script src="teacher-js/students.js"></script>
+    <script src="teacher-js/schedules.js"></script>
   </body>
 </html>
