@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Child's Grades</title>
+    <link rel="stylesheet" href="parent-css/styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div id="preloader"><div class="spinner"></div></div>
+    <div class="overlay" id="mobile-overlay"></div>
+
+    <div class="dashboard">
+        <div class="sidebar" id="sidebar">
+            <div class="logo"><div class="logo-placeholder">P</div><h1>ZSNHS</h1></div>
+            <div class="nav-menu">
+                <h2>Parent Menu</h2>
+                <div class="nav-item" onclick="window.location.href='parent.html'"><i class="fas fa-tachometer-alt"></i> <span>Dashboard</span></div>
+                <div class="nav-item" onclick="window.location.href='schedule.html'"><i class="fas fa-calendar-alt"></i> <span>Child's Schedule</span></div>
+                <div class="nav-item active" onclick="window.location.href='grades.html'"><i class="fas fa-star"></i> <span>Child's Grades</span></div>
+                <div class="nav-item" onclick="window.location.href='profile.html'"><i class="fas fa-user"></i> <span>My Profile</span></div>
+            </div>
+            <div class="logout-container"><button class="logout-btn" onclick="logout()"><i class="fas fa-sign-out-alt"></i> Log out</button></div>
+        </div>
+
+        <div class="main-content">
+            <div class="header">
+                <i class="fas fa-bars menu-toggle" id="menu-toggle-btn"></i>
+                <h1>Child's Grades</h1>
+                <div class="user-profile"><div class="avatar-placeholder">P</div><span id="header-user-name">Parent</span></div>
+            </div>
+
+            <div class="content-section">
+                <h3 style="margin-bottom:20px;">Grades for: <span id="grade-student-name" style="color:var(--primary-color);">...</span></h3>
+                
+                <table class="teachers-table">
+                    <thead>
+                        <tr>
+                            <th>Subject</th>
+                            <th>1st Quarter</th>
+                            <th>2nd Quarter</th>
+                            <th>3rd Quarter</th>
+                            <th>4th Quarter</th>
+                            <th>Final</th>
+                        </tr>
+                    </thead>
+                    <tbody id="grades-body">
+                        <tr>
+                            <td><strong>Math</strong></td>
+                            <td>88</td>
+                            <td>90</td>
+                            <td>-</td>
+                            <td>-</td>
+                            <td><strong>-</strong></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Science</strong></td>
+                            <td>85</td>
+                            <td>87</td>
+                            <td>-</td>
+                            <td>-</td>
+                            <td><strong>-</strong></td>
+                        </tr>
+                        <tr>
+                            <td><strong>English</strong></td>
+                            <td>92</td>
+                            <td>91</td>
+                            <td>-</td>
+                            <td>-</td>
+                            <td><strong>-</strong></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
+    <script src="parent-js/parent-config.js"></script>
+    <script src="parent-js/ui.js"></script>
+    <script src="parent-js/grades.js"></script>
+</body>
+</html>

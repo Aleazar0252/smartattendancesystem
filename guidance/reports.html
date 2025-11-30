@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Incident Reports</title>
+    <link rel="stylesheet" href="guidance-css/styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div id="preloader"><div class="spinner"></div></div>
+    <div class="overlay" id="mobile-overlay"></div>
+
+    <div class="dashboard">
+        <div class="sidebar" id="sidebar">
+            <div class="logo"><div class="logo-placeholder">G</div><h1>ZSNHS</h1></div>
+            <div class="nav-menu">
+                <h2>Guidance Menu</h2>
+                <div class="nav-item" onclick="window.location.href='guidance.html'"><i class="fas fa-tachometer-alt"></i> <span>Dashboard</span></div>
+                <div class="nav-item" onclick="window.location.href='students.html'"><i class="fas fa-user-graduate"></i> <span>Student Records</span></div>
+                <div class="nav-item" onclick="window.location.href='appointments.html'"><i class="fas fa-calendar-check"></i> <span>Appointments</span></div>
+                <div class="nav-item active" onclick="window.location.href='reports.html'"><i class="fas fa-clipboard-list"></i> <span>Incident Reports</span></div>
+                <div class="nav-item" onclick="window.location.href='profile.html'"><i class="fas fa-user"></i> <span>My Profile</span></div>
+            </div>
+            <div class="logout-container"><button class="logout-btn" onclick="logout()"><i class="fas fa-sign-out-alt"></i> Log out</button></div>
+        </div>
+
+        <div class="main-content">
+            <div class="header">
+                <i class="fas fa-bars menu-toggle" id="menu-toggle-btn"></i>
+                <h1>Incident Reports</h1>
+                <div class="user-profile"><div class="avatar-placeholder">G</div><span id="header-user-name">Guidance</span></div>
+            </div>
+
+            <div class="content-section">
+                <div style="display:flex; justify-content:space-between; margin-bottom:20px;">
+                    <h2 style="color:var(--primary-color);">Case Log</h2>
+                    <button class="btn btn-primary" style="background:#dc3545;">+ Report Incident</button>
+                </div>
+
+                <table class="teachers-table">
+                    <thead>
+                        <tr>
+                            <th>Case ID</th>
+                            <th>Student</th>
+                            <th>Incident Type</th>
+                            <th>Date</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="reports-body">
+                        <tr>
+                            <td>#CASE-001</td>
+                            <td><strong>Pedro Penduko</strong></td>
+                            <td>Bullying</td>
+                            <td>Oct 20, 2025</td>
+                            <td><span class="badge-success" style="background:#f8d7da; color:#721c24;">Open</span></td>
+                        </tr>
+                        <tr>
+                            <td>#CASE-002</td>
+                            <td><strong>Maria Makiling</strong></td>
+                            <td>Tardiness</td>
+                            <td>Nov 15, 2025</td>
+                            <td><span class="badge-success" style="background:#d4edda; color:#155724;">Resolved</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
+    <script src="guidance-js/guidance-config.js"></script>
+    <script src="guidance-js/ui.js"></script>
+</body>
+</html>

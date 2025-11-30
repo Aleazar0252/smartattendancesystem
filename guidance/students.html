@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Guidance Dashboard</title>
+    <title>Student Records</title>
     <link rel="stylesheet" href="guidance-css/styles.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
@@ -16,8 +16,8 @@
             <div class="logo"><div class="logo-placeholder">G</div><h1>ZSNHS</h1></div>
             <div class="nav-menu">
                 <h2>Guidance Menu</h2>
-                <div class="nav-item active" onclick="window.location.href='guidance.html'"><i class="fas fa-tachometer-alt"></i> <span>Dashboard</span></div>
-                <div class="nav-item" onclick="window.location.href='students.html'"><i class="fas fa-user-graduate"></i> <span>Student Records</span></div>
+                <div class="nav-item" onclick="window.location.href='guidance.html'"><i class="fas fa-tachometer-alt"></i> <span>Dashboard</span></div>
+                <div class="nav-item active" onclick="window.location.href='students.html'"><i class="fas fa-user-graduate"></i> <span>Student Records</span></div>
                 <div class="nav-item" onclick="window.location.href='appointments.html'"><i class="fas fa-calendar-check"></i> <span>Appointments</span></div>
                 <div class="nav-item" onclick="window.location.href='reports.html'"><i class="fas fa-clipboard-list"></i> <span>Incident Reports</span></div>
                 <div class="nav-item" onclick="window.location.href='profile.html'"><i class="fas fa-user"></i> <span>My Profile</span></div>
@@ -27,34 +27,29 @@
 
         <div class="main-content">
             <div class="header">
-                <div style="display:flex; align-items:center; gap:15px;">
-                    <i class="fas fa-bars menu-toggle" id="menu-toggle-btn"></i>
-                    <h1>Guidance Dashboard</h1>
-                </div>
+                <i class="fas fa-bars menu-toggle" id="menu-toggle-btn"></i>
+                <h1>Student Records</h1>
                 <div class="user-profile"><div class="avatar-placeholder">G</div><span id="header-user-name">Guidance</span></div>
             </div>
 
-            <div class="stats-grid">
-                <div class="stat-card">
-                    <i class="fas fa-user-injured"></i>
-                    <h3>Active Cases</h3>
-                    <div class="number" id="stat-cases">0</div>
-                </div>
-                <div class="stat-card">
-                    <i class="fas fa-calendar-day"></i>
-                    <h3>Today's Appts</h3>
-                    <div class="number" id="stat-appts">0</div>
-                </div>
-                <div class="stat-card">
-                    <i class="fas fa-users"></i>
-                    <h3>Total Students</h3>
-                    <div class="number" id="stat-students">0</div>
-                </div>
-            </div>
-
             <div class="content-section">
-                <h2 style="color:var(--primary-color);">Recent Activity</h2>
-                <p style="color:#666; margin-top:10px;">Welcome to the Guidance Office portal. Pending tasks will appear here.</p>
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+                     <input type="text" id="search-student" onkeyup="searchTable()" placeholder="Search Name or LRN..." class="form-control" style="width:300px; margin-bottom:0;">
+                </div>
+
+                <table class="teachers-table">
+                    <thead>
+                        <tr>
+                            <th>LRN</th>
+                            <th>Name</th>
+                            <th>Grade/Section</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="students-body">
+                        <tr><td colspan="4">Loading...</td></tr>
+                    </tbody>
+                </table>
             </div>
         </div>
     </div>
@@ -64,6 +59,6 @@
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
     <script src="guidance-js/guidance-config.js"></script>
     <script src="guidance-js/ui.js"></script>
-    <script src="guidance-js/dashboard.js"></script>
+    <script src="guidance-js/students.js"></script>
 </body>
 </html>
