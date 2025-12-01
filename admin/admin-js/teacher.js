@@ -115,7 +115,7 @@ async function loadTeachersWithLoad() {
 
             allTeachers.push({
                 docId: doc.id, 
-                id: data.teacherId || 'N/A',
+                id: data.userId || 'N/A',
                 firstName: data.firstName || '',
                 middleName: data.middleName || '',
                 lastName: data.lastName || '',
@@ -207,7 +207,7 @@ function addNewTeacher() {
     const password = generatePassword(); 
 
     const newTeacher = {
-        teacherId: id,
+        userId: id,
         password: password,
         firstName: firstName,
         middleName: middleName,

@@ -1,10 +1,11 @@
 /**
  * schedules.js
  * Manages Class Schedules
- * Logic: Days fixed to Daily, Room Removed, Grade Filtering Added.
+ * Logic: Days fixed to Daily, Room Removed, Grade Filtering Added, teacherId + teacherName stored.
  */
 
-let allSchedules = []; 
+let allSchedules = [];
+window.teacherMap = {}; // teacherId → teacherName
 
 document.addEventListener('DOMContentLoaded', () => {
     setTimeout(() => {
@@ -47,6 +48,7 @@ async function populateDropdowns() {
     const teacherSelect = document.getElementById('sel-teacher');
 
     try {
+        // Sections
         const secSnap = await window.db.collection('sections').orderBy('gradeLevel').get();
         sectionSelect.innerHTML = '<option value="">Select Section</option>';
         secSnap.forEach(doc => {
@@ -54,6 +56,7 @@ async function populateDropdowns() {
             sectionSelect.innerHTML += `<option value="${s.gradeLevel} - ${s.sectionName}">${s.gradeLevel} - ${s.sectionName}</option>`;
         });
 
+        // Subjects
         const subSnap = await window.db.collection('subjects').orderBy('subjectName').get();
         subjectSelect.innerHTML = '<option value="">Select Subject</option>';
         subSnap.forEach(doc => {
@@ -61,12 +64,21 @@ async function populateDropdowns() {
             subjectSelect.innerHTML += `<option value="${s.subjectName}">${s.subjectName}</option>`;
         });
 
+        // Teachers (load teacherId + full name)
         const teachSnap = await window.db.collection('users').where('role', '==', 'teacher').get();
         teacherSelect.innerHTML = '<option value="">Select Teacher</option>';
+
+        window.teacherMap = {}; // Reset teacher map
+
         teachSnap.forEach(doc => {
             const t = doc.data();
             const fullName = `${t.firstName} ${t.lastName}`;
-            teacherSelect.innerHTML += `<option value="${fullName}">${fullName}</option>`;
+
+            // Map teacherId → teacherName
+            window.teacherMap[t.userId] = fullName;
+
+            // Dropdown option stores teacherId
+            teacherSelect.innerHTML += `<option value="${t.userId}">${fullName}</option>`;
         });
 
     } catch (error) {
@@ -77,14 +89,14 @@ async function populateDropdowns() {
 // --- 2. LOAD SCHEDULES TABLE ---
 function loadSchedulesFromDB() {
     const tableBody = document.getElementById('schedules-list-body');
-    
+
     window.db.collection('classSessions').orderBy('section').get()
         .then((querySnapshot) => {
             allSchedules = [];
             tableBody.innerHTML = '';
 
             if (querySnapshot.empty) {
-                renderTable([]); 
+                renderTable([]);
                 return;
             }
 
@@ -113,12 +125,13 @@ function renderTable(data) {
     data.forEach(s => {
         const startDisplay = formatTime(s.startTime);
         const endDisplay = formatTime(s.endTime);
-        
+        const teacherName = s.teacherName || "Unknown Teacher";
+
         const row = document.createElement('tr');
         row.innerHTML = `
             <td><strong>${s.section || 'N/A'}</strong></td>
             <td>${s.subject || 'N/A'}</td>
-            <td>${s.teacher || 'N/A'}</td>
+            <td>${teacherName}</td>
             <td>
                 <span class="badge-success" style="background:#e3f2fd; color:#0d47a1; border:none;">${s.days || 'Daily'}</span><br>
                 <small style="color:#666;">${startDisplay} - ${endDisplay}</small>
@@ -142,24 +155,23 @@ function renderTable(data) {
 
 // --- 3. DUAL FILTER FUNCTION (Grade + Search Text) ---
 function filterSchedules() {
-    const gradeFilter = document.getElementById('filter-grade').value; // "All", "Grade 7", etc.
+    const gradeFilter = document.getElementById('filter-grade').value;
     const searchInput = document.getElementById('search-input').value.toLowerCase();
-    
+
     const filtered = allSchedules.filter(s => {
-        // 1. Filter by Grade (matches the Section Name)
-        // Since section name is "Grade 7 - Rizal", we check if it starts with the filter
         const sectionName = s.section || "";
         const matchesGrade = (gradeFilter === 'All') || sectionName.startsWith(gradeFilter);
 
-        // 2. Filter by Text Search (Teacher, Subject, or Section)
-        const matchesSearch = 
+        const teacherName = (s.teacherName || "").toLowerCase();
+
+        const matchesSearch =
             (s.section && s.section.toLowerCase().includes(searchInput)) ||
             (s.subject && s.subject.toLowerCase().includes(searchInput)) ||
-            (s.teacher && s.teacher.toLowerCase().includes(searchInput));
-        
+            teacherName.includes(searchInput);
+
         return matchesGrade && matchesSearch;
     });
-    
+
     renderTable(filtered);
 }
 
@@ -167,14 +179,16 @@ function filterSchedules() {
 function saveSchedule() {
     const section = document.getElementById('sel-section').value;
     const subject = document.getElementById('sel-subject').value;
-    const teacher = document.getElementById('sel-teacher').value;
+    const teacherId = document.getElementById('sel-teacher').value;
     const start = document.getElementById('sched-start').value;
     const end = document.getElementById('sched-end').value;
 
-    if(!section || !subject || !teacher || !start || !end) {
+    if (!section || !subject || !teacherId || !start || !end) {
         alert("Please select Section, Subject, Teacher, and Time.");
         return;
     }
+
+    const teacherName = window.teacherMap[teacherId]; // Get full name
 
     const btn = document.querySelector('#schedule-modal .btn-primary');
     const originalText = btn.innerText;
@@ -182,12 +196,13 @@ function saveSchedule() {
     btn.disabled = true;
 
     const scheduleData = {
-        section: section,
-        subject: subject,
-        teacher: teacher,
+        section,
+        subject,
+        teacherId,
+        teacherName,   // store readable name too
         days: "Daily",
-        startTime: start, 
-        endTime: end,     
+        startTime: start,
+        endTime: end,
         createdAt: new Date()
     };
 
@@ -207,7 +222,7 @@ function saveSchedule() {
 
 // --- 5. DELETE SCHEDULE ---
 function deleteSchedule(docId) {
-    if(confirm("Are you sure you want to delete this schedule?")) {
+    if (confirm("Are you sure you want to delete this schedule?")) {
         window.db.collection('classSessions').doc(docId).delete()
             .then(() => loadSchedulesFromDB())
             .catch(err => alert("Error: " + err.message));
@@ -233,7 +248,7 @@ function closeModal(modalId) {
     document.getElementById(modalId).style.display = 'none';
 }
 
-// Global Export
+// Exporting for global use
 window.filterSchedules = filterSchedules;
 window.openScheduleModal = openScheduleModal;
 window.saveSchedule = saveSchedule;

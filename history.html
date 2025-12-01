@@ -1,0 +1,1082 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/x-icon" href="img/a2.png">
+    <title>History - Zamboanga Sibugay National High School</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+
+    <style>
+        /* =========================================
+           YOUR PROVIDED CSS DESIGN
+           ========================================= */
+        :root {
+            --primary: #a40028;
+            --secondary: #8B0000;
+            --accent: #FFD700;
+            --light: #F8F9FA;
+            --dark: #212529;
+            --primary-color: #a40028; /* School maroon */
+            --secondary-color: #ffcc00; /* Gold accent */
+            --accent-blue: #004080;
+            --light-gray: #f8f9fa;
+            --dark-gray: #333;
+            --white: #ffffff;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Poppins', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            line-height: 1.7;
+            color: var(--dark-gray);
+            background-color: var(--light-gray);
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        /* Header and Navigation Styles */
+        .top-bar {
+            background: var(--primary);
+            color: white;
+            padding: 10px 30px;
+            font-size: 0.9em;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            gap: 40px;
+        }
+
+        .top-bar i {
+            margin-right: 8px;
+            color: var(--accent);
+        }
+
+        .logo-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background-color: white;
+            padding: 20px 30px;
+            min-height: 200px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            position: relative;
+            gap: 40px;
+        }
+
+        .logo-bar::before {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: linear-gradient(90deg, var(--primary), var(--secondary), var(--accent));
+        }
+
+        .logo-container {
+            display: flex;
+            align-items: center;
+            width: 25%;
+            gap: 20px;
+        }
+
+        .left-logo {
+            justify-content: flex-end;
+            padding-right: 30px;
+        }
+
+        .right-logo {
+            justify-content: flex-start;
+            padding-left: 30px;
+        }
+
+        .zsnhs-logo {
+            height: 150px;
+            width: auto;
+            object-fit: contain;
+            max-width: 220px;
+        }
+
+        .deped-logo {
+            height: 150px;
+            width: auto;
+            object-fit: contain;
+            max-width: 220px;
+        }
+
+        .title-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex: 1;
+            padding: 0 20px;
+        }
+
+        .school-name {
+            text-align: center;
+        }
+
+        .school-name h1 {
+            color: var(--primary);
+            font-size: 2.5em;
+            margin: 0;
+            font-weight: 800;
+            line-height: 1.2;
+            text-transform: uppercase;
+        }
+
+        .school-name p {
+            color: var(--secondary);
+            font-size: 1.1em;
+            font-weight: 600;
+            font-style: italic;
+            margin-top: 8px;
+        }
+
+        nav {
+            background: linear-gradient(135deg, var(--primary), #002244);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+
+        .nav-links {
+            display: flex;
+            list-style: none;
+            justify-content: center;
+            padding: 0 30px;
+            margin: 0;
+        }
+
+        .nav-links > li {
+            position: relative;
+        }
+
+        .nav-links > li:hover .dropdown-menu {
+            display: block;
+        }
+
+        .nav-links a {
+            color: white;
+            text-decoration: none;
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.85em;
+            letter-spacing: 1px;
+            padding: 18px 22px;
+            display: block;
+            transition: all 0.3s ease;
+        }
+
+        .nav-links a:hover {
+            color: var(--accent);
+        }
+
+        .dropdown-menu {
+            display: none;
+            position: absolute;
+            top: 100%;
+            left: 0;
+            background-color: white;
+            min-width: 200px;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+            z-index: 1;
+            border-radius: 0 0 4px 4px;
+            overflow: hidden;
+        }
+
+        .dropdown-menu li {
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .dropdown-menu li:last-child {
+            border-bottom: none;
+        }
+
+        .dropdown-menu a {
+            color: var(--dark);
+            padding: 12px 20px;
+            text-transform: none;
+        }
+
+        .dropdown-menu a:hover {
+            background-color: var(--primary);
+            color: white;
+        }
+
+        /* Main Content Styles */
+        main {
+            flex: 1;
+        }
+
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        /* History Page Specific Styles */
+        .history-hero {
+            background-color: #002244;
+            background: linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.6)), url('img/banner.jpg');
+            background-size: cover;
+            background-position: center;
+            height: 60vh;
+            min-height: 400px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            color: var(--white);
+            margin-bottom: 60px;
+            position: relative;
+        }
+
+        .hero-content {
+            max-width: 800px;
+            padding: 0 20px;
+        }
+
+        .history-hero h1 {
+            font-size: 3.2rem;
+            font-weight: 700;
+            margin-bottom: 20px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.3);
+        }
+
+        .hero-subtitle {
+            font-size: 1.4rem;
+            margin-bottom: 30px;
+            font-weight: 300;
+        }
+
+        .timeline-container {
+            max-width: 1100px;
+            margin: 60px auto;
+            padding: 0 20px;
+        }
+
+        .timeline {
+            position: relative;
+            padding: 40px 0;
+        }
+
+        .timeline::before {
+            content: '';
+            position: absolute;
+            width: 4px;
+            background-color: var(--secondary-color);
+            top: 0;
+            bottom: 0;
+            left: 50%;
+            margin-left: -2px;
+            border-radius: 2px;
+        }
+
+        .timeline-item {
+            padding: 20px 40px;
+            position: relative;
+            width: 50%;
+            box-sizing: border-box;
+            margin-bottom: 30px;
+            opacity: 0; /* Hidden initially per your design */
+            transition: opacity 0.6s ease, transform 0.6s ease; /* Added transition for JS animation */
+        }
+        
+        /* Helper class for JS animation to make items appear */
+        .timeline-item.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .timeline-item.odd {
+            left: 0;
+        }
+
+        .timeline-item.even {
+            left: 50%;
+        }
+
+        .timeline-content {
+            padding: 30px;
+            background: var(--white);
+            border-radius: 8px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
+            position: relative;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .timeline-content:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        .timeline-year {
+            position: absolute;
+            top: 20px;
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: var(--primary-color);
+        }
+
+        .timeline-item.odd .timeline-year {
+            right: -80px;
+            text-align: right;
+        }
+
+        .timeline-item.even .timeline-year {
+            left: -80px;
+            text-align: left;
+        }
+
+        .timeline-dot {
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            background-color: var(--primary-color);
+            border: 4px solid var(--secondary-color);
+            border-radius: 50%;
+            top: 30px;
+            z-index: 1;
+        }
+
+        .timeline-item.odd .timeline-dot {
+            right: -12px;
+        }
+
+        .timeline-item.even .timeline-dot {
+            left: -12px;
+        }
+
+        h2 {
+            color: var(--primary);
+            margin-bottom: 15px;
+            font-size: 1.5rem;
+        }
+
+        p {
+            margin-bottom: 15px;
+            font-size: 1rem;
+        }
+
+        /* --- IMAGES TO BE CLICKABLE --- */
+        .school-image, .campus-image {
+            width: 100%;
+            border-radius: 8px;
+            margin: 20px 0;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease;
+            cursor: pointer; /* Change cursor to pointer to indicate clickability */
+        }
+
+        .school-image:hover, .campus-image:hover {
+            transform: scale(1.02);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2); /* Enhanced hover effect */
+        }
+
+        .image-caption {
+            text-align: center;
+            font-style: italic;
+            color: #666;
+            margin-top: -15px;
+            margin-bottom: 20px;
+            font-size: 0.9rem;
+        }
+
+        .campus-section {
+            background-color: var(--white);
+            border-radius: 8px;
+            padding: 40px;
+            margin: 60px auto;
+            max-width: 1100px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
+        }
+
+        .campus-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+            margin-top: 30px;
+        }
+
+        .campus-card {
+            background: var(--light-gray);
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+            transition: transform 0.3s ease;
+        }
+
+        .campus-card:hover {
+            transform: translateY(-10px);
+        }
+        
+        /* Specific height for grid images */
+        .campus-image {
+            height: 200px;
+            object-fit: cover;
+            margin: 0; /* Override default margin for grid */
+            border-radius: 0; /* Reset radius for card top */
+        }
+
+        .campus-info {
+            padding: 20px;
+        }
+
+        .campus-info h3 {
+            color: var(--primary-color);
+            margin-bottom: 10px;
+        }
+
+        .loading-message {
+            text-align: center;
+            padding: 40px;
+            color: var(--primary);
+            font-style: italic;
+        }
+
+        .facilities-section {
+            background-color: var(--white);
+            border-radius: 8px;
+            padding: 40px;
+            margin: 60px auto;
+            max-width: 1100px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
+        }
+
+        /* Footer Styles */
+        footer {
+            background: linear-gradient(135deg, var(--primary), #a40028);
+            color: white;
+            padding: 50px 30px 20px;
+        }
+
+        .footer-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 30px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .footer-section h3 {
+            color: var(--accent);
+            font-size: 1.3em;
+            margin-bottom: 20px;
+            position: relative;
+            padding-bottom: 10px;
+        }
+
+        .footer-section h3::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 50px;
+            height: 2px;
+            background: var(--primary);
+        }
+
+        .footer-section p {
+            line-height: 1.6;
+            margin-bottom: 15px;
+        }
+
+        .social-links {
+            display: flex;
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .social-links a {
+            color: white;
+            font-size: 1.2em;
+            transition: color 0.3s;
+        }
+
+        .social-links a:hover {
+            color: var(--accent);
+        }
+
+        .footer-links {
+            list-style: none;
+        }
+
+        .footer-links li {
+            margin-bottom: 10px;
+        }
+
+        .footer-links a {
+            color: white;
+            text-decoration: none;
+            transition: color 0.3s;
+        }
+
+        .footer-links a:hover {
+            color: var(--accent);
+        }
+
+        .footer-links a::before {
+            content: '» ';
+            color: var(--accent);
+        }
+
+        .contact-info {
+            list-style: none;
+        }
+
+        .contact-info li {
+            margin-bottom: 15px;
+            display: flex;
+            align-items: flex-start;
+        }
+
+        .contact-info i {
+            margin-right: 10px;
+            color: var(--accent);
+            margin-top: 4px;
+        }
+
+        .copyright {
+            text-align: center;
+            margin-top: 50px;
+            padding-top: 20px;
+            border-top: 1px solid rgba(255,255,255,0.1);
+            font-size: 0.9em;
+        }
+
+        /* =========================================
+           LIGHTBOX / MODAL STYLES (NEW ADDITION)
+           ========================================= */
+        .lightbox {
+            display: none; /* Hidden by default */
+            position: fixed;
+            z-index: 9999;
+            padding-top: 50px;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0, 0, 0, 0.9); /* Black w/ opacity */
+        }
+
+        .lightbox-content {
+            margin: auto;
+            display: block;
+            width: 80%;
+            max-width: 900px;
+            max-height: 80vh;
+            object-fit: contain;
+            border: 3px solid var(--white);
+            border-radius: 4px;
+            animation-name: zoom;
+            animation-duration: 0.3s;
+        }
+
+        .lightbox-caption {
+            margin: auto;
+            display: block;
+            width: 80%;
+            max-width: 900px;
+            text-align: center;
+            color: #ccc;
+            padding: 10px 0;
+            font-size: 1.1em;
+        }
+
+        .close-lightbox {
+            position: absolute;
+            top: 15px;
+            right: 35px;
+            color: #f1f1f1;
+            font-size: 40px;
+            font-weight: bold;
+            transition: 0.3s;
+            cursor: pointer;
+        }
+
+        .close-lightbox:hover,
+        .close-lightbox:focus {
+            color: var(--accent);
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        @keyframes zoom {
+            from {transform:scale(0)}
+            to {transform:scale(1)}
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .lightbox-content {
+                width: 95%;
+            }
+            .top-bar {
+                flex-direction: column;
+                gap: 8px;
+                padding: 12px 15px;
+                text-align: center;
+            }
+
+            .logo-bar {
+                flex-direction: column;
+                gap: 20px;
+            }
+
+            .logo-container {
+                width: 100%;
+                justify-content: center;
+                padding: 0;
+            }
+
+            .school-name h1 {
+                font-size: 1.8em;
+            }
+
+            .nav-links {
+                flex-direction: column;
+                padding: 0;
+            }
+
+            .nav-links > li {
+                width: 100%;
+                text-align: center;
+            }
+
+            .dropdown-menu {
+                position: static;
+                width: 100%;
+                box-shadow: none;
+                border-radius: 0;
+            }
+
+            .history-hero h1 {
+                font-size: 2.4rem;
+            }
+
+            .hero-subtitle {
+                font-size: 1.2rem;
+            }
+
+            .timeline::before {
+                left: 31px;
+            }
+
+            .timeline-item {
+                width: 100%;
+                padding-left: 70px;
+                padding-right: 25px;
+            }
+
+            .timeline-item.even {
+                left: 0;
+            }
+
+            .timeline-item.odd .timeline-year,
+            .timeline-item.even .timeline-year {
+                left: 0;
+                right: auto;
+                top: -30px;
+                text-align: left;
+            }
+
+            .timeline-item.odd .timeline-dot,
+            .timeline-item.even .timeline-dot {
+                left: 20px;
+            }
+
+            .footer-container {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 576px) {
+            .history-hero h1 {
+                font-size: 2rem;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <header>
+        <div class="top-bar">
+            <div>
+                <i class="fas fa-map-marker-alt"></i> Provincial Government Complex, Ipil, Zamboanga Sibugay
+                <i class="fas fa-phone"></i> (062) 991-1771
+                <i class="fas fa-envelope"></i> zsnhs@deped.gov.ph
+            </div>
+        </div>
+
+        <div class="logo-bar">
+            <div class="logo-container left-logo">
+                <img src="img/zsnhs_logo.jpg" alt="ZSNHS Logo" class="zsnhs-logo">
+            </div>
+
+            <div class="title-container">
+                <div class="school-name">
+                    <h1>ZAMBOANGA SIBUGAY NATIONAL HIGH SCHOOL</h1>
+                </div>
+            </div>
+
+            <div class="logo-container right-logo">
+                <img src="img/deped_logo.jfif" alt="DepEd Logo" class="deped-logo">
+            </div>
+        </div>
+
+        <nav>
+            <ul class="nav-links">
+                <li><a href="index.html"><i class="fas fa-home"></i> Home</a></li>
+                <li>
+                    <a href="#"><i class="fas fa-info-circle"></i> About Us <i class="fas fa-caret-down"></i></a>
+                    <ul class="dropdown-menu">
+                        <li><a href="VisMis.html"><i class="fas fa-bullseye"></i> Mission & Vision</a></li>
+                        <li><a href="history.html"><i class="fas fa-landmark"></i> History</a></li>
+                    </ul>
+                </li>
+                <li>
+                    <a href="#"><i class="fas fa-info-circle"></i> Tracks <i class="fas fa-caret-down"></i></a>
+                    <ul class="dropdown-menu">
+                        <li><a href="tvl.html"><i class="fas fa-bullseye"></i> TVL Tracks </a></li>
+                        <li><a href="Academic.html"><i class="fas fa-landmark"></i> Academic Tracks </a></li>
+                    </ul>
+                </li>
+                <li><a href="contact.html"><i class="fas fa-graduation-cap"></i> Contact</a></li>
+                <li><a href="Login.html"><i class="fas fa-user-shield"></i> MyACCOUNT</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <main class="main-content">
+        <section class="history-hero">
+            <div class="hero-content">
+                <h1>History of Zamboanga Sibugay National<br>High School</h1>
+                <p class="hero-subtitle">From humble beginnings to a center of educational excellence</p>
+            </div>
+        </section>
+
+        <div class="timeline-container">
+            <div class="timeline" id="timeline-container">
+                <div class="loading-message">Loading history data...</div>
+            </div>
+        </div>
+
+        <section class="campus-section">
+            <div class="container">
+                <h2>Our Campuses</h2>
+                <p>
+                    Located 3 kilometers northeast of the provincial capital town of Ipil, the school consists of two campuses:
+                    Campus A (3,000 sq. m.) and Campus B (20,000 sq. m.), totaling 23,000 square meters in land area.
+                    The campuses are separated by about 600 meters.
+                </p>
+
+                <div class="campus-grid" id="campus-grid">
+                    <div class="loading-message">Loading campus information...</div>
+                </div>
+
+                <div class="campus-image-container" style="margin-top: 50px;">
+                    <img id="current-campus-img" src="" alt="ZSNHS Current Campus" class="school-image"
+                         onerror="this.src='https://placehold.co/800x400/a40028/FFFFFF?text=ZSNHS+Current+Campus'">
+                    <p id="current-campus-caption" class="image-caption">The current campus of Zamboanga Sibugay National High School</p>
+                </div>
+            </div>
+        </section>
+
+        <section class="facilities-section">
+            <div class="container">
+                <h2>Our Facilities and Community</h2>
+                <p id="facilities-description">
+                    Loading school facilities information...
+                </p>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <div class="footer-container">
+            <div class="footer-section">
+                <h3>About ZSNHS</h3>
+                <p>Zamboanga Sibugay National High School is committed to providing quality education to the youth of Sibugay Province.</p>
+                <div class="social-links">
+                    <a href="#"><i class="fab fa-facebook-f"></i></a>
+                    <a href="#"><i class="fab fa-twitter"></i></a>
+                    <a href="#"><i class="fab fa-instagram"></i></a>
+                </div>
+            </div>
+
+            <div class="footer-section">
+                <h3>Contact Us</h3>
+                <ul class="contact-info">
+                    <li><i class="fas fa-map-marker-alt"></i> Provincial Government Complex, Ipil</li>
+                    <li><i class="fas fa-phone-alt"></i> (062) 991-1771</li>
+                    <li><i class="fas fa-envelope"></i> zsnhs@deped.gov.ph</li>
+                </ul>
+            </div>
+        </div>
+        <div class="copyright">
+            <p>&copy; 2025 Zamboanga Sibugay National High School. All Rights Reserved.</p>
+        </div>
+    </footer>
+
+    <div id="lightbox" class="lightbox">
+        <span class="close-lightbox">&times;</span>
+        <img class="lightbox-content" id="lightbox-img">
+        <div id="caption" class="lightbox-caption"></div>
+    </div>
+
+    <script>
+        // --- 1. CONFIGURATION ---
+        const firebaseConfig = {
+            apiKey: "AIzaSyDlClfbOSKAhalafAQ4ptMRCHkaG-DxDd8",
+            authDomain: "zsnhs-24e44.firebaseapp.com",
+            databaseURL: "https://zsnhs-24e44-default-rtdb.firebaseio.com",
+            projectId: "zsnhs-24e44",
+            storageBucket: "zsnhs-24e44.firebasestorage.app",
+            messagingSenderId: "39166648924",
+            appId: "1:39166648924:web:d65f2e83e6143a5aff7c99",
+            measurementId: "G-C9JMD4C5WB"
+        };
+
+        const supabaseUrl = "https://lydfpvyzlkiemdkfevld.supabase.co";
+        const bucketName = "history-images"; // Ensure this bucket exists in Supabase
+
+        // Initialize Firebase
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+        }
+        const db = firebase.firestore();
+
+        // --- 2. DATA TO SEED (Default data if database is empty) ---
+        const defaultData = {
+            timeline: [
+                {
+                    year: 1974,
+                    title: 'Our Humble Beginnings',
+                    description: 'Zamboanga Sibugay National High School, formerly known as Pangi National High School, traces its origins back to 1974 as Sucgang Barangay High School, carrying the name of its co-founder, Generoso Sucgang.',
+                    image: `${supabaseUrl}/storage/v1/object/public/${bucketName}/early-days.jpg`,
+                    caption: 'The early days of the school',
+                    order: 1
+                },
+                {
+                    year: 2001,
+                    title: 'Provincial Recognition',
+                    description: 'With the creation of the Province of Zamboanga Sibugay in 2001, the dedicated efforts of its principal in 2005 paved the way for transformation.',
+                    image: `${supabaseUrl}/storage/v1/object/public/${bucketName}/provincial-recog.jpg`,
+                    caption: 'The school gained provincial recognition',
+                    order: 2
+                },
+                {
+                    year: 2006,
+                    title: 'Official Renaming',
+                    description: 'By virtue of the Provincial School Board Resolution approved by the DepEd Central Office in June 2006, the school was officially renamed Zamboanga Sibugay National High School.',
+                    image: `${supabaseUrl}/storage/v1/object/public/${bucketName}/renaming.jpg`,
+                    caption: 'Official renaming ceremony in 2006',
+                    order: 3
+                },
+                {
+                    year: 2010,
+                    title: 'Modernization and Expansion',
+                    description: 'The school underwent significant expansion with the addition of new facilities, including computer laboratories, science laboratories, and improved classroom infrastructure.',
+                    image: `${supabaseUrl}/storage/v1/object/public/${bucketName}/modernization.jpg`,
+                    caption: 'New facilities added during expansion',
+                    order: 4
+                }
+            ],
+            campuses: [
+                {
+                    name: 'Campus A',
+                    description: 'Caters to first-year and SPED classes with specialized learning facilities. This campus features modern classrooms, a library, and administrative offices.',
+                    image: `${supabaseUrl}/storage/v1/object/public/${bucketName}/campus-a.jpg`
+                },
+                {
+                    name: 'Campus B',
+                    description: 'Serves second, third, and fourth-year students with comprehensive facilities including science laboratories, computer labs, and vocational training areas.',
+                    image: `${supabaseUrl}/storage/v1/object/public/${bucketName}/campus-b.jpg`
+                }
+            ],
+            current_campus: {
+                image: `${supabaseUrl}/storage/v1/object/public/${bucketName}/current-campus.jpg`,
+                caption: 'The current campus of Zamboanga Sibugay National High School'
+            },
+            schoolInfo: {
+                facilities: 'The school accommodates 1,242 students, supported by 35 teachers and 5 non-teaching staff. Facilities include computer laboratories, a Home Economics building, Science Laboratory, Library, Industrial Arts building, water system, canteen, and 23 instructional rooms. The community surrounding the school is mainly engaged in farming, fishing, and rubber production.'
+            }
+        };
+
+        // --- 3. MAIN LOGIC ---
+        document.addEventListener('DOMContentLoaded', function() {
+            initHistoryPage();
+            initLightbox(); // Initialize the Lightbox Logic
+        });
+
+        async function initHistoryPage() {
+            try {
+                await checkAndSeedDatabase();
+                await loadData();
+            } catch (error) {
+                console.error("Initialization Error:", error);
+            }
+        }
+
+        async function checkAndSeedDatabase() {
+            const docRef = db.collection('history').doc('pageContent');
+            const doc = await docRef.get();
+
+            if (!doc.exists) {
+                console.log("Database empty. Seeding default data...");
+                await docRef.set(defaultData);
+                console.log("Seeding complete.");
+            }
+        }
+
+        async function loadData() {
+            try {
+                const doc = await db.collection('history').doc('pageContent').get();
+                let data = defaultData;
+
+                if (doc.exists) {
+                    data = doc.data();
+                }
+
+                renderTimeline(data.timeline);
+                renderCampuses(data.campuses);
+                renderCurrentCampus(data.current_campus);
+                renderFacilities(data.schoolInfo);
+
+                initScrollAnimations();
+
+            } catch (error) {
+                console.error("Error loading data:", error);
+                document.getElementById('timeline-container').innerHTML = '<div class="error-message">Failed to load history data.</div>';
+            }
+        }
+
+        function renderTimeline(timelineItems) {
+            const container = document.getElementById('timeline-container');
+            if (!timelineItems) return;
+
+            timelineItems.sort((a, b) => a.order - b.order);
+
+            let html = '';
+            timelineItems.forEach((item, index) => {
+                const positionClass = (index % 2 === 0) ? 'odd' : 'even';
+                
+                html += `
+                    <div class="timeline-item ${positionClass}">
+                        <div class="timeline-dot"></div>
+                        <div class="timeline-year">${item.year}</div>
+                        <div class="timeline-content">
+                            <h2>${item.title}</h2>
+                            <img src="${item.image}" alt="${item.title}" class="school-image"
+                                 onerror="this.src='https://placehold.co/600x400/a40028/FFFFFF?text=History+Image'">
+                            <p class="image-caption">${item.caption || ''}</p>
+                            <p>${item.description}</p>
+                        </div>
+                    </div>
+                `;
+            });
+            container.innerHTML = html;
+        }
+
+        function renderCampuses(campuses) {
+            const container = document.getElementById('campus-grid');
+            if (!campuses) return;
+
+            let html = '';
+            campuses.forEach(campus => {
+                html += `
+                    <div class="campus-card">
+                        <img src="${campus.image}" class="campus-image" alt="${campus.name}"
+                             onerror="this.src='https://placehold.co/600x400/002244/FFFFFF?text=${campus.name}'">
+                        <div class="campus-info">
+                            <h3>${campus.name}</h3>
+                            <p>${campus.description}</p>
+                        </div>
+                    </div>
+                `;
+            });
+            container.innerHTML = html;
+        }
+
+        function renderCurrentCampus(data) {
+            const img = document.getElementById('current-campus-img');
+            const cap = document.getElementById('current-campus-caption');
+            
+            if (data) {
+                if (img) img.src = data.image;
+                if (cap) cap.textContent = data.caption;
+            } else if (defaultData.current_campus) {
+                if (img) img.src = defaultData.current_campus.image;
+                if (cap) cap.textContent = defaultData.current_campus.caption;
+            }
+        }
+
+        function renderFacilities(info) {
+            const el = document.getElementById('facilities-description');
+            if (info && info.facilities) {
+                el.textContent = info.facilities;
+            }
+        }
+
+        function initScrollAnimations() {
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('visible');
+                    }
+                });
+            }, { threshold: 0.2 });
+
+            document.querySelectorAll('.timeline-item').forEach(item => {
+                observer.observe(item);
+            });
+        }
+
+        // --- 4. LIGHTBOX FUNCTIONALITY (NEW ADDITION) ---
+        function initLightbox() {
+            const modal = document.getElementById("lightbox");
+            const modalImg = document.getElementById("lightbox-img");
+            const captionText = document.getElementById("caption");
+            const closeBtn = document.querySelector(".close-lightbox");
+
+            // Event Delegation: Detects clicks on body, checks if target is an image
+            document.body.addEventListener('click', function(e) {
+                // Check if the clicked element has the class 'school-image' or 'campus-image'
+                if (e.target.classList.contains('school-image') || e.target.classList.contains('campus-image')) {
+                    modal.style.display = "block";
+                    modalImg.src = e.target.src;
+                    // Try to find a caption nearby or use Alt text
+                    captionText.innerHTML = e.target.alt;
+                }
+                
+                // Also close if clicking outside the image (on the black background)
+                if (e.target === modal) {
+                    modal.style.display = "none";
+                }
+            });
+
+            // Close button functionality
+            closeBtn.onclick = function() {
+                modal.style.display = "none";
+            }
+        }
+    </script>
+</body>
+</html>

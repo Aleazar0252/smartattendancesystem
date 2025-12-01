@@ -101,7 +101,7 @@ class SessionManager {
             case "student": return "student/student.html";
             case "parent": return "parent/parent.html";
             case "guidance": return "guidance/guidance.html";
-            default: return "index.html";
+            default: return "homepage.html";
         }
     }
 }

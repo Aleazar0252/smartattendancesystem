@@ -2,77 +2,292 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Parent Dashboard</title>
-    <link rel="stylesheet" href="parent-css/styles.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Parent Portal - Student Attendance Monitoring</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-storage.js"></script>
+    <link rel="stylesheet" href="css/parent.css">
 </head>
 <body>
-    <div id="preloader"><div class="spinner"></div></div>
-    <div class="overlay" id="mobile-overlay"></div>
-
-    <div class="dashboard">
-        <div class="sidebar" id="sidebar">
-            <div class="logo"><div class="logo-placeholder">P</div><h1>ZSNHS</h1></div>
-            <div class="nav-menu">
-                <h2>Parent Menu</h2>
-                <div class="nav-item active" onclick="window.location.href='parent.html'">
-                    <i class="fas fa-tachometer-alt"></i> <span>Dashboard</span>
+    <div class="container">
+        <header>
+            <div class="logo">
+                <div class="logo-icon">
+                    <i class="fas fa-user-friends"></i>
                 </div>
-                <div class="nav-item" onclick="window.location.href='schedule.html'">
-                    <i class="fas fa-calendar-alt"></i> <span>Child's Schedule</span>
-                </div>
-                <div class="nav-item" onclick="window.location.href='grades.html'">
-                    <i class="fas fa-star"></i> <span>Child's Grades</span>
-                </div>
-                <div class="nav-item" onclick="window.location.href='profile.html'">
-                    <i class="fas fa-user"></i> <span>My Profile</span>
+                <div>
+                    <div class="logo-text">Parent Portal</div>
+                    <div class="logo-subtext">Student Attendance Monitoring</div>
                 </div>
             </div>
-            <div class="logout-container"><button class="logout-btn" onclick="logout()"><i class="fas fa-sign-out-alt"></i> Log out</button></div>
-        </div>
+            <div class="academic-badge" onclick="redirectToLandingPage()">
+                <i class="fas fa-home"></i> Home
+            </div>
+        </header>
 
-        <div class="main-content">
-            <div class="header">
-                <div style="display:flex; align-items:center; gap:15px;">
-                    <i class="fas fa-bars menu-toggle" id="menu-toggle-btn"></i>
-                    <h1>Parent Dashboard</h1>
+        <div class="dashboard-content">
+            <!-- Sidebar Navigation -->
+            <div class="sidebar">
+                <div class="user-profile">
+                    <img src="https://images.unsplash.com/photo-1573497019940-1c28c88b4f3e?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=300&q=80" class="user-avatar" id="sidebar-avatar">
+                    <div class="user-name" id="sidebar-name">Loading...</div>
+                    <div class="user-id" id="sidebar-id">Parent ID: Loading...</div>
+                    
+                    <div class="student-info">
+                        <div class="student-name" id="monitoring-student">Monitoring: Loading...</div>
+                        <div class="student-detail" id="student-id">Student ID: Loading...</div>
+                        <div class="student-detail" id="student-program">Program: Loading...</div>
+                    </div>
                 </div>
-                <div class="user-profile"><div class="avatar-placeholder">P</div><span id="header-user-name">Parent</span></div>
+                
+                <ul class="nav-menu">
+                    <li class="nav-item active" onclick="changeSection('overview')">
+                        <div class="nav-icon"><i class="fas fa-home"></i></div>
+                        <div>Dashboard Overview</div>
+                    </li>
+                    <li class="nav-item" onclick="changeSection('attendance')">
+                        <div class="nav-icon"><i class="fas fa-calendar-check"></i></div>
+                        <div>Attendance Records</div>
+                    </li>
+                     <li class="nav-item" onclick="changeSection('subject')">
+                        <div class="nav-icon"><i class="fas fa-book-open"></i></div>
+                        <div>Enrolled Subjects</div>
+                    </li>
+                    <li class="nav-item" onclick="changeSection('profile')">
+                        <div class="nav-icon"><i class="fas fa-user-cog"></i></div>
+                        <div>Profile Settings</div>
+                    </li>
+                    <li class="nav-item" onclick="logout()">
+                        <div class="nav-icon"><i class="fas fa-sign-out-alt"></i></div>
+                        <div>Logout</div>
+                    </li>
+                </ul>
             </div>
 
-            <div class="stats-grid">
-                <div class="stat-card">
-                    <i class="fas fa-child"></i>
-                    <h3>Student Name</h3>
-                    <div class="number" style="font-size:1.2rem; margin-top:10px;" id="stat-child-name">...</div>
-                </div>
-                <div class="stat-card">
-                    <i class="fas fa-chalkboard"></i>
-                    <h3>Section</h3>
-                    <div class="number" id="stat-section" style="font-size:1.5rem">...</div>
-                </div>
-                <div class="stat-card">
-                    <i class="fas fa-book-open"></i>
-                    <h3>Subjects</h3>
-                    <div class="number" id="stat-subjects">0</div>
-                </div>
-            </div>
+            <!-- Main Content -->
+            <div class="main-content">
+                <!-- Dashboard Overview Section -->
+                <div id="overview" class="section active">
+                    <div class="content-header">
+                        <h1 class="content-title">Student Monitoring Dashboard</h1>
+                        <div class="date-filter">
+                            <div class="filter-btn active" onclick="filterData('week')">
+                                <i class="fas fa-calendar"></i> This Week
+                            </div>
+                            <div class="filter-btn" onclick="filterData('month')">
+                                <i class="fas fa-calendar"></i> This Month
+                            </div>
+                            <div class="filter-btn" onclick="filterData('semester')">
+                                <i class="fas fa-calendar"></i> This Semester
+                            </div>
+                        </div>
+                    </div>
 
-            <div class="content-section">
-                <h2 style="color:var(--primary-color);">School Announcements</h2>
-                <div style="padding:15px; background:#fff3cd; border:1px solid #ffeeba; border-radius:5px; margin-top:15px; color:#856404;">
-                    <i class="fas fa-bullhorn"></i> No urgent announcements at this time.
+                    <div class="welcome-banner">
+                        <div class="welcome-text">
+                            <h1 id="welcome-message">Welcome, Loading...</h1>
+                            <p id="monitoring-text">You are monitoring student's academic attendance and performance.</p>
+                        </div>
+                        <div class="academic-progress">
+                            <div class="progress-value" id="overall-attendance">0%</div>
+                            <div id="student-attendance-label">Student's Attendance Rate</div>
+                        </div>
+                    </div>
+
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-icon">
+                                <i class="fas fa-calendar-check"></i>
+                            </div>
+                            <div class="stat-value" id="month-attendance">0%</div>
+                            <div class="stat-label">Current Month Attendance</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon">
+                                <i class="fas fa-clock"></i>
+                            </div>
+                            <div class="stat-value" id="late-count">0</div>
+                            <div class="stat-label">Times Late This Month</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon">
+                                <i class="fas fa-book"></i>
+                            </div>
+                            <div class="stat-value" id="subject-count">0</div>
+                            <div class="stat-label">Enrolled Subjects</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon">
+                                <i class="fas fa-chart-line"></i>
+                            </div>
+                            <div class="stat-value" id="overall-performance">0%</div>
+                            <div class="stat-label">Academic Performance</div>
+                        </div>
+                    </div>
+
+                    <div class="charts-container">
+                        <div class="chart-card">
+                            <div class="chart-header">
+                                <div class="chart-title">Attendance Trend</div>
+                                <div class="filter-btn" onclick="toggleChartFilter('attendance')">
+                                    <i class="fas fa-filter"></i> Filter
+                                </div>
+                            </div>
+                            <canvas id="attendanceChart" height="250"></canvas>
+                        </div>
+                        <div class="chart-card">
+                            <div class="chart-header">
+                                <div class="chart-title">Subject Performance</div>
+                                <div class="filter-btn" onclick="toggleChartFilter('performance')">
+                                    <i class="fas fa-filter"></i> Filter
+                                </div>
+                            </div>
+                            <canvas id="performanceChart" height="250"></canvas>
+                        </div>
+                    </div>
+
+                    <div class="attendance-section">
+                        <h2 class="section-title">Recent Attendance</h2>
+                        <table class="attendance-table">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Subject</th>
+                                    <th>Time</th>
+                                    <th>Status</th>
+                                    <th>Instructor</th>
+                                </tr>
+                            </thead>
+                            <tbody id="attendance-tbody">
+                                <!-- Dynamic content will be loaded here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Attendance Records Section -->
+                <div id="attendance" class="section">
+                    <div class="content-header">
+                        <h1 class="content-title">Attendance Records</h1>
+                        <div class="date-filter">
+                            <div class="filter-btn active" onclick="filterAttendance('all')">
+                                All Records
+                            </div>
+                            <div class="filter-btn" onclick="filterAttendance('present')">
+                                Present Only
+                            </div>
+                            <div class="filter-btn" onclick="filterAttendance('absent')">
+                                Absent Only
+                            </div>
+                        </div>
+                    </div>
+                    <div class="attendance-section">
+                        <table class="attendance-table">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Subject</th>
+                                    <th>Time</th>
+                                    <th>Status</th>
+                                    <th>Instructor</th>
+                                    <th>Remarks</th>
+                                </tr>
+                            </thead>
+                            <tbody id="all-attendance-tbody">
+                                <!-- Dynamic content will be loaded here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Enrolled Subjects Section -->
+                <div id="subject" class="section">
+                    <div class="content-header">
+                        <h1 class="content-title">Enrolled Subjects</h1>
+                    </div>
+                    <div class="stats-grid" id="subjects-grid">
+                        <!-- Dynamic subjects will be loaded here -->
+                    </div>
+                </div>
+
+                <!-- Profile Section -->
+                <div id="profile" class="section">
+                    <div class="content-header">
+                        <h1 class="content-title">Parent Profile Settings</h1>
+                    </div>
+
+                    <div class="profile-section">
+                        <div class="profile-header">
+                            <div class="profile-avatar-container">
+                                <img src="https://images.unsplash.com/photo-1573497019940-1c28c88b4f3e?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=300&q=80" class="profile-avatar" id="profile-avatar">
+                                <div class="avatar-upload" onclick="document.getElementById('avatar-input').click()">
+                                    <i class="fas fa-camera"></i>
+                                </div>
+                                <input type="file" id="avatar-input" accept="image/*" style="display: none;">
+                            </div>
+                            <div class="profile-info">
+                                <h2 class="profile-name" id="profile-name">Loading...</h2>
+                                <div class="profile-detail"><strong>Parent ID:</strong> <span id="profile-id">Loading...</span></div>
+                                <div class="profile-detail"><strong>Monitoring:</strong> <span id="profile-monitoring">Loading...</span></div>
+                                <div class="profile-detail"><strong>Relationship:</strong> <span id="profile-relationship">Loading...</span></div>
+                                <div class="profile-detail"><strong>Email:</strong> <span id="profile-email">Loading...</span></div>
+                            </div>
+                        </div>
+
+                        <div class="profile-form">
+                            <div class="form-group">
+                                <label class="form-label">Full Name</label>
+                                <input type="text" class="form-input" id="full-name-input" disabled>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Parent ID</label>
+                                <input type="text" class="form-input" id="parent-id-input" disabled>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Email Address</label>
+                                <input type="email" class="form-input" id="email-input" disabled>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Phone Number</label>
+                                <input type="tel" class="form-input" id="phone-input">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Student Name</label>
+                                <input type="text" class="form-input" id="student-name-input" disabled>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Relationship</label>
+                                <input type="text" class="form-input" id="relationship-input" disabled>
+                            </div>
+                            <div class="form-actions">
+                                <button class="btn btn-secondary" id="cancel-btn">
+                                    <i class="fas fa-times"></i> Cancel
+                                </button>
+                                <button class="btn btn-primary" id="save-btn">
+                                    <i class="fas fa-save"></i> Save Changes
+                                </button>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
-    <script src="parent-js/parent-config.js"></script>
-    <script src="parent-js/ui.js"></script>
-    <script src="parent-js/dashboard.js"></script>
+    <!-- Toast Notification -->
+    <div class="toast" id="toast">
+        <i class="fas fa-check-circle"></i>
+        <span id="toast-message">Changes saved successfully!</span>
+    </div>
+
+    <script src="js/firebase-config.js"></script>
+    <script src="js/session-manager.js"></script>
+
+    
 </body>
 </html>

@@ -67,7 +67,7 @@ window.toggleDropdown = function (id, el) {
 
 // --- 4. GLOBAL LOGOUT FUNCTION (FIXED) ---
 window.logout = function () {
-  if (confirm("Are you sure you want to log out?")) {
+  if (confirm("Are you sure you want to log out??")) {
     
     // 1. Sign out from Firebase Auth
     if (firebase.auth()) {

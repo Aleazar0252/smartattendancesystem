@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/x-icon" href="img/a2.png">
     <title>Login - Zamboanga Sibugay National High School</title>
     
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -13,22 +14,35 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script> <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
 </head>
-<body>
-
+<body style="
+  background: linear-gradient(rgba(255,255,255,0.7), rgba(255,255,255,0.8)),
+              url('img/zsnhs.jpg') no-repeat center center fixed;
+  background-size: cover;
+  margin: 0;
+  padding: 0;
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+">
     <div class="particles" id="particles"></div>
     
     <div class="container floating">
         <div class="floating-decoration decoration-1"></div>
         <div class="floating-decoration decoration-2"></div>
         
-        <div class="image-section">
-            <div class="university-info">
+        <div class="image-section"  style=" background: linear-gradient(rgba(0,0,0,0.4), rgba(0,0,0,0.4)),
+                          url('img/zsnhs.jpg') no-repeat center center; background-size: cover;">
+
+             <img src="img/logo.png" alt="School Logo" style="width: 300px; height: auto; margin: 0 auto 15px;">
+            <div class="university-info" style="text-align: center;">
+
                 <h1>Zamboanga Sibugay National High School</h1>
                 <p>Center of Academic Excellence</p>
             </div>
-            <div class="logo">
-                <img src="Settings/img/logo.jpg" alt="School Logo" onerror="this.style.display='none'"> 
-            </div>
+            <!--<div class="logo">-->
+            <!--    <img src="img/logo.png" alt="School Logo" onerror="this.style.display='none'">-->
+            <!--</div>-->
         </div>
         
         <div class="login-section">
@@ -53,9 +67,9 @@
                     </div>
                 </div>
                 
-                <div class="forgot-password" style="text-align: right; margin-bottom: 20px;">
-                    <a href="reset-request.html" style="color: #8B0000; text-decoration: none; font-size: 0.9rem;">Forgot Password?</a>
-                </div>
+                <!--<div class="forgot-password" style="text-align: right; margin-bottom: 20px;">-->
+                <!--    <a href="reset-request.html" style="color: #8B0000; text-decoration: none; font-size: 0.9rem;">Forgot Password?</a>-->
+                <!--</div>-->
                 
                 <button type="submit" class="submit-btn" id="loginBtn">
                     <span class="btn-text">Login</span>
