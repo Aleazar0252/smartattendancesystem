@@ -1,97 +1,85 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <title>My Schedules</title>
-    <link rel="stylesheet" href="teacher-css/styles.css" />
-    <link
-      rel="stylesheet"
-      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
-    />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Playfair+Display:wght@700&display=swap"
-      rel="stylesheet"
-    />
-  </head>
-  <body>
-    <div id="preloader"><div class="spinner"></div></div>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Schedules - Teacher Portal</title>
+    
+    <link rel="stylesheet" href="teacher-css/styles.css">
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+</head>
+<body>
+
+    <div id="preloader"><div class="spinner"></div><div class="loading-text">Loading...</div></div>
     <div class="overlay" id="mobile-overlay"></div>
 
     <div class="dashboard">
-      <div class="sidebar" id="sidebar">
-        <div class="logo">
-          <div class="logo-placeholder">T</div>
-          <h1>ZSNHS</h1>
-        </div>
-        <div class="nav-menu">
-          <h2>Teacher Menu</h2>
+        <div class="sidebar" id="sidebar">
+            <div class="logo"><div class="logo-placeholder">T</div><h1>ZSNHS</h1></div>
+            <div class="nav-menu">
+                <h2>Teacher Menu</h2>
+                
+                <a href="teacher.html" class="nav-item">
+                    <i class="fas fa-tachometer-alt"></i> <span>Dashboard</span>
+                </a>
 
-          <div class="nav-item" onclick="window.location.href='teacher.html'">
-            <i class="fas fa-tachometer-alt"></i> <span>Dashboard</span>
-          </div>
+                <a href="schedules.html" class="nav-item active">
+                    <i class="fas fa-calendar-alt"></i> <span>My Schedules</span>
+                </a>
 
-          <div class="nav-item active" onclick="window.location.href='schedules.html'">
-            <i class="fas fa-calendar-alt"></i> <span>My Schedules</span>
-          </div>
+                <a href="students.html" class="nav-item">
+                    <i class="fas fa-user-graduate"></i> <span>My Students</span>
+                </a>
 
-          <div class="nav-item" onclick="window.location.href='students.html'">
-            <i class="fas fa-user-graduate"></i> <span>My Students</span>
-          </div>
+                <a href="attendance.html" class="nav-item">
+                    <i class="fas fa-clipboard-check"></i> <span>Attendance</span>
+                </a>
 
-          <div
-            class="nav-item"
-            onclick="window.location.href='attendance.html'"
-          >
-            <i class="fas fa-clipboard-check"></i> <span>Attendance</span>
-          </div>
-
-          <div class="nav-item" onclick="window.location.href='settings.html'">
-            <i class="fas fa-cog"></i> <span>Settings</span>
-          </div>
-        </div>
-        <div class="logout-container">
-          <button class="logout-btn" onclick="logout()">
-            <i class="fas fa-sign-out-alt"></i> Log out
-          </button>
-        </div>
-      </div>
-
-      <div class="main-content">
-        <div class="header">
-          <i class="fas fa-bars menu-toggle" id="menu-toggle-btn"></i>
-          <h1>My Class Schedules</h1>
-          <div class="user-profile">
-            <div class="avatar-placeholder">T</div>
-            <span id="header-user-name">Teacher</span>
-          </div>
+                <a href="settings.html" class="nav-item">
+                    <i class="fas fa-cog"></i> <span>Settings</span>
+                </a>
+            </div>
+            <div class="logout-container"><button class="logout-btn" onclick="logout()"><i class="fas fa-sign-out-alt"></i> Log out</button></div>
         </div>
 
-        <div class="content-section">
-          <table class="teachers-table">
-            <thead>
-              <tr>
-                <th>Subject</th>
-                <th>Section</th>
-                <th>Days</th>
-                <th>Time</th>
-                <th>Room</th>
-              </tr>
-            </thead>
-            <tbody id="schedule-body">
-              <tr>
-                <td colspan="5">Loading...</td>
-              </tr>
-            </tbody>
-          </table>
+        <div class="main-content">
+            <div class="header">
+                <div style="display:flex; align-items:center; gap:15px;">
+                    <i class="fas fa-bars menu-toggle" id="menu-toggle-btn"></i>
+                    <h1>My Class Schedules</h1>
+                </div>
+                <div class="user-profile">
+                    <div class="avatar-placeholder">T</div>
+                    <span id="header-user-name">Teacher</span>
+                </div>
+            </div>
+
+            <div class="content-section">
+                <table class="teachers-table">
+                    <thead>
+                        <tr>
+                            <th>Subject</th>
+                            <th>Section</th>
+                            <th>Days</th>
+                            <th>Time</th>
+                        </tr>
+                    </thead>
+                    <tbody id="my-schedules-body">
+                        <tr><td colspan="4" class="loading-cell">Loading schedules...</td></tr>
+                    </tbody>
+                </table>
+            </div>
         </div>
-      </div>
     </div>
 
-    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
-    <script src="teacher-js/teacher-config.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    <script src="../js/firebase-config.js"></script>
+    <script src="../js/session-manager.js"></script>
     <script src="teacher-js/ui.js"></script>
     <script src="teacher-js/schedules.js"></script>
-  </body>
+</body>
 </html>

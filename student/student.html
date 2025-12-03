@@ -1,503 +1,133 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Student Portal - Student Attendance Monitoring</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
-    <link rel="stylesheet" href="student-css/styles.css">
-    
-    <!-- Session Management -->
-    <script src="js/session-manager.js"></script>
-    <script src="js/student-firebase-config.js"></script>
-    <script src="js/auth-guard.js"></script>
-</head>
-<body>
-    <div class="container">
-        <header>
-            <div class="logo">
-                <div class="logo-icon">
-                    <i class="fas fa-graduation-cap"></i>
-                </div>
-                <div>
-                    <div class="logo-text">Student Attendance Portal</div>
-                    <div class="logo-subtext">Academic Performance Monitoring System</div>
-                </div>
-            </div>
-            <div class="academic-badge" onclick="redirectToLandingPage()">
-                <i class="fas fa-home"></i> Home
-            </div>
-        </header>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Dashboard - Student Portal</title>
+    <link rel="stylesheet" href="student-css/styles.css" />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Playfair+Display:wght@700&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+  <body>
+    <div id="preloader">
+      <div class="spinner"></div>
+      <div class="loading-text">Loading...</div>
+    </div>
+    <div class="overlay" id="mobile-overlay"></div>
 
-        <div class="dashboard-content">
-            <!-- Sidebar Navigation -->
-            <div class="sidebar">
-                <div class="user-profile">
-                    <div class="initials-avatar" id="sidebar-initials-avatar">
-                        <!-- Initials will be dynamically inserted -->
-                    </div>
-                    <div class="user-name" id="sidebar-name">Loading...</div>
-                    <div class="user-id" id="sidebar-id">ID: Loading...</div>
-                    <div class="user-role" id="sidebar-role">Student</div>
-                </div>
-                
-                <ul class="nav-menu">
-                    <li class="nav-item active" onclick="changeSection('overview')">
-                        <div class="nav-icon"><i class="fas fa-home"></i></div>
-                        <div>Dashboard Overview</div>
-                    </li>
-                    <li class="nav-item" onclick="changeSection('attendance')">
-                        <div class="nav-icon"><i class="fas fa-calendar-check"></i></div>
-                        <div>Attendance Records</div>
-                    </li>
-                    <li class="nav-item" onclick="changeSection('subject')">
-                        <div class="nav-icon"><i class="fas fa-book-open"></i></div>
-                        <div>Enrolled Subjects</div>
-                    </li>
-                    <li class="nav-item" onclick="changeSection('profile')">
-                        <div class="nav-icon"><i class="fas fa-user-cog"></i></div>
-                        <div>Profile Settings</div>
-                    </li>
-                    <li class="nav-item" onclick="logout()">
-                        <div class="nav-icon"><i class="fas fa-sign-out-alt"></i></div>
-                        <div>Logout</div>
-                    </li>
-                </ul>
-            </div>
-
-            <!-- Main Content -->
-            <div class="main-content">
-                <!-- Dashboard Overview Section -->
-                <div id="overview" class="section active">
-                    <div class="content-header">
-                        <h1 class="content-title">Academic Dashboard</h1>
-                        <div class="date-filter">
-                            <div class="filter-btn active" onclick="filterData('week')">
-                                <i class="fas fa-calendar"></i> This Week
-                            </div>
-                            <div class="filter-btn" onclick="filterData('month')">
-                                <i class="fas fa-calendar"></i> This Month
-                            </div>
-                            <div class="filter-btn" onclick="filterData('semester')">
-                                <i class="fas fa-calendar"></i> This Semester
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="welcome-banner">
-                        <div class="welcome-text">
-                            <h1 id="welcome-message">Welcome back!</h1>
-                            <p>Here's your academic performance overview for the current semester.</p>
-                        </div>
-                        <div class="academic-progress">
-                            <div class="progress-value" id="overall-attendance">0%</div>
-                            <div>Overall Attendance Rate</div>
-                        </div>
-                    </div>
-
-                    <div class="stats-grid">
-                        <div class="stat-card">
-                            <div class="stat-icon">
-                                <i class="fas fa-calendar-check"></i>
-                            </div>
-                            <div class="stat-value" id="month-attendance">0%</div>
-                            <div class="stat-label">Current Month Attendance</div>
-                        </div>
-                        <div class="stat-card">
-                            <div class="stat-icon">
-                                <i class="fas fa-clock"></i>
-                            </div>
-                            <div class="stat-value" id="late-count">0</div>
-                            <div class="stat-label">Times Late This Month</div>
-                        </div>
-                        <div class="stat-card">
-                            <div class="stat-icon">
-                                <i class="fas fa-book"></i>
-                            </div>
-                            <div class="stat-value" id="subject-count">0</div>
-                            <div class="stat-label">Enrolled Subjects</div>
-                        </div>
-                        <div class="stat-card">
-                            <div class="stat-icon">
-                                <i class="fas fa-chart-line"></i>
-                            </div>
-                            <div class="stat-value" id="overall-performance">0%</div>
-                            <div class="stat-label">Overall Academic Performance</div>
-                        </div>
-                    </div>
-
-                    <div class="charts-container">
-                        <div class="chart-card">
-                            <div class="chart-header">
-                                <div class="chart-title">Attendance Trend</div>
-                                <div class="filter-btn" onclick="toggleChartFilter('attendance')">
-                                    <i class="fas fa-filter"></i> Filter
-                                </div>
-                            </div>
-                            <canvas id="attendanceChart" height="250"></canvas>
-                        </div>
-                        <div class="chart-card">
-                            <div class="chart-header">
-                                <div class="chart-title">Subject Performance</div>
-                                <div class="filter-btn" onclick="toggleChartFilter('performance')">
-                                    <i class="fas fa-filter"></i> Filter
-                                </div>
-                            </div>
-                            <canvas id="performanceChart" height="250"></canvas>
-                        </div>
-                    </div>
-
-                    <div class="attendance-section">
-                        <h2 class="section-title">Recent Attendance</h2>
-                        <div id="recent-attendance-table">
-                            <table class="attendance-table">
-                                <thead>
-                                    <tr>
-                                        <th>Date</th>
-                                        <th>Subject</th>
-                                        <th>Time</th>
-                                        <th>Status</th>
-                                        <th>Instructor</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="attendance-tbody">
-                                    <!-- Dynamic content will be loaded here -->
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Attendance Records Section -->
-                <div id="attendance" class="section">
-                    <div class="content-header">
-                        <h1 class="content-title">Attendance Records</h1>
-                        <div class="date-filter">
-                            <div class="filter-btn active" onclick="filterAttendance('all')">
-                                All Records
-                            </div>
-                            <div class="filter-btn" onclick="filterAttendance('present')">
-                                Present Only
-                            </div>
-                            <div class="filter-btn" onclick="filterAttendance('absent')">
-                                Absent Only
-                            </div>
-                        </div>
-                    </div>
-                    <div class="attendance-section">
-                        <table class="attendance-table">
-                            <thead>
-                                <tr>
-                                    <th>Date</th>
-                                    <th>Subject</th>
-                                    <th>Time</th>
-                                    <th>Status</th>
-                                    <th>Instructor</th>
-                                    <th>Remarks</th>
-                                </tr>
-                            </thead>
-                            <tbody id="all-attendance-tbody">
-                                <!-- Dynamic content will be loaded here -->
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-
-                <!-- Enrolled Subjects Section -->
-                <div id="subject" class="section">
-                    <div class="content-header">
-                        <h1 class="content-title">Enrolled Subjects</h1>
-                    </div>
-                    <div class="stats-grid" id="subjects-grid">
-                        <!-- Dynamic subjects will be loaded here -->
-                    </div>
-                </div>
-
-                <!-- Profile Section -->
-                <div id="profile" class="section">
-                    <div class="profile-section">
-                        <div class="profile-header">
-                            <div class="profile-avatar-container">
-                                <div class="profile-initials-avatar" id="profile-initials-avatar">
-                                    <!-- Initials will be dynamically inserted -->
-                                </div>
-                            </div>
-                            <div class="profile-info">
-                                <h2 class="profile-name" id="profile-name">Loading...</h2>
-                            </div>
-                        </div>
-
-                        <div class="profile-form">
-                            <!-- All fields are now non-editable -->
-                            <div class="form-group">
-                                <label class="form-label">First Name</label>
-                                <input type="text" class="form-input" id="first-name-input" disabled>
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label">Last Name</label>
-                                <input type="text" class="form-input" id="last-name-input" disabled>
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label">Middle Name</label>
-                                <input type="text" class="form-input" id="middle-name-input" disabled>
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label">Email Address</label>
-                                <input type="email" class="form-input" id="email-input" disabled>
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label">Student ID</label>
-                                <input type="text" class="form-input" id="student-id-input" disabled>
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label">LRN</label>
-                                <input type="text" class="form-input" id="lrn-input" disabled>
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label">Phone Number</label>
-                                <input type="tel" class="form-input" id="phone-input" disabled>
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label">Strand</label>
-                                <input type="text" class="form-input" id="strand-input" disabled>
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label">Year Level</label>
-                                <input type="text" class="form-input" id="year-input" disabled>
-                            </div>
-
-                            <!-- Informational message -->
-                            <div class="info-message">
-                                <i class="fas fa-info-circle"></i>
-                                <span>Profile information is managed by the school administration. Please contact the registrar's office for any updates.</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
+    <div class="dashboard">
+      <div class="sidebar" id="sidebar">
+        <div class="logo">
+          <div class="logo-placeholder">S</div>
+          <h1>ZSNHS</h1>
         </div>
+        <div class="nav-menu">
+          <h2>Student Menu</h2>
+
+          <a href="student.html" class="nav-item active">
+            <i class="fas fa-tachometer-alt"></i> <span>Dashboard</span>
+          </a>
+
+          <a href="attendance.html" class="nav-item">
+            <i class="fas fa-calendar-check"></i> <span>My Attendance</span>
+          </a>
+
+          <a href="schedule.html" class="nav-item">
+            <i class="fas fa-book-open"></i> <span>My Schedule</span>
+          </a>
+
+          <a href="profile.html" class="nav-item">
+            <i class="fas fa-user-circle"></i> <span>My Profile</span>
+          </a>
+        </div>
+        <div class="logout-container">
+          <button class="logout-btn" onclick="logout()">
+            <i class="fas fa-sign-out-alt"></i> Log out
+          </button>
+        </div>
+      </div>
+
+      <div class="main-content">
+        <div class="header">
+          <div style="display: flex; align-items: center; gap: 15px">
+            <i class="fas fa-bars menu-toggle" id="menu-toggle-btn"></i>
+            <h1>Dashboard Overview</h1>
+          </div>
+          <div class="user-profile">
+            <div class="avatar-placeholder" style="background: #28a745">S</div>
+            <span id="header-user-name">Student</span>
+          </div>
+        </div>
+
+        <div
+          class="content-section"
+          style="
+            background: linear-gradient(135deg, #a52a2a 0%, #8b0000 100%);
+            color: white;
+            margin-bottom: 25px;
+          "
+        >
+          <h2 style="color: white; margin-bottom: 10px">
+            Welcome back, <span id="welcome-name">Student</span>!
+          </h2>
+          <p style="opacity: 0.9">
+            Here is your academic overview for this semester.
+          </p>
+        </div>
+
+        <div class="stats-grid">
+          <div class="stat-card">
+            <i class="fas fa-book-open"></i>
+            <h3>Enrolled Subjects</h3>
+            <div class="number" id="stat-subjects">0</div>
+          </div>
+          <div class="stat-card">
+            <i class="fas fa-calendar-day"></i>
+            <h3>Present Days</h3>
+            <div class="number" style="color: #28a745">0</div>
+          </div>
+          <div class="stat-card">
+            <i class="fas fa-exclamation-circle"></i>
+            <h3>Absences</h3>
+            <div class="number" style="color: #dc3545">0</div>
+          </div>
+        </div>
+
+        <div class="content-section">
+          <h3 style="color: var(--primary-color); margin-bottom: 20px">
+            Today's Classes
+          </h3>
+          <table class="teachers-table">
+            <thead>
+              <tr>
+                <th>Time</th>
+                <th>Subject</th>
+                <th>Teacher</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="today-classes-body">
+              <tr>
+                <td colspan="4" class="loading-cell">Loading schedule...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
     </div>
 
-    <!-- Toast Notification -->
-    <div class="toast" id="toast">
-        <i class="fas fa-check-circle"></i>
-        <span id="toast-message">Changes saved successfully!</span>
-    </div>
-
-    <!-- Student-specific scripts -->
-    <script src="js/student-dashboard.js"></script>
-    <script src="js/student-app.js"></script>
-    
-    <!-- Session initialization script -->
-    <script>
-        // Initialize session and load user data
-        document.addEventListener('DOMContentLoaded', function() {
-            console.log('🎓 Student portal initialized');
-            
-            // Check session and load user data
-            if (window.sessionManager && window.sessionManager.isLoggedIn()) {
-                const session = window.sessionManager.getSession();
-                console.log('✅ Student session:', session);
-                
-                // Update UI with session data immediately
-                updateStudentUI(session);
-                
-                // Initialize dashboard (will load data from Firestore)
-                if (typeof initDashboard === 'function') {
-                    initDashboard();
-                }
-            } else {
-                console.error('❌ No valid session found');
-                window.sessionManager.redirectToLogin('Please login to access student portal');
-            }
-        });
-
-        function updateStudentUI(session) {
-            // Update sidebar
-            const sidebarName = document.getElementById('sidebar-name');
-            const sidebarId = document.getElementById('sidebar-id');
-            const sidebarRole = document.getElementById('sidebar-role');
-            const welcomeMessage = document.getElementById('welcome-message');
-            const profileName = document.getElementById('profile-name');
-            const firstNameInput = document.getElementById('first-name-input');
-            const lastNameInput = document.getElementById('last-name-input');
-            const middleNameInput = document.getElementById('middle-name-input');
-            const emailInput = document.getElementById('email-input');
-            const phoneInput = document.getElementById('phone-input');
-            const studentIdInput = document.getElementById('student-id-input');
-            const lrnInput = document.getElementById('lrn-input');
-            const strandInput = document.getElementById('strand-input');
-            const yearInput = document.getElementById('year-input');
-
-            // Update with individual name fields
-            if (sidebarName) sidebarName.textContent = session.name || getFullName(session);
-            if (sidebarId) sidebarId.textContent = `ID: ${session.studentId || 'N/A'}`;
-            if (sidebarRole) sidebarRole.textContent = session.role || 'Student';
-            if (welcomeMessage) welcomeMessage.textContent = `Welcome back, ${session.firstName || getFirstName(session) || 'Student'}!`;
-            if (profileName) profileName.textContent = session.name || getFullName(session);
-            
-            // Update form inputs with individual name fields (all disabled)
-            if (firstNameInput) firstNameInput.value = session.firstName || '';
-            if (lastNameInput) lastNameInput.value = session.lastName || '';
-            if (middleNameInput) middleNameInput.value = session.middleName || '';
-            if (emailInput) emailInput.value = session.email || '';
-            if (phoneInput) phoneInput.value = session.phoneNumber || '';
-            if (studentIdInput) studentIdInput.value = session.studentId || '';
-            if (lrnInput) lrnInput.value = session.lrn || '';
-            if (strandInput) strandInput.value = session.strand || '';
-            if (yearInput) yearInput.value = session.yearLevel || '';
-            
-            // Update initials avatars
-            updateInitialsAvatar(session);
-        }
-
-        // Helper functions to handle name fields
-        function getFullName(session) {
-            if (session.firstName && session.lastName) {
-                return `${session.firstName} ${session.middleName ? session.middleName + ' ' : ''}${session.lastName}`;
-            }
-            return session.name || 'Student';
-        }
-
-        function getFirstName(session) {
-            return session.firstName || session.name?.split(' ')[0] || 'Student';
-        }
-
-        // Update initials avatar
-        function updateInitialsAvatar(session) {
-            const firstName = session.firstName || '';
-            const lastName = session.lastName || '';
-            
-            let initials = '';
-            if (firstName && lastName) {
-                initials = (firstName.charAt(0) + lastName.charAt(0)).toUpperCase();
-            } else if (session.name) {
-                const nameParts = session.name.split(' ');
-                if (nameParts.length >= 2) {
-                    initials = (nameParts[0].charAt(0) + nameParts[nameParts.length - 1].charAt(0)).toUpperCase();
-                } else {
-                    initials = session.name.substring(0, 2).toUpperCase();
-                }
-            } else {
-                initials = 'ST';
-            }
-            
-            document.getElementById('profile-initials-avatar').textContent = initials;
-            document.getElementById('sidebar-initials-avatar').textContent = initials;
-        }
-
-        // Global logout function
-        function logout() {
-            if (confirm('Are you sure you want to logout?')) {
-                window.sessionManager.clearSession('Logged out successfully');
-            }
-        }
-
-        function redirectToLandingPage() {
-            window.location.href = 'index.html';
-        }
-
-        // Navigation functions
-        function changeSection(sectionName) {
-            // Hide all sections
-            const sections = document.querySelectorAll('.section');
-            sections.forEach(section => {
-                section.classList.remove('active');
-            });
-
-            // Show selected section
-            const targetSection = document.getElementById(sectionName);
-            if (targetSection) {
-                targetSection.classList.add('active');
-            }
-
-            // Update navigation
-            const navItems = document.querySelectorAll('.nav-item');
-            navItems.forEach(item => {
-                item.classList.remove('active');
-            });
-
-            // Find and activate the corresponding nav item
-            const activeNavItem = Array.from(navItems).find(item => {
-                return item.getAttribute('onclick')?.includes(sectionName);
-            });
-            if (activeNavItem) {
-                activeNavItem.classList.add('active');
-            }
-        }
-
-        // Filter functions
-        function filterData(timeframe) {
-            document.querySelectorAll('.date-filter .filter-btn').forEach(btn => {
-                btn.classList.remove('active');
-            });
-            event.target.classList.add('active');
-            
-            showToast(`Showing data for ${timeframe}`);
-        }
-
-        function filterAttendance(status) {
-            document.querySelectorAll('.attendance-section .filter-btn').forEach(btn => {
-                btn.classList.remove('active');
-            });
-            event.target.classList.add('active');
-            
-            const tbody = document.getElementById('all-attendance-tbody');
-            const rows = tbody.getElementsByTagName('tr');
-            
-            for (let row of rows) {
-                const statusBadge = row.querySelector('.status-badge');
-                if (!statusBadge) continue;
-                
-                const showRow = status === 'all' || 
-                    (status === 'present' && (statusBadge.textContent.includes('Present') || statusBadge.textContent.includes('Late'))) ||
-                    (status === 'absent' && statusBadge.textContent.includes('Absent'));
-                
-                row.style.display = showRow ? '' : 'none';
-            }
-        }
-
-        function toggleChartFilter(chartType) {
-            showToast(`${chartType.charAt(0).toUpperCase() + chartType.slice(1)} chart filter options`);
-        }
-
-        // Show toast notification
-        function showToast(message, isError = false) {
-            const toast = document.getElementById('toast');
-            const toastMessage = document.getElementById('toast-message');
-            const toastIcon = toast.querySelector('i');
-            
-            if (!toast || !toastMessage) return;
-            
-            toastMessage.textContent = message;
-            
-            if (isError) {
-                toast.classList.add('error');
-                toastIcon.className = 'fas fa-exclamation-circle';
-            } else {
-                toast.classList.remove('error');
-                toastIcon.className = 'fas fa-check-circle';
-            }
-            
-            toast.classList.add('show');
-            
-            setTimeout(() => {
-                toast.classList.remove('show');
-            }, 3000);
-        }
-
-        // Refresh data function
-        async function refreshData() {
-            showToast('Refreshing data...');
-            if (typeof loadStudentData === 'function') {
-                await loadStudentData();
-            }
-            showToast('Data updated');
-        }
-    </script>
-</body>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    <script src="../js/firebase-config.js"></script>
+    <script src="../js/session-manager.js"></script>
+    <script src="student-js/ui.js"></script>
+    <script src="student-js/dashboard.js"></script>
+  </body>
 </html>

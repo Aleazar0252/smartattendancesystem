@@ -4,131 +4,113 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>My Students - Teacher Portal</title>
-
-    <link rel="stylesheet" href="teacher-css/styles.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script> 
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    <link rel="stylesheet" href="teacher-css/styles.css">
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
 </head>
 <body>
 
-    <div id="preloader">
-        <div class="spinner"></div>
-        <div class="loading-text">Loading Data...</div>
-    </div>
+    <div id="preloader"><div class="spinner"></div><div class="loading-text">Loading...</div></div>
+    <div class="overlay" id="mobile-overlay"></div>
 
     <div class="dashboard">
-        
-        <div class="sidebar">
-            <div class="logo">
-                <h1>ZSNHS</h1>
-                <p style="font-size: 0.7rem; color: #ccc;">TEACHER PORTAL</p>
-            </div>
-
+        <div class="sidebar" id="sidebar">
+            <div class="logo"><div class="logo-placeholder">T</div><h1>ZSNHS</h1></div>
             <div class="nav-menu">
-                <h2>Main Menu</h2>
+                <h2>Teacher Menu</h2>
+                
                 <a href="teacher.html" class="nav-item">
-                    <i class="fas fa-th-large"></i> <span>Dashboard</span>
-                </a>
-                <a href="students.html" class="nav-item active"> <i class="fas fa-user-graduate"></i> <span>My Students</span>
-                </a>
-                <a href="schedule.html" class="nav-item">
-                    <i class="fas fa-calendar-alt"></i> <span>Class Schedule</span>
+                    <i class="fas fa-tachometer-alt"></i> <span>Dashboard</span>
                 </a>
 
-                <h2>Account</h2>
-                <a href="profile.html" class="nav-item">
-                    <i class="fas fa-user-circle"></i> <span>My Profile</span>
+                <a href="schedules.html" class="nav-item">
+                    <i class="fas fa-calendar-alt"></i> <span>My Schedules</span>
                 </a>
-                <div style="flex-grow: 1;"></div>
-                <div class="nav-item logout-btn" onclick="window.sessionManager.logout()">
-                    <i class="fas fa-sign-out-alt"></i> <span>Logout</span>
-                </div>
+
+                <a href="students.html" class="nav-item active">
+                    <i class="fas fa-user-graduate"></i> <span>My Students</span>
+                </a>
+
+                <a href="attendance.html" class="nav-item">
+                    <i class="fas fa-clipboard-check"></i> <span>Attendance</span>
+                </a>
+
+                <a href="settings.html" class="nav-item">
+                    <i class="fas fa-cog"></i> <span>Settings</span>
+                </a>
             </div>
+            <div class="logout-container"><button class="logout-btn" onclick="logout()"><i class="fas fa-sign-out-alt"></i> Log out</button></div>
         </div>
 
         <div class="main-content">
-            <header>
-                <div class="header-title">
-                    <h2 id="page-title">My Students</h2>
-                    <span id="current-date" class="date-text">Loading date...</span>
+            <div class="header">
+                <div style="display:flex; align-items:center; gap:15px;">
+                    <i class="fas fa-bars menu-toggle" id="menu-toggle-btn"></i>
+                    <h1>My Students</h1>
                 </div>
                 <div class="user-profile">
-                    <div class="user-info">
-                        <h4 id="teacher-name">Teacher</h4>
-                        <small>Faculty</small>
-                    </div>
-                    <div class="avatar-circle" id="header-avatar">T</div>
-                </div>
-            </header>
-
-            <div class="content-section active">
-                <div class="card-container">
-                    
-                    <div class="section-header" style="margin-bottom: 20px;">
-                        <div class="search-box">
-                            <i class="fas fa-search"></i>
-                            <input type="text" id="student-search" placeholder="Search student name..." onkeyup="filterStudents()">
-                        </div>
-                        
-                        <button class="btn-primary" onclick="openAddModal()">
-                            <i class="fas fa-plus"></i> Add New Student
-                        </button>
-                    </div>
-                    
-                    <div class="table-responsive">
-                        <table class="data-table">
-                            <thead>
-                                <tr>
-                                    <th>Student Name</th>
-                                    <th>Email</th>
-                                    <th>Password</th> <th>Status</th>
-                                    <th>Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody id="students-table-body">
-                                </tbody>
-                        </table>
-                    </div>
+                    <div class="avatar-placeholder">T</div>
+                    <span id="header-user-name">Teacher</span>
                 </div>
             </div>
 
+            <div class="content-section">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <h2 style="color: var(--primary-color)">Student List</h2>
+                    <button class="btn btn-primary" onclick="showAddStudentModal()">
+                        <i class="fas fa-plus"></i> Add Student
+                    </button>
+                </div>
+                
+                <table class="teachers-table">
+                    <thead>
+                        <tr>
+                            <th>LRN</th>
+                            <th>Name</th>
+                            <th>Grade/Section</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="my-students-body">
+                        <tr><td colspan="4" class="loading-cell">Loading students...</td></tr>
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
 
-    <div id="addStudentModal" class="modal">
+    <div id="add-student-modal" class="modal">
         <div class="modal-content">
-            <span class="close-modal" onclick="closeAddModal()">&times;</span>
-            <h2>Add New Student</h2>
-            <form id="addStudentForm">
-                <div class="form-group">
-                    <label>First Name</label>
-                    <input type="text" id="new-firstname" required>
-                </div>
-                <div class="form-group">
-                    <label>Last Name</label>
-                    <input type="text" id="new-lastname" required>
-                </div>
-                <div class="form-group">
-                    <label>Email Address</label>
-                    <input type="email" id="new-email" required>
-                </div>
-                <div class="form-group">
-                    <label>Password</label>
-                    <input type="text" id="new-password" value="student123" required>
-                </div>
-                <button type="submit" class="btn-primary" style="width: 100%; margin-top: 10px;">Save Student</button>
-            </form>
+            <div class="modal-header">
+                <h2>Add Student</h2>
+                <span class="close-modal" onclick="closeModal('add-student-modal')">&times;</span>
+            </div>
+            <div class="modal-body">
+                <form id="add-student-form">
+                    <input type="text" id="new-lrn" class="form-control" placeholder="LRN" required>
+                    <input type="text" id="new-fname" class="form-control" placeholder="First Name" required>
+                    <input type="text" id="new-lname" class="form-control" placeholder="Last Name" required>
+                    
+                    <label style="font-weight:500; display:block; margin-bottom:5px;">Grade & Section (Type to Search)</label>
+                    <input type="text" id="new-section-input" list="sections-list" class="form-control" placeholder="e.g. Grade 7 - Rizal" required>
+                    <datalist id="sections-list"></datalist>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn" onclick="closeModal('add-student-modal')">Cancel</button>
+                <button class="btn btn-primary" onclick="submitNewStudent()">Save</button>
+            </div>
         </div>
     </div>
 
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
     <script src="../js/firebase-config.js"></script>
     <script src="../js/session-manager.js"></script>
-    <script src="../js/session-validator.js"></script>
+    <script src="teacher-js/ui.js"></script>
     <script src="teacher-js/students.js"></script>
-
 </body>
 </html>

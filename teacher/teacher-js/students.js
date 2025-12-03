@@ -1,173 +1,138 @@
-// teacher-js/students.js
-
-let currentUserUid = null; // Store the Teacher's ID
+/**
+ * students.js
+ * Student Management for Teachers
+ * Includes: List View & Add Student Modal with Searchable Section
+ */
 
 document.addEventListener('DOMContentLoaded', () => {
-    initializePage();
+    if (window.sessionManager && window.sessionManager.isLoggedIn()) {
+        const user = window.sessionManager.getSession();
+        document.getElementById('header-user-name').innerText = user.name;
+        loadStudents();
+    }
+    
+    // Close Modal on Click Outside
+    window.onclick = function(event) {
+        const modal = document.getElementById('add-student-modal');
+        if (event.target === modal) {
+            modal.style.display = "none";
+        }
+    }
 });
 
-async function initializePage() {
-    // 1. Check Login
-    if (!window.sessionManager || !sessionManager.isLoggedIn()) {
-        window.location.href = '../login.html';
-        return;
-    }
-
-    // 2. Get Teacher Info
-    const session = sessionManager.getSession();
-    currentUserUid = session.uid; // <--- IMPORTANT: We need this ID to link students
-    
-    // Update Header
-    document.getElementById('teacher-name').textContent = `${session.firstName} ${session.lastName}`;
-    document.getElementById('header-avatar').textContent = session.firstName.charAt(0);
-
-    // 3. Load ONLY My Students
-    await loadMyStudents();
-
-    // 4. Hide Loader
-    const preloader = document.getElementById('preloader');
-    if(preloader) preloader.style.display = 'none';
-}
-
-// --- LOAD STUDENTS (FILTERED) ---
-async function loadMyStudents() {
-    const tbody = document.getElementById('students-table-body');
-    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:20px;">Loading your students...</td></tr>';
-
+// --- 1. LOAD STUDENTS ---
+async function loadStudents() {
+    const tbody = document.getElementById('my-students-body');
     try {
-        console.log("Fetching students for Adviser ID:", currentUserUid);
-
-        // QUERY: Get users who are 'students' AND belong to 'me'
-        const snapshot = await db.collection('users')
+        // Teachers see ALL students (or filter by advisory if you prefer)
+        const snapshot = await window.db.collection('users')
             .where('role', '==', 'student')
-            .where('adviserId', '==', currentUserUid) // <--- THE FILTER
             .get();
-        
-        if (snapshot.empty) {
-            tbody.innerHTML = `
-                <tr>
-                    <td colspan="5" style="text-align:center; padding:30px;">
-                        <div style="color:#888; margin-bottom:10px;"><i class="fas fa-user-graduate" style="font-size:2rem;"></i></div>
-                        <p>No students found in your list.</p>
-                        <button class="btn-primary" onclick="openAddModal()" style="margin:auto; font-size:0.8rem;">
-                            Add Your First Student
-                        </button>
-                    </td>
-                </tr>`;
+
+        tbody.innerHTML = '';
+        if(snapshot.empty) {
+            tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;">No students found.</td></tr>';
             return;
         }
 
-        let html = '';
         snapshot.forEach(doc => {
             const s = doc.data();
-            html += `
+            const row = `
                 <tr>
+                    <td>${s.lrn || 'N/A'}</td>
+                    <td><strong>${s.lastName}, ${s.firstName}</strong></td>
+                    <td>${s.gradeLevel} - ${s.section}</td>
                     <td>
-                        <div style="display: flex; align-items: center; gap: 12px;">
-                            <div class="avatar-sm">${s.firstName.charAt(0)}</div>
-                            <div style="display:flex; flex-direction:column;">
-                                <span style="font-weight:600; font-size:0.95rem;">${s.lastName}, ${s.firstName}</span>
-                            </div>
-                        </div>
-                    </td>
-                    <td>${s.email}</td>
-                    <td style="font-family:monospace; color:#666;">${s.password || '••••••'}</td>
-                    <td><span class="status-badge">Enrolled</span></td>
-                    <td>
-                        <button class="btn-icon" onclick="deleteStudent('${doc.id}')" title="Remove from class">
-                            <i class="fas fa-trash" style="color:#dc3545;"></i>
-                        </button>
+                        <button class="btn-icon"><i class="fas fa-eye"></i></button>
                     </td>
                 </tr>
             `;
+            tbody.innerHTML += row;
         });
-        tbody.innerHTML = html;
 
-    } catch (error) {
-        console.error("Error:", error);
-        // Handle "Missing Index" error gracefully
-        if (error.message.includes("index")) {
-            alert("System Alert: A new database index is required for filtering. Please check the console (F12) and click the link provided by Firebase.");
-        }
-        tbody.innerHTML = '<tr><td colspan="5" style="color:red; text-align:center">Error loading data. Check console.</td></tr>';
+    } catch (e) {
+        console.error(e);
     }
 }
 
-// --- ADD STUDENT (LINKED TO TEACHER) ---
-document.getElementById('addStudentForm').addEventListener('submit', async (e) => {
-    e.preventDefault();
+// --- 2. LOAD SECTIONS FOR DROPDOWN (DATALIST) ---
+async function loadAvailableSections() {
+    const dataList = document.getElementById('sections-list');
+    const input = document.getElementById('new-section-input'); // Ensure you added this ID in HTML
     
-    // Get values
-    const firstName = document.getElementById('new-firstname').value.trim();
-    const lastName = document.getElementById('new-lastname').value.trim();
-    const email = document.getElementById('new-email').value.trim();
-    const password = document.getElementById('new-password').value.trim();
+    // Create datalist if not in HTML yet, or ensure HTML has <datalist id="sections-list">
+    if(!dataList) return; 
 
-    if(!currentUserUid) {
-        alert("Session Error: Cannot identify teacher. Please relogin.");
+    dataList.innerHTML = '';
+    
+    try {
+        const snap = await window.db.collection('sections').orderBy('gradeLevel').get();
+        snap.forEach(doc => {
+            const s = doc.data();
+            const option = document.createElement('option');
+            option.value = `${s.gradeLevel} - ${s.sectionName}`;
+            dataList.appendChild(option);
+        });
+    } catch(e) {
+        console.error("Error loading sections", e);
+    }
+}
+
+// --- 3. ADD STUDENT LOGIC ---
+async function submitNewStudent() {
+    const lrn = document.getElementById('new-lrn').value;
+    const fname = document.getElementById('new-fname').value;
+    const lname = document.getElementById('new-lname').value;
+    
+    // Parse Grade/Section from Input
+    const sectionInput = document.getElementById('new-section-input').value; // Needs to match HTML ID
+    
+    if(!lrn || !fname || !lname || !sectionInput) {
+        alert("Please fill in all fields.");
         return;
     }
 
-    // Submit Button Loading State
-    const btn = e.target.querySelector('button[type="submit"]');
-    const originalText = btn.textContent;
-    btn.textContent = "Saving...";
-    btn.disabled = true;
+    if (!sectionInput.includes(' - ')) {
+        alert("Please select a valid section from the list.");
+        return;
+    }
+
+    const [grade, sectionName] = sectionInput.split(' - ');
 
     try {
-        // SAVE TO FIRESTORE
-        // We add 'adviserId' so we know who this student belongs to.
-        await db.collection('users').add({
-            firstName: firstName,
-            lastName: lastName,
-            email: email,
-            password: password,
-            role: 'student',       // Role is student
-            adviserId: currentUserUid, // <--- LINKS TO THIS TEACHER
-            createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        await window.db.collection('users').add({
+            lrn,
+            firstName: fname,
+            lastName: lname,
+            gradeLevel: grade.trim(),
+            section: sectionName.trim(),
+            role: 'student',
+            password: generatePassword(),
+            createdAt: new Date()
         });
-
-        alert(`✅ Success! ${firstName} has been added to your list.`);
-        closeAddModal();
-        document.getElementById('addStudentForm').reset();
         
-        // Refresh the table
-        loadMyStudents();
-
-    } catch (error) {
-        console.error("Add Error:", error);
-        alert("Error adding student: " + error.message);
-    } finally {
-        btn.textContent = originalText;
-        btn.disabled = false;
-    }
-});
-
-// --- MODAL UTILITIES ---
-window.openAddModal = function() {
-    document.getElementById('addStudentModal').style.display = 'block';
-}
-
-window.closeAddModal = function() {
-    document.getElementById('addStudentModal').style.display = 'none';
-}
-
-window.deleteStudent = async function(docId) {
-    if(confirm("Are you sure you want to remove this student from your class?")) {
-        try {
-            await db.collection('users').doc(docId).delete();
-            loadMyStudents(); // Refresh
-        } catch(e) {
-            alert("Error: " + e.message);
-        }
+        alert("Student Added Successfully!");
+        closeModal('add-student-modal');
+        loadStudents();
+    } catch(e) {
+        alert("Error: " + e.message);
     }
 }
 
-// Search Filter
-window.filterStudents = function() {
-    const q = document.getElementById('student-search').value.toLowerCase();
-    const rows = document.querySelectorAll('#students-table-body tr');
-    rows.forEach(row => {
-        row.style.display = row.innerText.toLowerCase().includes(q) ? '' : 'none';
-    });
+function generatePassword() {
+    return Math.random().toString(36).slice(-8);
 }
+
+// --- UI HELPERS ---
+window.showAddStudentModal = function() {
+    document.getElementById('add-student-form').reset();
+    document.getElementById('add-student-modal').style.display = 'block';
+    
+    // We assume the HTML has the new <input list="sections-list"> structure
+    // If not, you need to update teacher/students.html to match the Admin one
+    loadAvailableSections(); 
+};
+
+window.closeModal = function(id) {
+    document.getElementById(id).style.display = 'none';
+};

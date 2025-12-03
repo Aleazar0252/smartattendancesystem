@@ -1,97 +1,100 @@
 /**
  * attendance.js
- * Manages class selection and student list display
+ * Teacher Attendance Management
  */
 
-let myClasses = [];
-
 document.addEventListener('DOMContentLoaded', () => {
-    if(window.currentUser) {
-        document.getElementById('header-user-name').innerText = window.currentUser.name;
-        loadClassDropdown();
+    if (window.sessionManager && window.sessionManager.isLoggedIn()) {
+        const user = window.sessionManager.getSession();
+        document.getElementById('header-user-name').innerText = user.name;
+        loadClassDropdown(user.uid);
     }
 });
 
-// 1. Load Classes into Dropdown
-async function loadClassDropdown() {
+async function loadClassDropdown(teacherId) {
     const select = document.getElementById('class-select');
-    const db = window.db;
-
+    
     try {
-        // Fetch classes assigned to this teacher
-        const snap = await db.collection('classSessions')
-            .where('teacher', '==', window.currentUser.name)
+        const snap = await window.db.collection('classSessions')
+            .where('teacherId', '==', teacherId)
             .get();
 
-        select.innerHTML = '<option value="">-- Select a Class --</option>';
-        myClasses = [];
-
+        select.innerHTML = '<option value="">-- Select Class --</option>';
+        
         if (snap.empty) {
-            select.innerHTML = '<option value="">No classes assigned</option>';
+            select.innerHTML = '<option>No classes assigned</option>';
             return;
         }
 
+        let addedSections = [];
+        
         snap.forEach(doc => {
             const data = doc.data();
-            myClasses.push(data);
-            const option = document.createElement('option');
-            // Use Section as the value to filter students later
-            option.value = data.section; 
-            option.text = `${data.subject} - ${data.section} (${data.days})`;
-            select.appendChild(option);
+            // Avoid duplicates in dropdown
+            if (!addedSections.includes(data.section)) {
+                addedSections.push(data.section);
+                const option = document.createElement('option');
+                option.value = data.section; // e.g. "Grade 7 - Rizal"
+                option.text = `${data.section} (${data.subject})`;
+                select.appendChild(option);
+            }
         });
 
     } catch (e) {
-        console.error("Error loading classes:", e);
-        select.innerHTML = '<option>Error loading data</option>';
+        console.error(e);
     }
 }
 
-// 2. Load Students when Class is Selected
-async function loadClassList() {
+// Called when dropdown changes
+window.loadClassList = async function() {
     const section = document.getElementById('class-select').value;
     const tbody = document.getElementById('attendance-body');
-    const db = window.db;
+    
+    if (!section) return;
 
-    if (!section) {
-        tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;">Please select a class above.</td></tr>';
-        return;
-    }
-
-    tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;">Loading students...</td></tr>';
+    // Parse "Grade 7 - Rizal" to get section name if needed, 
+    // but usually we store the full string "Grade 7 - Rizal" in user.section
+    // Assuming user.section matches classSessions.section exactly:
 
     try {
-        // Fetch students belonging to the selected section
-        const snap = await db.collection('users')
+        // Query Students in this section
+        // Note: Make sure your User data 'section' field matches the dropdown value format
+        // Ideally: section="Rizal", gradeLevel="Grade 7"
+        
+        // This query might need adjustment depending on exact data format
+        // Here we try searching by the full string first
+        let snap = await window.db.collection('users')
             .where('role', '==', 'student')
-            .where('section', '==', section)
+            .where('section', '==', section.split(' - ')[1].trim()) // Try to get just "Rizal"
             .get();
 
         tbody.innerHTML = '';
-
-        if (snap.empty) {
-            tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;">No students found in this section.</td></tr>';
+        if(snap.empty) {
+            tbody.innerHTML = '<tr><td colspan="3" style="text-align:center;">No students found in this section.</td></tr>';
             return;
         }
 
         snap.forEach(doc => {
             const s = doc.data();
-            tbody.innerHTML += `
+            const row = `
                 <tr>
                     <td><strong>${s.lastName}, ${s.firstName}</strong></td>
                     <td><span class="badge-success" style="background:#d4edda; color:#155724;">Present</span></td>
-                    <td>-</td>
                     <td>
-                        <button class="btn btn-primary" style="padding:5px 10px; font-size:0.8rem;" onclick="alert('Marked Absent: ${s.firstName}')">
+                        <button class="btn btn-primary" style="padding:5px 10px; font-size:0.8rem; background:#dc3545;" onclick="markAbsent('${doc.id}')">
                             Mark Absent
                         </button>
                     </td>
                 </tr>
             `;
+            tbody.innerHTML += row;
         });
 
     } catch (e) {
-        console.error("Error loading students:", e);
-        tbody.innerHTML = '<tr><td colspan="4" style="color:red; text-align:center;">Error loading student list.</td></tr>';
+        console.error("Attendance Load Error:", e);
     }
-}
+};
+
+window.markAbsent = function(studentId) {
+    alert("Marked absent (Demo logic)");
+};

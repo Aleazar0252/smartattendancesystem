@@ -1,11 +1,13 @@
 document.addEventListener('DOMContentLoaded', () => {
-    if(window.currentUser) {
-        document.getElementById('header-user-name').innerText = window.currentUser.name;
+    if (window.sessionManager && window.sessionManager.isLoggedIn()) {
+        const user = window.sessionManager.getSession();
+        document.getElementById('header-user-name').innerText = user.name;
         
-        // Populate fields
-        document.getElementById('prof-lrn').value = window.currentUser.lrn;
-        document.getElementById('prof-name').value = window.currentUser.name;
-        document.getElementById('prof-grade').value = window.currentUser.gradeLevel;
-        document.getElementById('prof-section').value = window.currentUser.section;
+        document.getElementById('profile-fullname').innerText = user.name;
+        document.getElementById('profile-id').innerText = `ID: ${user.uid}`;
+        document.getElementById('prof-grade').value = user.gradeLevel || "N/A";
+        document.getElementById('prof-section').value = user.section || "N/A";
+        document.getElementById('prof-lrn').value = user.lrn || "N/A";
+        document.getElementById('prof-email').value = user.email || "N/A";
     }
 });
