@@ -1,9 +1,12 @@
 /**
  * sections.js
  * Logic for Grade Level & Sections Management
+ * Displays Grade Levels 7-12 explicitly and allows adding sections to them.
  */
 
 let allSections = []; 
+// Define standard Grade Levels
+const STANDARD_GRADES = ["Grade 7", "Grade 8", "Grade 9", "Grade 10", "Grade 11", "Grade 12"];
 
 document.addEventListener('DOMContentLoaded', () => {
     setTimeout(() => {
@@ -31,117 +34,103 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // 1. FETCH DATA
 function loadSectionsFromDB() {
-    const tableBody = document.getElementById('sections-list-body');
+    const container = document.getElementById('grade-levels-container');
     
-    window.db.collection('sections').orderBy('gradeLevel').get()
+    window.db.collection('sections').get()
         .then((querySnapshot) => {
             allSections = [];
             
-            if (querySnapshot.empty) {
-                renderTable([]); 
-                return;
-            }
-
             querySnapshot.forEach((doc) => {
                 const data = doc.data();
                 allSections.push({ docId: doc.id, ...data });
             });
             
-            renderTable(allSections);
+            renderGradeGroups();
         })
         .catch((error) => {
             console.error("Error:", error);
-            tableBody.innerHTML = `<tr><td colspan="3" style="color:red; text-align:center;">Error: ${error.message}</td></tr>`;
+            container.innerHTML = `<p style="color:red;">Error loading sections: ${error.message}</p>`;
         });
 }
 
-// 2. RENDER TABLE
-function renderTable(data) {
-    const tableBody = document.getElementById('sections-list-body');
-    tableBody.innerHTML = '';
-
-    if (data.length === 0) {
-        tableBody.innerHTML = '<tr><td colspan="3" style="text-align:center;">No sections found.</td></tr>';
-        return;
-    }
-
-    // Sort: Grade Level first, then Section Name
-    data.sort((a, b) => {
-        const gradeA = String(a.gradeLevel || '');
-        const gradeB = String(b.gradeLevel || '');
-        
-        if(gradeA === gradeB) {
-            return String(a.sectionName).localeCompare(String(b.sectionName));
-        }
-        return gradeA.localeCompare(gradeB);
-    });
-
-    data.forEach(section => {
-        const row = document.createElement('tr');
-        const gradeStr = String(section.gradeLevel || ''); 
-
-        // Color coding badges for Grades
-        let badgeColor = "#e3f2fd"; 
-        let textColor = "#0d47a1";
-        
-        if(gradeStr.includes('7')) { badgeColor = "#e8f5e9"; textColor = "#1b5e20"; } 
-        if(gradeStr.includes('8')) { badgeColor = "#fff3e0"; textColor = "#e65100"; }
-        if(gradeStr.includes('9')) { badgeColor = "#f3e5f5"; textColor = "#4a148c"; }
-        if(gradeStr.includes('10')) { badgeColor = "#ffebee"; textColor = "#b71c1c"; }
-        if(gradeStr.includes('11') || gradeStr.includes('12')) { badgeColor = "#fff8e1"; textColor = "#ff6f00"; }
-
-        row.innerHTML = `
-            <td><span class="badge-success" style="background:${badgeColor}; color:${textColor}; border:none;">${gradeStr}</span></td>
-            <td><strong>${section.sectionName}</strong></td>
-            <td style="text-align: right;">
-                <div class="action-menu-container">
-                    <button class="btn-icon" onclick="toggleActionMenu('menu-${section.docId}')">
-                        <i class="fas fa-ellipsis-v"></i>
-                    </button>
-                    <div id="menu-${section.docId}" class="action-dropdown">
-                        <div onclick="openSectionModal('${section.docId}')">
-                            <i class="fas fa-edit" style="color:#007bff"></i> Edit
-                        </div>
-                        <div onclick="deleteSection('${section.docId}')">
-                            <i class="fas fa-trash" style="color:#dc3545"></i> Delete
-                        </div>
-                    </div>
-                </div>
-            </td>
-        `;
-        tableBody.appendChild(row);
-    });
-}
-
-// 3. FILTER FUNCTION
-function filterSections() {
-    const gradeFilter = document.getElementById('filter-grade').value; 
+// 2. RENDER GROUPS (Grade 7 - 12)
+function renderGradeGroups() {
+    const container = document.getElementById('grade-levels-container');
     const searchInput = document.getElementById('search-input').value.toLowerCase();
     
-    const filtered = allSections.filter(section => {
-        const dbGrade = String(section.gradeLevel || ''); 
+    container.innerHTML = '';
+
+    STANDARD_GRADES.forEach(grade => {
+        // Filter sections that belong to this grade AND match search
+        const gradeSections = allSections.filter(s => {
+            const matchesGrade = s.gradeLevel === grade;
+            const matchesSearch = s.sectionName.toLowerCase().includes(searchInput);
+            return matchesGrade && matchesSearch;
+        });
+
+        // Sort sections alphabetically
+        gradeSections.sort((a, b) => a.sectionName.localeCompare(b.sectionName));
+
+        // Build HTML for the Grade Group
+        const groupDiv = document.createElement('div');
+        groupDiv.className = 'grade-group-card';
         
-        // Matches Grade?
-        const matchesGrade = (gradeFilter === 'All') || (dbGrade === gradeFilter);
-        
-        // Matches Name?
-        const secName = String(section.sectionName || '').toLowerCase();
-        const matchesSearch = secName.includes(searchInput);
-        
-        return matchesGrade && matchesSearch;
+        let sectionsHtml = '';
+
+        if (gradeSections.length === 0) {
+            sectionsHtml = `<div class="empty-message">No sections added yet.</div>`;
+        } else {
+            sectionsHtml = `<div class="grade-body">`;
+            gradeSections.forEach(section => {
+                sectionsHtml += `
+                    <div class="section-item">
+                        <span>${section.sectionName}</span>
+                        <div class="action-menu-container" style="display:inline-block;">
+                            <button class="btn-icon" onclick="toggleActionMenu('menu-${section.docId}')">
+                                <i class="fas fa-ellipsis-v"></i>
+                            </button>
+                            <div id="menu-${section.docId}" class="action-dropdown">
+                                <div onclick="openSectionModal('${grade}', '${section.docId}')">
+                                    <i class="fas fa-edit" style="color:#007bff"></i> Edit
+                                </div>
+                                <div onclick="deleteSection('${section.docId}')">
+                                    <i class="fas fa-trash" style="color:#dc3545"></i> Delete
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            sectionsHtml += `</div>`;
+        }
+
+        groupDiv.innerHTML = `
+            <div class="grade-header">
+                <h3>${grade}</h3>
+                <button class="btn btn-primary" style="padding: 5px 12px; font-size: 0.8rem;" onclick="openSectionModal('${grade}')">
+                    <i class="fas fa-plus"></i> Add Section
+                </button>
+            </div>
+            ${sectionsHtml}
+        `;
+
+        container.appendChild(groupDiv);
     });
-    
-    renderTable(filtered);
 }
 
-// 4. SAVE
+// 3. FILTER WRAPPER
+function filterGroups() {
+    renderGradeGroups();
+}
+
+// 4. SAVE (Add/Edit)
 function saveSection() {
     const docId = document.getElementById('edit-doc-id').value;
-    const grade = document.getElementById('sec-grade').value;
+    const grade = document.getElementById('sec-grade-value').value;
     const name = document.getElementById('sec-name').value;
 
-    if(!grade || !name) {
-        alert("Please fill in Grade Level and Section Name");
+    if(!name) {
+        alert("Please enter a Section Name");
         return;
     }
 
@@ -165,7 +154,7 @@ function saveSection() {
     }
 
     promise.then(() => {
-        alert(docId ? "Section updated!" : "Section added!");
+        alert(docId ? "Section updated!" : "Section added to " + grade + "!");
         closeModal('section-modal');
         loadSectionsFromDB();
     }).catch((err) => {
@@ -186,25 +175,32 @@ function deleteSection(docId) {
 }
 
 // 6. UI HELPERS
-function openSectionModal(docId = null) {
+function openSectionModal(gradeLevel, docId = null) {
     const modal = document.getElementById('section-modal');
     const title = document.getElementById('modal-title');
     const form = document.getElementById('section-form');
     
+    // Set the Grade Level (Fixed for this modal session)
+    document.getElementById('sec-grade-display').value = gradeLevel;
+    document.getElementById('sec-grade-value').value = gradeLevel;
+
     if (docId) {
-        // EDIT
+        // EDIT MODE
         const section = allSections.find(s => s.docId === docId);
         if(section) {
             document.getElementById('edit-doc-id').value = docId;
-            document.getElementById('sec-grade').value = section.gradeLevel;
             document.getElementById('sec-name').value = section.sectionName;
             title.innerText = "Edit Section";
         }
     } else {
-        // ADD
+        // ADD MODE
         form.reset();
+        // Resetting form clears hidden inputs, so re-set the grade
+        document.getElementById('sec-grade-display').value = gradeLevel;
+        document.getElementById('sec-grade-value').value = gradeLevel;
+        
         document.getElementById('edit-doc-id').value = "";
-        title.innerText = "Add New Section";
+        title.innerText = "Add Section to " + gradeLevel;
     }
     
     modal.style.display = 'block';

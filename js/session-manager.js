@@ -1,110 +1,97 @@
-// js/session-manager.js
+/**
+ * session-manager.js
+ * Handles Session Logic and Folder Redirections
+ */
 
 class SessionManager {
     constructor() {
-        this.sessionKey = "zsnhs_session_user";
-        this.sessionDurations = {
-            admin: 24 * 60 * 60 * 1000,
-            teacher: 12 * 60 * 60 * 1000,
-            student: 8 * 60 * 60 * 1000
-        };
+        this.sessionKey = 'zsnhs_user'; // Standardized key
     }
 
-    /**
-     * CUSTOM LOGIN: CHECKS FIRESTORE COLLECTION DIRECTLY
-     */
-    async login(email, password) {
+    // 1. Create Session
+    createSession(userData) {
         try {
-            console.log(`Searching in 'users' collection for: ${email}`);
-
-            // 1. QUERY THE COLLECTION DIRECTLY
-            // We look for a document where BOTH email and password match
-            const querySnapshot = await firebase.firestore()
-                .collection("users")
-                .where("email", "==", email)
-                .where("password", "==", password) // checking the stored password
-                .get();
-
-            // 2. CHECK IF FOUND
-            if (querySnapshot.empty) {
-                console.warn("No matching user found in collection.");
-                throw new Error("Incorrect email or password.");
-            }
-
-            // 3. GET USER DATA
-            // Since emails are unique, we take the first match
-            const userDoc = querySnapshot.docs[0]; 
-            const userData = userDoc.data();
-            const userId = userDoc.id;
-
-            console.log("User found!", userData);
-
-            // 4. PREPARE SESSION DATA
-            const rawRole = userData.role || "student";
-            const userRole = rawRole.toLowerCase().trim();
-
-            const sessionPayload = {
-                uid: userId, // The Firestore Document ID
+            const sessionData = {
+                uid: userData.id || userData.userId, // Handle both ID formats
+                docId: userData.id,
+                name: userData.name || `${userData.firstName} ${userData.lastName}`,
                 email: userData.email,
-                role: userRole,
-                firstName: userData.firstName || "User",
-                lastName: userData.lastName || "",
+                role: (userData.role || 'student').toLowerCase(),
+                section: userData.section || null,
+                gradeLevel: userData.gradeLevel || null,
                 isLoggedIn: true,
-                sessionCreated: Date.now(),
-                sessionExpires: Date.now() + (this.sessionDurations[userRole] || 8 * 60 * 60 * 1000)
+                loginTime: new Date().getTime()
             };
-
-            // 5. SAVE SESSION
-            this.saveSession(sessionPayload);
-            return sessionPayload;
-
+            
+            sessionStorage.setItem(this.sessionKey, JSON.stringify(sessionData));
+            
+            // Set global variable immediately for the current page
+            window.currentUser = sessionData;
+            
+            console.log(`✅ Session created for: ${sessionData.email} (${sessionData.role})`);
+            return true;
         } catch (error) {
-            console.error("Login Error:", error);
-            throw error;
-        }
-    }
-
-    // --- KEEP THESE UTILITIES THE SAME ---
-
-    saveSession(sessionData) {
-        sessionStorage.setItem(this.sessionKey, JSON.stringify(sessionData));
-        localStorage.setItem(this.sessionKey, JSON.stringify(sessionData));
-    }
-
-    getSession() {
-        const data = sessionStorage.getItem(this.sessionKey) || localStorage.getItem(this.sessionKey);
-        return data ? JSON.parse(data) : null;
-    }
-
-    isLoggedIn() {
-        const session = this.getSession();
-        if (!session || !session.isLoggedIn) return false;
-        if (Date.now() > session.sessionExpires) {
-            this.logout();
+            console.error('❌ Error creating session:', error);
             return false;
         }
-        return true;
     }
 
+    // 2. Get Session
+    getSession() {
+        try {
+            const data = sessionStorage.getItem(this.sessionKey);
+            return data ? JSON.parse(data) : null;
+        } catch (error) {
+            return null;
+        }
+    }
+
+    // 3. Check Login Status
+    isLoggedIn() {
+        return !!this.getSession();
+    }
+
+    // 4. Get Correct URL (FIXED FOLDER PATHS)
+    getDashboardUrl(role) {
+        const r = role.toLowerCase();
+        
+        // These paths assume you are currently at the root (index.html)
+        const dashboards = {
+            'admin': 'admin/admin.html',
+            'teacher': 'teacher/teacher.html',     // Points to folder/file
+            'student': 'student/student.html',     // Points to folder/file
+            'parent': 'parent/parent.html',        // Points to folder/file
+            'guidance': 'guidance/guidance.html'   // Points to folder/file
+        };
+        
+        return dashboards[r] || 'index.html';
+    }
+
+    // 5. Logout
     logout() {
-        // We don't need firebase.auth().signOut() anymore
         sessionStorage.removeItem(this.sessionKey);
         localStorage.removeItem(this.sessionKey);
-        window.location.href = "../login.html"; 
-    }
-
-    getRedirectUrl(role) {
-        const r = role ? role.toLowerCase() : "";
-        switch (r) {
-            case "admin": return "admin/admin.html";
-            case "teacher": return "teacher/teacher.html";
-            case "student": return "student/student.html";
-            case "parent": return "parent/parent.html";
-            case "guidance": return "guidance/guidance.html";
-            default: return "homepage.html";
+        
+        // Check if we are inside a subfolder
+        const path = window.location.pathname;
+        if (path.includes('/admin/') || path.includes('/teacher/') || 
+            path.includes('/student/') || path.includes('/parent/') || 
+            path.includes('/guidance/')) {
+            window.location.href = '../index.html'; 
+        } else {
+            window.location.href = 'index.html'; 
         }
     }
 }
 
 // Initialize
 window.sessionManager = new SessionManager();
+
+// Auto-restore on load
+document.addEventListener('DOMContentLoaded', () => {
+    const session = window.sessionManager.getSession();
+    if(session) {
+        window.currentUser = session;
+        console.log("Session restored for:", session.name);
+    }
+});

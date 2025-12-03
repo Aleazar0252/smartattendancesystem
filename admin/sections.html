@@ -15,6 +15,53 @@
       href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Playfair+Display:wght@700&display=swap"
       rel="stylesheet"
     />
+    <style>
+        /* Specific styles for the Grade Groups */
+        .grade-group-card {
+            background: #fff;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            overflow: hidden;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        .grade-header {
+            background-color: #f8f9fa;
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        .grade-header h3 {
+            margin: 0;
+            color: var(--primary-color);
+            font-size: 1.1rem;
+        }
+        .grade-body {
+            padding: 0;
+        }
+        .section-item {
+            padding: 12px 20px;
+            border-bottom: 1px solid #f0f0f0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: background 0.2s;
+        }
+        .section-item:last-child {
+            border-bottom: none;
+        }
+        .section-item:hover {
+            background-color: #fafafa;
+        }
+        .empty-message {
+            padding: 20px;
+            text-align: center;
+            color: #888;
+            font-style: italic;
+        }
+    </style>
   </head>
   <body>
     <div class="overlay" id="mobile-overlay"></div>
@@ -33,17 +80,11 @@
         <div class="nav-menu">
           <h2>Dashboard</h2>
 
-          <div
-            class="nav-item"
-            onclick="window.location.href='admin.html'"
-          >
+          <div class="nav-item" onclick="window.location.href='admin.html'">
             <i class="fas fa-tachometer-alt"></i> <span>Overview</span>
           </div>
 
-          <div
-            class="nav-item"
-            onclick="toggleDropdown('academics-dropdown', this)"
-          >
+          <div class="nav-item" onclick="toggleDropdown('academics-dropdown', this)">
             <div style="display: flex; align-items: center; gap: 15px">
               <i class="fas fa-graduation-cap"></i>
               <span>Academics</span>
@@ -53,9 +94,7 @@
           <div class="nav-dropdown" id="academics-dropdown">
             <a href="teachers.html" class="nav-sub-item">Teacher Management</a>
             <a href="subjects.html" class="nav-sub-item">Subjects</a>
-            <a href="sections.html" class="nav-sub-item active"
-              >Grade Level & Sections</a
-            >
+            <a href="sections.html" class="nav-sub-item active">Grade Level & Sections</a>
             <a href="schedules.html" class="nav-sub-item">Class Schedules</a>
           </div>
 
@@ -86,7 +125,7 @@
       <div class="main-content">
         <div class="header">
           <i class="fas fa-bars menu-toggle" id="menu-toggle-btn"></i>
-          <h1>Grade Levels and Sections</h1>
+          <h1>Grade Levels & Sections</h1>
           <div class="user-profile">
             <div class="avatar-placeholder">A</div>
             <span>Admin</span>
@@ -94,71 +133,23 @@
         </div>
 
         <div class="content-section">
-          <div
-            style="
-              display: flex;
-              justify-content: space-between;
-              align-items: center;
-              margin-bottom: 20px;
-              flex-wrap: wrap;
-              gap: 10px;
-            "
-          >
-            <h2 style="color: var(--primary-color)">Sections List</h2>
-
-            <div style="display: flex; gap: 10px; align-items: center">
-              <select
-                id="filter-grade"
-                onchange="filterSections()"
-                style="
-                  padding: 10px;
-                  border: 1px solid #ddd;
-                  border-radius: 5px;
-                  cursor: pointer;
-                "
-              >
-                <option value="All">All Grade Levels</option>
-                <option value="Grade 7">Grade 7</option>
-                <option value="Grade 8">Grade 8</option>
-                <option value="Grade 9">Grade 9</option>
-                <option value="Grade 10">Grade 10</option>
-                <option value="Grade 11">Grade 11</option>
-                <option value="Grade 12">Grade 12</option>
-              </select>
-
-              <input
-                type="text"
-                id="search-input"
-                onkeyup="filterSections()"
-                placeholder="Search Section..."
-                style="
-                  padding: 10px;
-                  border: 1px solid #ddd;
-                  border-radius: 5px;
-                  width: 200px;
-                "
-              />
-
-              <button class="btn btn-primary" onclick="openSectionModal()">
-                <i class="fas fa-plus"></i> Add Section
-              </button>
+          <div style="margin-bottom: 20px;">
+            <p style="color:#666;">Manage sections for each Grade Level below. Grade levels are fixed (7-12).</p>
+            <div style="display: flex; justify-content: flex-end;">
+                 <input
+                    type="text"
+                    id="search-input"
+                    onkeyup="filterGroups()"
+                    placeholder="Search Section Name..."
+                    style="padding: 10px; border: 1px solid #ddd; border-radius: 5px; width: 250px;"
+                  />
             </div>
           </div>
 
-          <table class="teachers-table">
-            <thead>
-              <tr>
-                <th>Grade Level</th>
-                <th>Section Name</th>
-                <th style="text-align: right">Actions</th>
-              </tr>
-            </thead>
-            <tbody id="sections-list-body">
-              <tr>
-                <td colspan="3" class="loading-cell">Loading sections...</td>
-              </tr>
-            </tbody>
-          </table>
+          <div id="grade-levels-container">
+              <div class="loading-cell">Loading Grade Levels...</div>
+          </div>
+
         </div>
       </div>
     </div>
@@ -167,27 +158,16 @@
       <div class="modal-content">
         <div class="modal-header">
           <h2 id="modal-title">Add New Section</h2>
-          <span class="close-modal" onclick="closeModal('section-modal')"
-            >&times;</span
-          >
+          <span class="close-modal" onclick="closeModal('section-modal')">&times;</span>
         </div>
         <div class="modal-body">
-          <form
-            id="section-form"
-            onsubmit="event.preventDefault(); saveSection();"
-          >
+          <form id="section-form" onsubmit="event.preventDefault(); saveSection();">
             <input type="hidden" id="edit-doc-id" />
 
             <div class="form-group">
               <label>Grade Level</label>
-              <select id="sec-grade" class="form-control">
-                <option value="Grade 7">Grade 7</option>
-                <option value="Grade 8">Grade 8</option>
-                <option value="Grade 9">Grade 9</option>
-                <option value="Grade 10">Grade 10</option>
-                <option value="Grade 11">Grade 11</option>
-                <option value="Grade 12">Grade 12</option>
-              </select>
+              <input type="text" id="sec-grade-display" class="form-control" readonly style="background-color: #e9ecef;">
+              <input type="hidden" id="sec-grade-value"> 
             </div>
 
             <div class="form-group">
@@ -203,12 +183,8 @@
           </form>
         </div>
         <div class="modal-footer">
-          <button class="btn" onclick="closeModal('section-modal')">
-            Cancel
-          </button>
-          <button class="btn btn-primary" onclick="saveSection()">
-            Save Section
-          </button>
+          <button class="btn" onclick="closeModal('section-modal')">Cancel</button>
+          <button class="btn btn-primary" onclick="saveSection()">Save Section</button>
         </div>
       </div>
     </div>

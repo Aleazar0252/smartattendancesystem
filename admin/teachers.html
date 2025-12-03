@@ -25,9 +25,9 @@
     <div class="dashboard">
       <div class="sidebar" id="sidebar">
         <div class="logo">
-                <img src="../img/zsnhs.jpg" class="logo-placeholder hover-zoom">
-                <h1>ZSNHS</h1>
-            </div>
+            <div class="logo-placeholder">ZSNHS</div>
+            <h1>ZSNHS</h1>
+        </div>
 
         <div class="nav-menu">
           <h2>Dashboard</h2>
@@ -137,59 +137,34 @@
       <div class="modal-content">
         <div class="modal-header">
           <h2>Add New Teacher</h2>
-          <span class="close-modal" onclick="closeModal('add-teacher-modal')"
-            >&times;</span
-          >
+          <span class="close-modal" onclick="closeModal('add-teacher-modal')">&times;</span>
         </div>
         <div class="modal-body">
-          <form
-            id="add-teacher-form"
-            onsubmit="event.preventDefault(); addNewTeacher();"
-          >
+          <form id="add-teacher-form" onsubmit="event.preventDefault(); addNewTeacher();">
+            
             <div class="form-group">
-              <label>Teacher ID (Auto-Generated)</label>
+              <label>Teacher ID (Manual)</label>
               <input
                 type="text"
                 id="new-id"
                 class="form-control"
-                readonly
-                style="
-                  background-color: #e9ecef;
-                  cursor: default;
-                  font-weight: bold;
-                  color: #333;
-                  pointer-events: none;
-                "
+                placeholder="e.g. T-2023-001"
+                required
               />
             </div>
 
             <div class="form-row" style="display: flex; gap: 10px">
               <div class="form-group" style="flex: 1">
                 <label>First Name</label>
-                <input
-                  type="text"
-                  id="new-firstname"
-                  class="form-control"
-                  required
-                />
+                <input type="text" id="new-firstname" class="form-control" required />
               </div>
               <div class="form-group" style="flex: 1">
                 <label>Middle Name</label>
-                <input
-                  type="text"
-                  id="new-middlename"
-                  class="form-control"
-                  placeholder="Optional"
-                />
+                <input type="text" id="new-middlename" class="form-control" placeholder="Optional" />
               </div>
               <div class="form-group" style="flex: 1">
                 <label>Last Name</label>
-                <input
-                  type="text"
-                  id="new-lastname"
-                  class="form-control"
-                  required
-                />
+                <input type="text" id="new-lastname" class="form-control" required />
               </div>
             </div>
 
@@ -203,12 +178,8 @@
                 onkeyup="validateEmailInput()"
                 required
               />
-              <small
-                id="email-error"
-                style="color: #dc3545; font-size: 0.8rem; display: none"
-              >
-                <i class="fas fa-exclamation-circle"></i> Invalid format. Must
-                end with <strong>@gmail.com</strong>
+              <small id="email-error" style="color: #dc3545; font-size: 0.8rem; display: none">
+                <i class="fas fa-exclamation-circle"></i> Invalid format. Must end with <strong>@gmail.com</strong>
               </small>
             </div>
 
@@ -218,27 +189,19 @@
                 type="number"
                 id="new-phone"
                 class="form-control"
-                placeholder="639xxxxxxxxx"
+                placeholder="09xxxxxxxxx"
                 onkeyup="validatePhoneInput()"
                 required
               />
-              <small
-                id="phone-error"
-                style="color: #dc3545; font-size: 0.8rem; display: none"
-              >
-                <i class="fas fa-exclamation-circle"></i> Invalid format. Must
-                be exactly <strong>11 digits</strong>.
+              <small id="phone-error" style="color: #dc3545; font-size: 0.8rem; display: none">
+                <i class="fas fa-exclamation-circle"></i> Invalid format. Must be exactly <strong>11 digits</strong>.
               </small>
             </div>
           </form>
         </div>
         <div class="modal-footer">
-          <button class="btn" onclick="closeModal('add-teacher-modal')">
-            Cancel
-          </button>
-          <button class="btn btn-primary" onclick="addNewTeacher()">
-            Save Teacher
-          </button>
+          <button class="btn" onclick="closeModal('add-teacher-modal')">Cancel</button>
+          <button class="btn btn-primary" onclick="addNewTeacher()">Save Teacher</button>
         </div>
       </div>
     </div>
@@ -247,21 +210,13 @@
       <div class="modal-content">
         <div class="modal-header">
           <h2>Teacher Details</h2>
-          <span class="close-modal" onclick="closeModal('view-teacher-modal')"
-            >&times;</span
-          >
+          <span class="close-modal" onclick="closeModal('view-teacher-modal')">&times;</span>
         </div>
         <div class="modal-body">
           <div class="profile-view">
             <div class="profile-avatar-large" id="view-avatar"></div>
-            <h3
-              id="view-fullname"
-              style="color: var(--text-dark); margin-bottom: 5px"
-            ></h3>
-            <span
-              id="view-id"
-              style="color: var(--text-light); font-size: 0.9rem"
-            ></span>
+            <h3 id="view-fullname" style="color: var(--text-dark); margin-bottom: 5px"></h3>
+            <span id="view-id" style="color: var(--text-light); font-size: 0.9rem"></span>
           </div>
 
           <div class="detail-row">
@@ -281,25 +236,8 @@
 
           <div class="detail-row" style="align-items: center">
             <span class="detail-label">Password:</span>
-            <span
-              class="detail-value"
-              id="view-password"
-              style="
-                font-family: monospace;
-                letter-spacing: 1px;
-                color: #d63384;
-                font-weight: bold;
-                margin-right: 10px;
-              "
-            >
-              ********
-            </span>
-            <i
-              class="fas fa-eye"
-              id="toggle-password-btn"
-              onclick="togglePasswordView()"
-              style="cursor: pointer; color: #666"
-            ></i>
+            <span class="detail-value" id="view-password" style="font-family: monospace; letter-spacing: 1px; color: #d63384; font-weight: bold; margin-right: 10px;">********</span>
+            <i class="fas fa-eye" id="toggle-password-btn" onclick="togglePasswordView()" style="cursor: pointer; color: #666"></i>
           </div>
 
           <div class="detail-row">
@@ -313,9 +251,7 @@
           </div>
         </div>
         <div class="modal-footer">
-          <button class="btn" onclick="closeModal('view-teacher-modal')">
-            Close
-          </button>
+          <button class="btn" onclick="closeModal('view-teacher-modal')">Close</button>
         </div>
       </div>
     </div>
@@ -324,19 +260,13 @@
       <div class="modal-content" style="max-width: 700px">
         <div class="modal-header">
           <h2 id="schedules-modal-title">Class Schedules</h2>
-          <span class="close-modal" onclick="closeModal('view-schedules-modal')"
-            >&times;</span
-          >
+          <span class="close-modal" onclick="closeModal('view-schedules-modal')">&times;</span>
         </div>
         <div class="modal-body">
           <div id="schedules-loading" style="text-align: center; padding: 20px">
             <i class="fas fa-spinner fa-spin"></i> Loading schedules...
           </div>
-          <table
-            class="teachers-table"
-            id="teacher-schedules-table"
-            style="display: none; width: 100%; margin-top: 0"
-          >
+          <table class="teachers-table" id="teacher-schedules-table" style="display: none; width: 100%; margin-top: 0">
             <thead>
               <tr>
                 <th>Subject</th>
@@ -346,22 +276,12 @@
             </thead>
             <tbody id="teacher-schedules-body"></tbody>
           </table>
-          <p
-            id="schedules-empty"
-            style="
-              display: none;
-              text-align: center;
-              color: #666;
-              padding: 20px;
-            "
-          >
+          <p id="schedules-empty" style="display: none; text-align: center; color: #666; padding: 20px;">
             No schedules assigned to this teacher.
           </p>
         </div>
         <div class="modal-footer">
-          <button class="btn" onclick="closeModal('view-schedules-modal')">
-            Close
-          </button>
+          <button class="btn" onclick="closeModal('view-schedules-modal')">Close</button>
         </div>
       </div>
     </div>

@@ -25,9 +25,9 @@
     <div class="dashboard">
       <div class="sidebar" id="sidebar">
         <div class="logo">
-                <img src="../img/zsnhs.jpg" class="logo-placeholder hover-zoom">
-                <h1>ZSNHS</h1>
-            </div>
+            <div class="logo-placeholder">ZSNHS</div>
+            <h1>ZSNHS</h1>
+        </div>
 
         <div class="nav-menu">
           <h2>Dashboard</h2>
@@ -85,30 +85,11 @@
         </div>
 
         <div class="content-section">
-          <div
-            style="
-              display: flex;
-              justify-content: space-between;
-              align-items: center;
-              margin-bottom: 20px;
-              flex-wrap: wrap;
-              gap: 10px;
-            "
-          >
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px;">
             <h2 style="color: var(--primary-color)">Master Schedule</h2>
 
             <div style="display: flex; gap: 10px; align-items: center">
-              <select
-                id="filter-grade"
-                onchange="filterSchedules()"
-                style="
-                  padding: 10px;
-                  border: 1px solid #ddd;
-                  border-radius: 5px;
-                  cursor: pointer;
-                  background: #fff;
-                "
-              >
+              <select id="filter-grade" onchange="filterSchedules()" style="padding: 10px; border: 1px solid #ddd; border-radius: 5px; cursor: pointer; background: #fff;">
                 <option value="All">All Levels</option>
                 <option value="Grade 7">Grade 7</option>
                 <option value="Grade 8">Grade 8</option>
@@ -118,18 +99,7 @@
                 <option value="Grade 12">Grade 12</option>
               </select>
 
-              <input
-                type="text"
-                id="search-input"
-                onkeyup="filterSchedules()"
-                placeholder="Search Teacher, Subject, or Section..."
-                style="
-                  padding: 10px;
-                  border: 1px solid #ddd;
-                  border-radius: 5px;
-                  width: 250px;
-                "
-              />
+              <input type="text" id="search-input" onkeyup="filterSchedules()" placeholder="Search Teacher, Subject, or Section..." style="padding: 10px; border: 1px solid #ddd; border-radius: 5px; width: 250px;" />
 
               <button class="btn btn-primary" onclick="openScheduleModal()">
                 <i class="fas fa-plus"></i> Add Schedule
@@ -161,92 +131,50 @@
       <div class="modal-content">
         <div class="modal-header">
           <h2 id="modal-title">Add Class Schedule</h2>
-          <span class="close-modal" onclick="closeModal('schedule-modal')"
-            >&times;</span
-          >
+          <span class="close-modal" onclick="closeModal('schedule-modal')">&times;</span>
         </div>
         <div class="modal-body">
-          <form
-            id="schedule-form"
-            onsubmit="event.preventDefault(); saveSchedule();"
-          >
+          <form id="schedule-form" onsubmit="event.preventDefault(); saveSchedule();">
             <input type="hidden" id="edit-doc-id" />
 
             <div class="form-group">
-              <label>Grade & Section</label>
-              <select id="sel-section" class="form-control" required>
-                <option value="">Loading Sections...</option>
-              </select>
+              <label>Grade & Section (Type to Search)</label>
+              <input type="text" id="sel-section" list="list-section" class="form-control" placeholder="e.g. Grade 7 - Rizal" required autocomplete="off">
+              <datalist id="list-section"></datalist>
             </div>
 
             <div class="form-group">
-              <label>Subject</label>
-              <select id="sel-subject" class="form-control" required>
-                <option value="">Loading Subjects...</option>
-              </select>
+              <label>Subject (Type to Search)</label>
+              <input type="text" id="sel-subject" list="list-subject" class="form-control" placeholder="e.g. Mathematics" required autocomplete="off">
+              <datalist id="list-subject"></datalist>
             </div>
 
             <div class="form-group">
-              <label>Teacher</label>
-              <select id="sel-teacher" class="form-control" required>
-                <option value="">Loading Teachers...</option>
-              </select>
+              <label>Teacher (Type to Search)</label>
+              <input type="text" id="sel-teacher" list="list-teacher" class="form-control" placeholder="e.g. Juan Dela Cruz" required autocomplete="off">
+              <datalist id="list-teacher"></datalist>
             </div>
 
             <div class="form-group">
               <label>Day(s)</label>
-              <input
-                type="text"
-                class="form-control"
-                value="Daily (Mon-Fri)"
-                readonly
-                style="
-                  background-color: #e9ecef;
-                  color: #495057;
-                  cursor: not-allowed;
-                "
-              />
+              <input type="text" class="form-control" value="Daily (Mon-Fri)" readonly style="background-color: #e9ecef; color: #495057; cursor: not-allowed;" />
             </div>
 
             <div class="form-group" style="display: flex; gap: 15px">
               <div style="flex: 1">
-                <label
-                  >Start Time
-                  <small style="color: #666; font-weight: normal"
-                    >(AM/PM)</small
-                  ></label
-                >
-                <input
-                  type="time"
-                  id="sched-start"
-                  class="form-control"
-                  required
-                />
+                <label>Start Time <small style="color: #666; font-weight: normal">(AM/PM)</small></label>
+                <input type="time" id="sched-start" class="form-control" required />
               </div>
               <div style="flex: 1">
-                <label
-                  >End Time
-                  <small style="color: #666; font-weight: normal"
-                    >(AM/PM)</small
-                  ></label
-                >
-                <input
-                  type="time"
-                  id="sched-end"
-                  class="form-control"
-                  required
-                />
+                <label>End Time <small style="color: #666; font-weight: normal">(AM/PM)</small></label>
+                <input type="time" id="sched-end" class="form-control" required />
               </div>
             </div>
           </form>
         </div>
         <div class="modal-footer">
-          <button class="btn" onclick="closeModal('schedule-modal')">
-            Cancel
-          </button>
-          <button class="btn btn-primary" onclick="saveSchedule()">
-            Save Schedule
-          </button>
+          <button class="btn" onclick="closeModal('schedule-modal')">Cancel</button>
+          <button class="btn btn-primary" onclick="saveSchedule()">Save Schedule</button>
         </div>
       </div>
     </div>

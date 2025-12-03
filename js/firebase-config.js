@@ -1,5 +1,7 @@
-// js/firebase-config.js
-
+/**
+ * firebase-config.js
+ * Standardizes the database connection as 'window.db'
+ */
 const firebaseConfig = {
     apiKey: "AIzaSyDlClfbOSKAhalafAQ4ptMRCHkaG-DxDd8",
     authDomain: "zsnhs-24e44.firebaseapp.com",
@@ -11,17 +13,13 @@ const firebaseConfig = {
     measurementId: "G-C9JMD4C5WB"
 };
 
-// Initialize Firebase
+// Initialize only if not already initialized
 if (!firebase.apps.length) {
     firebase.initializeApp(firebaseConfig);
 }
 
-// Initialize Services
-const auth = firebase.auth();
-const db = firebase.firestore();
+// Standardize the variable name to window.db
+window.db = firebase.firestore();
+window.firestoreDb = window.db; // Compatibility for your other scripts
 
-// Make them available globally
-window.auth = auth;
-window.db = db;
-
-console.log("✅ Firebase Initialized");
+console.log("Firebase initialized. Database available at window.db");

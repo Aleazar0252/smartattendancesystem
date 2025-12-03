@@ -1,108 +1,155 @@
-// login.js
+/**
+ * login.js
+ * Connects Login Form to Firestore
+ */
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('🚀 Login page loaded');
     
-    // Check if already logged in (Auto-Redirect)
+    // Check if DB is ready (it should be if firebase-config.js is loaded)
+    if (window.db) {
+        initializeLoginPage();
+    } else {
+        // Fallback wait
+        setTimeout(() => {
+            if(window.db) initializeLoginPage();
+            else console.error("Database failed to load.");
+        }, 1000);
+    }
+});
+
+function initializeLoginPage() {
+    // Check if already logged in
     if (window.sessionManager && window.sessionManager.isLoggedIn()) {
-        const user = window.sessionManager.getSession();
-        const url = window.sessionManager.getRedirectUrl(user.role);
-        window.location.href = url;
+        const session = window.sessionManager.getSession();
+        console.log('User already logged in. Redirecting...');
+        window.location.href = window.sessionManager.getDashboardUrl(session.role);
         return;
     }
 
     const loginForm = document.getElementById('loginForm');
-    const loginBtn = document.getElementById('loginBtn');
-    const btnText = loginBtn ? loginBtn.querySelector('.btn-text') : null;
-    const btnLoader = loginBtn ? loginBtn.querySelector('.btn-loader') : null;
-    const errorMsg = document.getElementById('errorMessage');
-    
-    createParticles(); // Create background particles
+    const togglePassword = document.getElementById('togglePassword');
 
-    // 2. Handle Form Submit
-    if (loginForm) {
-        loginForm.addEventListener('submit', async (e) => {
-            e.preventDefault(); 
-
-            const email = document.getElementById('email').value.trim();
-            const password = document.getElementById('password').value;
-
-            // UI Loading State (Start)
-            setLoading(true);
-            showError(''); // Clear previous errors
-
-            try {
-                // Call Session Manager (FIXED in session-manager.js)
-                const user = await window.sessionManager.login(email, password);
-                
-                // Success! Redirect
-                const redirectUrl = window.sessionManager.getRedirectUrl(user.role);
-                window.location.href = redirectUrl;
-
-            } catch (error) {
-                // Failure! (This block will now execute correctly)
-                setLoading(false); // Stop loading animation
-                showError(error.message); // Display the user-friendly error
-            }
-        });
-    }
-
-    // Helper: Button Loading State (FIXED)
-    function setLoading(isLoading) {
-        if (!loginBtn || !btnText || !btnLoader) return;
-
-        if (isLoading) {
-            loginBtn.disabled = true;
-            btnText.style.display = 'none';
-            btnLoader.style.display = 'inline';
-        } else {
-            loginBtn.disabled = false;
-            btnText.style.display = 'inline';
-            btnLoader.style.display = 'none';
-        }
-    }
-
-    // Helper: Show Error Message
-    function showError(msg) {
-        if (errorMsg) {
-            errorMsg.textContent = msg;
-            errorMsg.classList.toggle('show', !!msg);
-        }
-    }
-    
-    // Helper: Particle Creation
-    function createParticles() {
-        const particlesContainer = document.getElementById('particles');
-        if (!particlesContainer) return;
-
-        const particleCount = 20;
-        for (let i = 0; i < particleCount; i++) {
-            const particle = document.createElement('div');
-            particle.classList.add('particle');
-
-            const size = Math.random() * 8 + 4;
-            const posX = Math.random() * 100;
-            const delay = Math.random() * 5;
-            const duration = Math.random() * 10 + 10;
-
-            particle.style.width = `${size}px`;
-            particle.style.height = `${size}px`;
-            particle.style.left = `${posX}%`;
-            particle.style.animationDelay = `${delay}s`;
-            particle.style.animationDuration = `${duration}s`;
-            
-            particlesContainer.appendChild(particle);
-        }
-    }
-    
     // Toggle Password Visibility
-    const togglePass = document.getElementById('togglePassword');
-    const passInput = document.getElementById('password');
-    if(togglePass && passInput) {
-        togglePass.addEventListener('click', () => {
-            const type = passInput.type === 'password' ? 'text' : 'password';
-            passInput.type = type;
-            togglePass.classList.toggle('fa-eye');
-            togglePass.classList.toggle('fa-eye-slash');
+    if (togglePassword) {
+        togglePassword.addEventListener('click', function() {
+            const passwordInput = document.getElementById('password');
+            const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+            passwordInput.setAttribute('type', type);
+            this.classList.toggle('fa-eye');
+            this.classList.toggle('fa-eye-slash');
         });
     }
-});
+
+    if (loginForm) {
+        loginForm.addEventListener('submit', handleLogin);
+    }
+    
+    createParticles();
+}
+
+async function handleLogin(e) {
+    e.preventDefault();
+    
+    const email = document.getElementById('email').value.trim();
+    const password = document.getElementById('password').value.trim();
+    const loginBtn = document.getElementById('loginBtn');
+
+    // Basic Validation
+    if (!email || !password) {
+        showMessage('Please fill in all fields', 'error');
+        return;
+    }
+
+    setButtonLoading(loginBtn, true);
+
+    try {
+        if (!window.db) throw new Error('Database not connected.');
+
+        console.log('🔍 Searching user:', email);
+
+        // QUERY FIRESTORE
+        const querySnapshot = await window.db.collection("users")
+            .where("email", "==", email)
+            .where("password", "==", password) // Direct password check (matches Admin manual entry)
+            .get();
+
+        if (querySnapshot.empty) {
+            showMessage('Invalid email or password.', 'error');
+            setButtonLoading(loginBtn, false);
+            return;
+        }
+
+        // USER FOUND
+        const doc = querySnapshot.docs[0];
+        const userData = { id: doc.id, ...doc.data() };
+
+        // Check Status
+        if (userData.status === 'Archived' || userData.status === 'Inactive') {
+            showMessage('This account is inactive. Contact Admin.', 'error');
+            setButtonLoading(loginBtn, false);
+            return;
+        }
+
+        // Create Session
+        window.sessionManager.createSession(userData);
+
+        // Redirect
+        const dashboardUrl = window.sessionManager.getDashboardUrl(userData.role);
+        showMessage(`Welcome, ${userData.firstName}! Redirecting...`, 'success');
+
+        setTimeout(() => {
+            window.location.href = dashboardUrl;
+        }, 1000);
+
+    } catch (error) {
+        console.error('Login Error:', error);
+        showMessage('System Error: ' + error.message, 'error');
+        setButtonLoading(loginBtn, false);
+    }
+}
+
+// --- HELPER FUNCTIONS ---
+
+function setButtonLoading(button, isLoading) {
+    const text = button.querySelector('.btn-text');
+    const loader = button.querySelector('.btn-loader');
+    
+    if (isLoading) {
+        button.disabled = true;
+        if(text) text.style.display = 'none';
+        if(loader) loader.style.display = 'inline-block';
+    } else {
+        button.disabled = false;
+        if(text) text.style.display = 'inline-block';
+        if(loader) loader.style.display = 'none';
+    }
+}
+
+function showMessage(message, type) {
+    const errorEl = document.getElementById('errorMessage');
+    // Using alert for success to keep it simple, or reuse your error div
+    if(type === 'error') {
+        errorEl.textContent = message;
+        errorEl.classList.add('show');
+    } else {
+        // Success
+        errorEl.style.backgroundColor = '#28a745';
+        errorEl.textContent = message;
+        errorEl.classList.add('show');
+    }
+}
+
+function createParticles() {
+    const container = document.getElementById('particles');
+    if(!container) return;
+    
+    for (let i = 0; i < 15; i++) {
+        const p = document.createElement('div');
+        p.classList.add('particle');
+        p.style.left = Math.random() * 100 + '%';
+        p.style.top = Math.random() * 100 + '%';
+        p.style.animationDelay = Math.random() * 5 + 's';
+        container.appendChild(p);
+    }
+}

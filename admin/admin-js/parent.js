@@ -1,10 +1,11 @@
 /**
  * parent.js
- * Manages Parent List (Read-Only/View)
+ * Manages Parent List & Add Functionality
  * Filters users by role: 'parent'
  */
 
 let allParents = []; 
+let currentViewPassword = "";
 
 document.addEventListener('DOMContentLoaded', () => {
     setTimeout(() => {
@@ -21,7 +22,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (event.target.classList.contains('modal')) {
             event.target.style.display = "none";
         }
-        if (!event.target.closest('.action-menu-container')) {
+        if (!event.target.closest('.action-menu-container') && !event.target.closest('#toggle-password-btn')) {
             const dropdowns = document.getElementsByClassName("action-dropdown");
             for (let i = 0; i < dropdowns.length; i++) {
                 dropdowns[i].classList.remove('show');
@@ -30,11 +31,20 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 
+// --- HELPER: Generate Password ---
+function generatePassword() {
+    const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+    let password = "";
+    for (let i = 0; i < 8; i++) {
+        password += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return password;
+}
+
 // 1. FETCH DATA
 function loadParents() {
     const tableBody = document.getElementById('parent-list-body');
     
-    // Updated Query: Users -> role == parent
     window.db.collection('users')
         .where('role', '==', 'parent')
         .get()
@@ -52,7 +62,7 @@ function loadParents() {
                 // Format Timestamp
                 let createdStr = "Unknown";
                 if (data.createdAt && data.createdAt.toDate) {
-                    createdStr = data.createdAt.toDate().toLocaleDateString() + ' ' + data.createdAt.toDate().toLocaleTimeString();
+                    createdStr = data.createdAt.toDate().toLocaleDateString();
                 } else if (data.createdAt) {
                     createdStr = new Date(data.createdAt).toLocaleDateString();
                 }
@@ -66,8 +76,8 @@ function loadParents() {
                     email: data.email || 'N/A',
                     phone: data.phone || 'N/A',
                     address: data.address || 'N/A',
+                    password: data.password || '******',
                     status: data.status || 'Active',
-                    addedBy: data.addedBy || 'System Admin',
                     createdAt: createdStr
                 });
             });
@@ -83,7 +93,7 @@ function loadParents() {
         });
 }
 
-// 2. RENDER TABLE (With 3-Dot Menu)
+// 2. RENDER TABLE
 function renderTable(data) {
     const tableBody = document.getElementById('parent-list-body');
     tableBody.innerHTML = '';
@@ -123,7 +133,58 @@ function renderTable(data) {
     });
 }
 
-// 3. SEARCH
+// 3. ADD NEW PARENT
+function addNewParent() {
+    const parentId = document.getElementById('new-parent-id').value;
+    const firstName = document.getElementById('new-firstname').value;
+    const middleName = document.getElementById('new-middlename').value;
+    const lastName = document.getElementById('new-lastname').value;
+    const email = document.getElementById('new-email').value;
+    const phone = document.getElementById('new-phone').value;
+    const address = document.getElementById('new-address').value;
+
+    if (!parentId || !firstName || !lastName || !email || !phone) {
+        alert("Please fill in all required fields.");
+        return;
+    }
+
+    const password = generatePassword();
+
+    const newParent = {
+        parentId: parentId, // Manual ID
+        firstName: firstName,
+        middleName: middleName,
+        lastName: lastName,
+        email: email,
+        phone: phone,
+        address: address,
+        password: password,
+        role: 'parent',
+        status: 'Active',
+        createdAt: new Date()
+    };
+
+    const btn = document.querySelector('#add-parent-modal .btn-primary');
+    const originalText = btn.innerText;
+    btn.innerText = "Saving...";
+    btn.disabled = true;
+
+    window.db.collection('users').add(newParent)
+        .then(() => {
+            alert(`Parent Added Successfully!\n\nID: ${parentId}\nPassword: ${password}`);
+            closeModal('add-parent-modal');
+            loadParents();
+        })
+        .catch((error) => {
+            alert("Error: " + error.message);
+        })
+        .finally(() => {
+            btn.innerText = originalText;
+            btn.disabled = false;
+        });
+}
+
+// 4. SEARCH
 function searchParents() {
     const input = document.getElementById('search-input').value.toLowerCase();
     
@@ -137,7 +198,7 @@ function searchParents() {
     renderTable(filtered);
 }
 
-// 4. VIEW DETAILS
+// 5. VIEW DETAILS
 function viewParentDetails(docId) {
     const parent = allParents.find(p => p.docId === docId);
     
@@ -150,15 +211,39 @@ function viewParentDetails(docId) {
         document.getElementById('view-email').innerText = parent.email;
         document.getElementById('view-address').innerText = parent.address;
         
-        document.getElementById('view-added-by').innerText = parent.addedBy;
         document.getElementById('view-timestamp').innerText = parent.createdAt;
         document.getElementById('view-status').innerText = parent.status;
+
+        // Password Reveal Logic
+        currentViewPassword = parent.password || 'Not Set';
+        const passField = document.getElementById('view-password');
+        const icon = document.getElementById('toggle-password-btn');
+        passField.innerText = "********"; 
+        icon.className = "fas fa-eye";
         
         document.getElementById('view-parent-modal').style.display = 'block';
     }
 }
 
-// 5. UI HELPERS
+function togglePasswordView() {
+    const passField = document.getElementById('view-password');
+    const icon = document.getElementById('toggle-password-btn');
+    
+    if (passField.innerText === "********") {
+        passField.innerText = currentViewPassword;
+        icon.className = "fas fa-eye-slash"; 
+    } else {
+        passField.innerText = "********";
+        icon.className = "fas fa-eye"; 
+    }
+}
+
+// 6. UI HELPERS
+function showAddParentModal() {
+    document.getElementById('add-parent-form').reset();
+    document.getElementById('add-parent-modal').style.display = 'block';
+}
+
 function toggleActionMenu(menuId) {
     const dropdowns = document.getElementsByClassName("action-dropdown");
     for (let i = 0; i < dropdowns.length; i++) {
@@ -170,6 +255,6 @@ function toggleActionMenu(menuId) {
     if(menu) menu.classList.toggle('show');
 }
 
-window.closeModal = function(modalId) {
+function closeModal(modalId) {
     document.getElementById(modalId).style.display = 'none';
 }
