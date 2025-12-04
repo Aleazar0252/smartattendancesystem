@@ -6,7 +6,6 @@
     <title>Sections Management - ZSNHS</title>
 
     <link rel="stylesheet" href="admin-css/styles.css" />
-
     <link
       rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
@@ -15,53 +14,7 @@
       href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Playfair+Display:wght@700&display=swap"
       rel="stylesheet"
     />
-    <style>
-        /* Specific styles for the Grade Groups */
-        .grade-group-card {
-            background: #fff;
-            border: 1px solid #e0e0e0;
-            border-radius: 8px;
-            margin-bottom: 20px;
-            overflow: hidden;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-        }
-        .grade-header {
-            background-color: #f8f9fa;
-            padding: 15px 20px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-bottom: 1px solid #e0e0e0;
-        }
-        .grade-header h3 {
-            margin: 0;
-            color: var(--primary-color);
-            font-size: 1.1rem;
-        }
-        .grade-body {
-            padding: 0;
-        }
-        .section-item {
-            padding: 12px 20px;
-            border-bottom: 1px solid #f0f0f0;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            transition: background 0.2s;
-        }
-        .section-item:last-child {
-            border-bottom: none;
-        }
-        .section-item:hover {
-            background-color: #fafafa;
-        }
-        .empty-message {
-            padding: 20px;
-            text-align: center;
-            color: #888;
-            font-style: italic;
-        }
-    </style>
+
   </head>
   <body>
     <div class="overlay" id="mobile-overlay"></div>
@@ -73,31 +26,31 @@
     <div class="dashboard">
       <div class="sidebar" id="sidebar">
         <div class="logo">
-                <img src="../img/zsnhs.jpg" class="logo-placeholder hover-zoom">
-                <h1>ZSNHS</h1>
-            </div>
-
+          <img src="../img/zsnhs.jpg" class="logo-placeholder hover-zoom" />
+          <h1>ZSNHS</h1>
+        </div>
         <div class="nav-menu">
           <h2>Dashboard</h2>
-
           <div class="nav-item" onclick="window.location.href='admin.html'">
             <i class="fas fa-tachometer-alt"></i> <span>Overview</span>
           </div>
-
-          <div class="nav-item" onclick="toggleDropdown('academics-dropdown', this)">
+          <div
+            class="nav-item"
+            onclick="toggleDropdown('academics-dropdown', this)"
+          >
             <div style="display: flex; align-items: center; gap: 15px">
-              <i class="fas fa-graduation-cap"></i>
-              <span>Academics</span>
+              <i class="fas fa-graduation-cap"></i> <span>Academics</span>
             </div>
             <i class="fas fa-chevron-down chevron-icon"></i>
           </div>
           <div class="nav-dropdown" id="academics-dropdown">
             <a href="teachers.html" class="nav-sub-item">Teacher Management</a>
             <a href="subjects.html" class="nav-sub-item">Subjects</a>
-            <a href="sections.html" class="nav-sub-item active">Grade Level & Sections</a>
+            <a href="sections.html" class="nav-sub-item active"
+              >Grade Level & Sections</a
+            >
             <a href="schedules.html" class="nav-sub-item">Class Schedules</a>
           </div>
-
           <div class="nav-item" onclick="window.location.href='guidance.html'">
             <i class="fas fa-hands-helping"></i> <span>Guidance</span>
           </div>
@@ -114,7 +67,6 @@
             <i class="fas fa-cog"></i> <span>Settings</span>
           </div>
         </div>
-
         <div class="logout-container">
           <button class="logout-btn" onclick="logout()">
             <i class="fas fa-sign-out-alt"></i> Log out
@@ -133,23 +85,29 @@
         </div>
 
         <div class="content-section">
-          <div style="margin-bottom: 20px;">
-            <p style="color:#666;">Manage sections for each Grade Level below. Grade levels are fixed (7-12).</p>
-            <div style="display: flex; justify-content: flex-end;">
-                 <input
-                    type="text"
-                    id="search-input"
-                    onkeyup="filterGroups()"
-                    placeholder="Search Section Name..."
-                    style="padding: 10px; border: 1px solid #ddd; border-radius: 5px; width: 250px;"
-                  />
-            </div>
+          <div
+            style="
+              margin-bottom: 20px;
+              display: flex;
+              justify-content: flex-end;
+            "
+          >
+            <input
+              type="text"
+              id="search-input"
+              onkeyup="filterGroups()"
+              placeholder="Search Section Name..."
+              style="
+                padding: 10px;
+                border: 1px solid #ddd;
+                border-radius: 5px;
+                width: 250px;
+              "
+            />
           </div>
-
           <div id="grade-levels-container">
-              <div class="loading-cell">Loading Grade Levels...</div>
+            <div class="loading-cell">Loading Grade Levels...</div>
           </div>
-
         </div>
       </div>
     </div>
@@ -158,33 +116,246 @@
       <div class="modal-content">
         <div class="modal-header">
           <h2 id="modal-title">Add New Section</h2>
-          <span class="close-modal" onclick="closeModal('section-modal')">&times;</span>
+          <span class="close-modal" onclick="closeModal('section-modal')"
+            >&times;</span
+          >
         </div>
         <div class="modal-body">
-          <form id="section-form" onsubmit="event.preventDefault(); saveSection();">
+          <form
+            id="section-form"
+            onsubmit="event.preventDefault(); saveSection();"
+          >
             <input type="hidden" id="edit-doc-id" />
-
             <div class="form-group">
               <label>Grade Level</label>
-              <input type="text" id="sec-grade-display" class="form-control" readonly style="background-color: #e9ecef;">
-              <input type="hidden" id="sec-grade-value"> 
+              <input
+                type="text"
+                id="sec-grade-display"
+                class="form-control"
+                readonly
+                style="background-color: #e9ecef"
+              />
+              <input type="hidden" id="sec-grade-value" />
             </div>
-
             <div class="form-group">
               <label>Section Name</label>
               <input
                 type="text"
                 id="sec-name"
                 class="form-control"
-                placeholder="e.g. Rizal, Newton, Einstein"
+                placeholder="e.g. Rizal"
                 required
               />
             </div>
           </form>
         </div>
         <div class="modal-footer">
-          <button class="btn" onclick="closeModal('section-modal')">Cancel</button>
-          <button class="btn btn-primary" onclick="saveSection()">Save Section</button>
+          <button class="btn" onclick="closeModal('section-modal')">
+            Cancel
+          </button>
+          <button class="btn btn-primary" onclick="saveSection()">
+            Save Section
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div id="class-list-modal" class="modal">
+      <div class="modal-content" style="max-width: 750px">
+        <div class="modal-header">
+          <h2 id="class-list-title">Class List</h2>
+          <span class="close-modal" onclick="closeModal('class-list-modal')"
+            >&times;</span
+          >
+        </div>
+        <div class="modal-body">
+          <div
+            style="
+              display: flex;
+              justify-content: space-between;
+              align-items: center;
+              margin-bottom: 15px;
+              flex-wrap: wrap;
+              gap: 10px;
+            "
+          >
+            <div style="display: flex; gap: 10px; align-items: center">
+              <p
+                id="class-count"
+                style="margin: 0; color: #666; font-style: italic"
+              >
+                0 Students
+              </p>
+
+              <input
+                type="text"
+                id="search-class-list"
+                onkeyup="filterClassListTable()"
+                placeholder="Search student..."
+                style="
+                  padding: 6px 10px;
+                  border: 1px solid #ddd;
+                  border-radius: 5px;
+                  width: 200px;
+                  margin-bottom: 0;
+                "
+              />
+            </div>
+
+            <div style="display: flex; gap: 10px">
+              <button
+                class="btn"
+                style="background-color: #28a745; color: white"
+                onclick="downloadClassListCSV()"
+              >
+                <i class="fas fa-file-excel"></i> Export Excel
+              </button>
+              <button class="btn btn-primary" onclick="openAssignModal()">
+                <i class="fas fa-user-plus"></i> Add Students
+              </button>
+            </div>
+          </div>
+
+          <div id="class-loader" style="text-align: center; padding: 20px">
+            <div
+              class="spinner"
+              style="width: 30px; height: 30px; margin: 0 auto"
+            ></div>
+            <p>Fetching students...</p>
+          </div>
+
+          <div id="class-content">
+            <table class="teachers-table" style="margin-top: 0">
+              <thead>
+                <tr>
+                  <th
+                    style="
+                      position: sticky;
+                      top: 0;
+                      background: #a52a2a;
+                      color: white;
+                      z-index: 2;
+                    "
+                  >
+                    LRN
+                  </th>
+                  <th
+                    style="
+                      position: sticky;
+                      top: 0;
+                      background: #a52a2a;
+                      color: white;
+                      z-index: 2;
+                    "
+                  >
+                    Name
+                  </th>
+                  <th
+                    style="
+                      position: sticky;
+                      top: 0;
+                      background: #a52a2a;
+                      color: white;
+                      z-index: 2;
+                    "
+                  >
+                    Gender
+                  </th>
+                  <th
+                    style="
+                      position: sticky;
+                      top: 0;
+                      background: #a52a2a;
+                      color: white;
+                      z-index: 2;
+                    "
+                  >
+                    Action
+                  </th>
+                </tr>
+              </thead>
+              <tbody id="class-list-body"></tbody>
+            </table>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn" onclick="closeModal('class-list-modal')">
+            Close
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div id="assign-student-modal" class="modal" style="z-index: 2200">
+      <div class="modal-content" style="max-width: 500px">
+        <div class="modal-header">
+          <h2>
+            Add Students to
+            <span
+              id="assign-target-section"
+              style="font-size: 0.9em; color: #666"
+            ></span>
+          </h2>
+          <span class="close-modal" onclick="closeModal('assign-student-modal')"
+            >&times;</span
+          >
+        </div>
+        <div class="modal-body">
+          <div class="form-group" style="margin-bottom: 10px">
+            <label>Search Student</label>
+            <div style="display: flex; gap: 10px">
+              <input
+                type="text"
+                id="search-student-dropdown"
+                list="students-datalist"
+                class="form-control"
+                placeholder="Type Name or LRN..."
+                autocomplete="off"
+                style="margin-bottom: 0"
+              />
+              <button class="btn btn-primary" onclick="addStudentToBatchList()">
+                <i class="fas fa-plus"></i> Add
+              </button>
+            </div>
+            <datalist id="students-datalist"></datalist>
+          </div>
+
+          <div
+            style="
+              font-weight: 600;
+              margin-top: 20px;
+              margin-bottom: 10px;
+              border-bottom: 1px solid #eee;
+              padding-bottom: 5px;
+            "
+          >
+            Selected Students (<span id="batch-count">0</span>)
+          </div>
+
+          <div class="batch-list-container">
+            <div id="batch-list-body">
+              <div
+                style="
+                  padding: 15px;
+                  text-align: center;
+                  color: #999;
+                  font-style: italic;
+                "
+              >
+                No students selected yet.
+              </div>
+            </div>
+          </div>
+
+          <button
+            class="btn btn-primary"
+            id="btn-confirm-assign"
+            style="width: 100%; margin-top: 20px"
+            onclick="confirmBatchAssignment()"
+            disabled
+          >
+            Confirm Assignment
+          </button>
         </div>
       </div>
     </div>

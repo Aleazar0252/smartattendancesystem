@@ -7,8 +7,37 @@
     
     <link rel="stylesheet" href="teacher-css/styles.css">
     
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+    
+    <style>
+        /* DASHBOARD SPECIFIC STYLES */
+        .charts-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 25px;
+            margin-bottom: 30px;
+        }
+        .chart-container {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            border: 1px solid #eee;
+        }
+        .chart-header {
+            margin-bottom: 15px;
+            border-bottom: 1px solid #f0f0f0;
+            padding-bottom: 10px;
+        }
+        .chart-header h3 {
+            margin: 0;
+            font-size: 1.1rem;
+            color: var(--primary-color);
+        }
+    </style>
 </head>
 <body>
 
@@ -16,37 +45,17 @@
     <div class="overlay" id="mobile-overlay"></div>
 
     <div class="dashboard">
-        
         <div class="sidebar" id="sidebar">
             <div class="logo"><div class="logo-placeholder">T</div><h1>ZSNHS</h1></div>
             <div class="nav-menu">
                 <h2>Teacher Menu</h2>
-                
-                <a href="teacher.html" class="nav-item active">
-                    <i class="fas fa-tachometer-alt"></i> <span>Dashboard</span>
-                </a>
-
-                <a href="schedules.html" class="nav-item">
-                    <i class="fas fa-calendar-alt"></i> <span>My Schedules</span>
-                </a>
-
-                <a href="students.html" class="nav-item">
-                    <i class="fas fa-user-graduate"></i> <span>My Students</span>
-                </a>
-
-                <a href="attendance.html" class="nav-item">
-                    <i class="fas fa-clipboard-check"></i> <span>Attendance</span>
-                </a>
-
-                <a href="settings.html" class="nav-item">
-                    <i class="fas fa-cog"></i> <span>Settings</span>
-                </a>
+                <a href="teacher.html" class="nav-item active"><i class="fas fa-tachometer-alt"></i> <span>Dashboard</span></a>
+                <a href="schedules.html" class="nav-item"><i class="fas fa-calendar-alt"></i> <span>My Schedules</span></a>
+                <a href="students.html" class="nav-item"><i class="fas fa-user-graduate"></i> <span>My Students</span></a>
+                <a href="attendance.html" class="nav-item"><i class="fas fa-clipboard-check"></i> <span>Attendance</span></a>
+                <a href="settings.html" class="nav-item"><i class="fas fa-cog"></i> <span>Settings</span></a>
             </div>
-            <div class="logout-container">
-                <button class="logout-btn" onclick="logout()">
-                    <i class="fas fa-sign-out-alt"></i> Log out
-                </button>
-            </div>
+            <div class="logout-container"><button class="logout-btn" onclick="logout()"><i class="fas fa-sign-out-alt"></i> Log out</button></div>
         </div>
 
         <div class="main-content">
@@ -79,20 +88,35 @@
                 </div>
             </div>
 
-            <div class="content-section">
-                <h2 style="color:var(--primary-color);">Welcome Back!</h2>
-                <p style="color:#666; margin-top:10px;">Select an option from the menu to manage your classes and students.</p>
+            <div class="charts-grid">
+                <div class="chart-container">
+                    <div class="chart-header">
+                        <h3>Overall Attendance</h3>
+                        <small style="color:#666">Performance across all classes</small>
+                    </div>
+                    <div style="height: 250px; position: relative;">
+                        <canvas id="attendancePieChart"></canvas>
+                    </div>
+                </div>
+                <div class="chart-container">
+                    <div class="chart-header">
+                        <h3>Recent Class Activity</h3>
+                        <small style="color:#666">Attendance counts for last 5 sessions</small>
+                    </div>
+                    <div style="height: 250px; position: relative;">
+                        <canvas id="attendanceBarChart"></canvas>
+                    </div>
+                </div>
             </div>
+
         </div>
     </div>
 
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
-    
     <script src="../js/firebase-config.js"></script>
     <script src="../js/session-manager.js"></script>
-    
     <script src="teacher-js/ui.js"></script>
     <script src="teacher-js/dashboard.js"></script>
 

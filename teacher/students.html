@@ -3,10 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My Students - Teacher Portal</title>
-    
+    <title>My Classes - Teacher Portal</title>
     <link rel="stylesheet" href="teacher-css/styles.css">
-    
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
 </head>
@@ -20,26 +18,11 @@
             <div class="logo"><div class="logo-placeholder">T</div><h1>ZSNHS</h1></div>
             <div class="nav-menu">
                 <h2>Teacher Menu</h2>
-                
-                <a href="teacher.html" class="nav-item">
-                    <i class="fas fa-tachometer-alt"></i> <span>Dashboard</span>
-                </a>
-
-                <a href="schedules.html" class="nav-item">
-                    <i class="fas fa-calendar-alt"></i> <span>My Schedules</span>
-                </a>
-
-                <a href="students.html" class="nav-item active">
-                    <i class="fas fa-user-graduate"></i> <span>My Students</span>
-                </a>
-
-                <a href="attendance.html" class="nav-item">
-                    <i class="fas fa-clipboard-check"></i> <span>Attendance</span>
-                </a>
-
-                <a href="settings.html" class="nav-item">
-                    <i class="fas fa-cog"></i> <span>Settings</span>
-                </a>
+                <a href="teacher.html" class="nav-item"><i class="fas fa-tachometer-alt"></i> <span>Dashboard</span></a>
+                <a href="schedules.html" class="nav-item"><i class="fas fa-calendar-alt"></i> <span>My Schedules</span></a>
+                <a href="students.html" class="nav-item active"><i class="fas fa-user-graduate"></i> <span>My Students</span></a>
+                <a href="attendance.html" class="nav-item"><i class="fas fa-clipboard-check"></i> <span>Attendance</span></a>
+                <a href="settings.html" class="nav-item"><i class="fas fa-cog"></i> <span>Settings</span></a>
             </div>
             <div class="logout-container"><button class="logout-btn" onclick="logout()"><i class="fas fa-sign-out-alt"></i> Log out</button></div>
         </div>
@@ -48,7 +31,7 @@
             <div class="header">
                 <div style="display:flex; align-items:center; gap:15px;">
                     <i class="fas fa-bars menu-toggle" id="menu-toggle-btn"></i>
-                    <h1>My Students</h1>
+                    <h1 id="page-title">My Classes</h1>
                 </div>
                 <div class="user-profile">
                     <div class="avatar-placeholder">T</div>
@@ -56,12 +39,30 @@
                 </div>
             </div>
 
-            <div class="content-section">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                    <h2 style="color: var(--primary-color)">Student List</h2>
+            <div id="view-classes-grid" class="content-section" style="background:transparent; box-shadow:none; padding:0;">
+                <p style="color:#666;">Select a class below to view student records.</p>
+                <div id="classes-container" class="class-grid">
+                    <div class="loading-cell">Loading classes...</div>
+                </div>
+            </div>
+
+            <div id="view-class-detail" class="content-section" style="display:none;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; padding-bottom:15px; border-bottom:1px solid #eee;">
+                    <div style="display:flex; align-items:center; gap:15px;">
+                        <button class="btn" onclick="backToGrid()" style="background:#e0e0e0;"><i class="fas fa-arrow-left"></i> Back</button>
+                        <div>
+                            <h2 style="margin:0; color:var(--primary-color);" id="detail-subject">Subject Name</h2>
+                            <p style="margin:0; color:#666;" id="detail-section">Section Name</p>
+                        </div>
+                    </div>
+                    
                     <button class="btn btn-primary" onclick="showAddStudentModal()">
-                        <i class="fas fa-plus"></i> Add Student
+                        <i class="fas fa-user-plus"></i> Add Student
                     </button>
+                </div>
+
+                <div style="margin-bottom:15px;">
+                    <input type="text" id="search-student-table" onkeyup="filterStudentTable()" class="form-control" placeholder="Search student in this class..." style="max-width:300px;">
                 </div>
                 
                 <table class="teachers-table">
@@ -69,11 +70,11 @@
                         <tr>
                             <th>LRN</th>
                             <th>Name</th>
-                            <th>Grade/Section</th>
+                            <th>Gender</th>
                             <th>Action</th>
                         </tr>
                     </thead>
-                    <tbody id="my-students-body">
+                    <tbody id="class-students-body">
                         <tr><td colspan="4" class="loading-cell">Loading students...</td></tr>
                     </tbody>
                 </table>
@@ -82,25 +83,32 @@
     </div>
 
     <div id="add-student-modal" class="modal">
-        <div class="modal-content">
+        <div class="modal-content" style="max-width: 500px;">
             <div class="modal-header">
-                <h2>Add Student</h2>
+                <h2>Add Students to <span id="modal-section-name">Class</span></h2>
                 <span class="close-modal" onclick="closeModal('add-student-modal')">&times;</span>
             </div>
             <div class="modal-body">
-                <form id="add-student-form">
-                    <input type="text" id="new-lrn" class="form-control" placeholder="LRN" required>
-                    <input type="text" id="new-fname" class="form-control" placeholder="First Name" required>
-                    <input type="text" id="new-lname" class="form-control" placeholder="Last Name" required>
-                    
-                    <label style="font-weight:500; display:block; margin-bottom:5px;">Grade & Section (Type to Search)</label>
-                    <input type="text" id="new-section-input" list="sections-list" class="form-control" placeholder="e.g. Grade 7 - Rizal" required>
-                    <datalist id="sections-list"></datalist>
-                </form>
-            </div>
-            <div class="modal-footer">
-                <button class="btn" onclick="closeModal('add-student-modal')">Cancel</button>
-                <button class="btn btn-primary" onclick="submitNewStudent()">Save</button>
+                <p style="color:#666; font-size:0.9rem; margin-bottom:15px;">Search for students from the master list to add to this class.</p>
+
+                <div class="form-group" style="margin-bottom:10px;">
+                    <div style="display:flex; gap:10px;">
+                        <input type="text" id="search-db-input" list="db-students-list" class="form-control" placeholder="Type Name or LRN..." autocomplete="off" style="margin-bottom:0;">
+                        <button class="btn btn-primary" onclick="addToBatch()"><i class="fas fa-plus"></i> Add</button>
+                    </div>
+                    <datalist id="db-students-list"></datalist>
+                </div>
+
+                <div style="font-weight:600; margin-top:20px; margin-bottom:5px;">Selected: <span id="batch-count">0</span></div>
+                <div class="batch-list-container">
+                    <div id="batch-list-body">
+                        <div style="padding:15px; text-align:center; color:#999; font-style:italic;">No students selected.</div>
+                    </div>
+                </div>
+
+                <button class="btn btn-primary" id="btn-save-batch" style="width:100%; margin-top:20px;" onclick="saveBatchStudents()" disabled>
+                    Confirm & Enroll
+                </button>
             </div>
         </div>
     </div>

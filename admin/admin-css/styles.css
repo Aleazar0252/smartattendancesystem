@@ -900,3 +900,126 @@ input:checked + .slider:before {
     border: 1px solid #ddd;
   }
 }
+
+/* Grade Group Styles */
+.grade-group-card {
+  background: #fff;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  overflow: visible !important;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+.grade-header {
+  background-color: #f8f9fa;
+  padding: 15px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #e0e0e0;
+  border-radius: 8px 8px 0 0;
+}
+.grade-header h3 {
+  margin: 0;
+  color: var(--primary-color);
+  font-size: 1.1rem;
+}
+
+.section-item {
+  padding: 12px 20px;
+  border-bottom: 1px solid #f0f0f0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: background 0.2s;
+  position: relative;
+}
+.section-item:last-child {
+  border-bottom: none;
+  border-radius: 0 0 8px 8px;
+}
+.section-item:hover {
+  background-color: #fafafa;
+}
+.empty-message {
+  padding: 20px;
+  text-align: center;
+  color: #888;
+  font-style: italic;
+}
+
+.action-dropdown {
+  z-index: 1000 !important;
+  right: 10px;
+}
+
+/* MODAL FIXES */
+.modal-content {
+  background-color: var(--white);
+  padding: 0;
+  border-radius: 10px;
+  width: 90%;
+  max-width: 750px; /* Made slightly wider for the search bar */
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  max-height: 95vh;
+  display: flex;
+  flex-direction: column;
+  animation: slideCenter 0.3s;
+}
+
+.modal-body {
+  padding: 25px;
+  overflow: visible;
+}
+
+/* LIST SCROLLBARS */
+.batch-list-container {
+  margin-top: 15px;
+  max-height: 250px;
+  overflow-y: auto;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  background: #fff;
+}
+
+#class-content {
+  display: none;
+  max-height: 400px;
+  overflow-y: auto;
+  border: 1px solid #eee;
+}
+
+/* Scrollbar Styling */
+.batch-list-container::-webkit-scrollbar,
+#class-content::-webkit-scrollbar {
+  width: 8px;
+}
+.batch-list-container::-webkit-scrollbar-thumb,
+#class-content::-webkit-scrollbar-thumb {
+  background-color: #ccc;
+  border-radius: 4px;
+}
+
+.batch-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 15px;
+  border-bottom: 1px solid #eee;
+  font-size: 0.9rem;
+}
+.batch-item:hover {
+  background: #f9f9f9;
+}
+.remove-batch-btn {
+  color: #dc3545;
+  cursor: pointer;
+  background: none;
+  border: none;
+  font-size: 1rem;
+  padding: 5px;
+}
