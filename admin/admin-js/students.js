@@ -2,7 +2,7 @@
  * students.js
  * Single Account Model: Parents log in via Student Account.
  * Parent details are stored INSIDE the student document.
- * FIXED: Added Student Phone Number field to data model and all CRUD/UI functions.
+ * UPDATED: Renamed 'studentId' to 'userId' for the data model.
  */
 
 // ==========================================
@@ -80,8 +80,11 @@ function loadStudents() {
             querySnapshot.forEach((doc) => {
                 const data = doc.data();
                 
-                if (data.studentId && !isNaN(data.studentId)) {
-                    const currentIdNum = parseInt(data.studentId);
+                // Compatibility: Check userId first, fallback to studentId if old data exists
+                const dbId = data.userId || data.studentId;
+
+                if (dbId && !isNaN(dbId)) {
+                    const currentIdNum = parseInt(dbId);
                     if (currentIdNum > latestLocalId) latestLocalId = currentIdNum;
                 }
                 
@@ -98,7 +101,7 @@ function loadStudents() {
 
                 allStudents.push({
                     docId: doc.id,
-                    studentId: data.studentId || 'N/A', 
+                    userId: dbId || 'N/A', // <--- CHANGED TO userId
                     lrn: data.lrn || 'N/A',            
                     firstName: data.firstName || '',
                     lastName: data.lastName || '',
@@ -106,7 +109,7 @@ function loadStudents() {
                     
                     // Student Fields
                     email: data.email || 'N/A',
-                    phone: data.phone || 'N/A', // <--- ADDED STUDENT PHONE FETCH
+                    phone: data.phone || 'N/A', 
                     
                     // Parent Fields
                     parentFirstName: pFName,
@@ -121,7 +124,8 @@ function loadStudents() {
                 });
             });
             
-            allStudents.sort((a, b) => a.studentId.localeCompare(b.studentId, undefined, { numeric: true }));
+            // Sort by userId
+            allStudents.sort((a, b) => a.userId.localeCompare(b.userId, undefined, { numeric: true }));
             renderTable(allStudents);
         })
         .catch((error) => {
@@ -142,8 +146,7 @@ function renderTable(data) {
     data.forEach(student => {
         const row = document.createElement('tr');
         row.innerHTML = `
-            <td><strong>${student.studentId}</strong></td>
-            <td>${student.lrn}</td>
+            <td><strong>${student.userId}</strong></td> <td>${student.lrn}</td>
             <td>${student.fullName}</td>
             <td>${student.parentFullName}</td> 
             <td>${student.parentContact}</td> 
@@ -195,13 +198,13 @@ function searchStudents() {
     
     const filtered = allStudents.filter(s => {
         const textMatch = s.fullName.toLowerCase().includes(term) || 
-                          s.studentId.includes(term) || 
+                          s.userId.includes(term) || // <--- CHANGED
                           s.lrn.includes(term) ||
                           s.parentFirstName.toLowerCase().includes(term) ||
                           s.parentMiddleName.toLowerCase().includes(term) ||
                           s.parentLastName.toLowerCase().includes(term) ||
                           s.parentContact.includes(term) ||
-                          s.phone.includes(term); // <--- ADDED STUDENT PHONE TO SEARCH
+                          s.phone.includes(term); 
         return textMatch;
     });
     renderTable(filtered);
@@ -221,11 +224,11 @@ function viewStudentDetails(docId) {
     }
     
     document.getElementById('view-fullname').innerText = student.fullName;
-    document.getElementById('view-id').innerText = student.studentId;
+    document.getElementById('view-id').innerText = student.userId; // <--- CHANGED
     document.getElementById('view-lrn').innerText = student.lrn;
     
     document.getElementById('view-email').innerText = student.email;
-    document.getElementById('view-student-phone').innerText = student.phone; // <--- ADDED STUDENT PHONE DISPLAY
+    document.getElementById('view-student-phone').innerText = student.phone; 
     
     document.getElementById('view-parent-fullname').innerText = student.parentFullName;
     document.getElementById('view-parent-email').innerText = student.parentEmail;
@@ -261,7 +264,7 @@ async function showAddStudentModal() {
     if(idField) {
         idField.value = "Calculating...";
         try {
-            const nextId = await generateNextStudentId();
+            const nextId = await generateNextUserId(); // <--- CHANGED
             idField.value = nextId; 
         } catch (error) {
             idField.value = "Error"; 
@@ -278,7 +281,7 @@ async function addNewStudent() {
     const firstName = document.getElementById('new-firstname').value;
     const lastName = document.getElementById('new-lastname').value;
     const email = document.getElementById('new-email').value;
-    const studentPhone = document.getElementById('new-student-phone').value; // <--- FETCHED NEW STUDENT PHONE INPUT
+    const studentPhone = document.getElementById('new-student-phone').value;
     
     // Parent Data
     const parentFirstName = document.getElementById('new-parent-firstname').value;
@@ -287,17 +290,18 @@ async function addNewStudent() {
     const parentEmail = document.getElementById('new-parent-email').value;
     const parentContact = document.getElementById('new-parent-contact').value;
     
-    const studentId = document.getElementById('new-student-id').value;
+    // CHANGED: Renamed variable to userId
+    const userId = document.getElementById('new-student-id').value;
     
     // Create ONE document (Student) with parent info embedded
     const newStudent = {
-        studentId: studentId,
+        userId: userId, // <--- CHANGED KEY
         lrn: lrn,
         firstName: firstName,
         middleName: document.getElementById('new-middlename').value,
         lastName: lastName,
         email: email,
-        phone: studentPhone, // <--- ADDED STUDENT PHONE TO OBJECT
+        phone: studentPhone,
         
         // Embedded Parent Info
         parentFirstName: parentFirstName,
@@ -313,9 +317,9 @@ async function addNewStudent() {
 
     try {
         await window.db.collection('users').add(newStudent);
-        console.log("Student account created:", studentId);
+        console.log("Student account created:", userId);
 
-        latestLocalId = parseInt(studentId); 
+        latestLocalId = parseInt(userId); 
         alert("Student Added Successfully!");
         closeModal('add-student-modal');
         loadStudents();
@@ -341,17 +345,20 @@ function deleteStudent(docId) {
 // 6. HELPER FUNCTIONS
 // ==========================================
 
-async function generateNextStudentId() {
+// RENAMED FUNCTION
+async function generateNextUserId() {
     const currentYear = new Date().getFullYear(); 
     let dbHighestId = 0;
     try {
         const snapshot = await window.db.collection('users')
             .where('role', '==', 'student')
-            .orderBy('studentId', 'desc') 
+            .orderBy('userId', 'desc') // <--- CHANGED QUERY
             .limit(1)
             .get();
         if (!snapshot.empty) {
-            const lastId = snapshot.docs[0].data().studentId;
+            // Check userId first, fallback to studentId
+            const data = snapshot.docs[0].data();
+            const lastId = data.userId || data.studentId;
             if (lastId && !isNaN(lastId)) dbHighestId = parseInt(lastId);
         }
     } catch (e) { console.warn("First run or index building:", e); }
@@ -384,7 +391,6 @@ function showBulkUploadModal() {
 }
 
 function downloadTemplate() {
-    // MODIFIED: Added "Student Phone" column
     const headers = ["First Name", "Lastname", "Middle name", "email", "Student Phone", "LRN", "Parent First Name", "Parent Middle Name", "Parent Last Name", "Parent Email", "Parent Contact"];
     const dummy = ["John", "Doe", "A", "john@mail.com", "09991234567", "123456789", "Jane", "P.", "Smith", "jane@mail.com", "09171234567"];
     
@@ -437,7 +443,7 @@ async function processBulkUpload() {
 
             logsDiv.innerHTML += `<div>Found ${jsonData.length} rows. Generating IDs...</div>`;
 
-            let currentIdString = await generateNextStudentId(); 
+            let currentIdString = await generateNextUserId(); // <--- CHANGED
             let currentIdNum = parseInt(currentIdString); 
             
             let successCount = 0;
@@ -457,14 +463,14 @@ async function processBulkUpload() {
                     continue;
                 }
 
-                const studentId = currentIdNum.toString();
+                const userId = currentIdNum.toString(); // <--- RENAMED
                 const newStudent = {
-                    studentId: studentId,
+                    userId: userId, // <--- CHANGED KEY
                     firstName: fName,
                     lastName: lName,
                     middleName: row["Middle name"] || row["middlename"] || "",
                     email: row["email"] || row["Email"] || "",
-                    phone: String(row["Student Phone"] || row["student phone"] || row["Phone"] || ""), // <--- ADDED STUDENT PHONE FROM BULK
+                    phone: String(row["Student Phone"] || row["student phone"] || row["Phone"] || ""),
                     lrn: String(row["LRN"] || row["lrn"] || ""),
                     
                     // Embedded Parent Info
