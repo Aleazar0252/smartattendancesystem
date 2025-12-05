@@ -5,52 +5,47 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>My Attendance - Student Portal</title>
     <link rel="stylesheet" href="student-css/styles.css" />
-    <link
-      rel="stylesheet"
-      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
-    />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
-      rel="stylesheet"
-    />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+    <style>
+        /* Specific Styles for Attendance Stats */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 25px;
+        }
+        .stat-card {
+            background: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            text-align: center;
+            border: 1px solid #eee;
+        }
+        .stat-card h3 { font-size: 0.9rem; color: #666; margin-bottom: 10px; }
+        .stat-card .number { font-size: 2rem; font-weight: 700; }
+        
+        .text-success { color: #28a745; }
+        .text-warning { color: #ffc107; }
+        .text-danger { color: #dc3545; }
+    </style>
   </head>
   <body>
-    <div id="preloader">
-      <div class="spinner"></div>
-      <div class="loading-text">Loading...</div>
-    </div>
+    <div id="preloader"><div class="spinner"></div><div class="loading-text">Loading...</div></div>
     <div class="overlay" id="mobile-overlay"></div>
 
     <div class="dashboard">
       <div class="sidebar" id="sidebar">
-        <div class="logo">
-          <div class="logo-placeholder">S</div>
-          <h1>ZSNHS</h1>
-        </div>
+        <div class="logo"><div class="logo-placeholder">S</div><h1>ZSNHS</h1></div>
         <div class="nav-menu">
           <h2>Student Menu</h2>
-
-          <a href="student.html" class="nav-item">
-            <i class="fas fa-tachometer-alt"></i> <span>Dashboard</span>
-          </a>
-
-          <a href="attendance.html" class="nav-item active">
-            <i class="fas fa-calendar-check"></i> <span>My Attendance</span>
-          </a>
-
-          <a href="schedule.html" class="nav-item">
-            <i class="fas fa-book-open"></i> <span>My Schedule</span>
-          </a>
-
-          <a href="profile.html" class="nav-item">
-            <i class="fas fa-user-circle"></i> <span>My Profile</span>
-          </a>
+          <a href="student.html" class="nav-item"><i class="fas fa-tachometer-alt"></i> <span>Dashboard</span></a>
+          <a href="attendance.html" class="nav-item active"><i class="fas fa-calendar-check"></i> <span>My Attendance</span></a>
+          <a href="schedule.html" class="nav-item"><i class="fas fa-book-open"></i> <span>My Schedule</span></a>
+          <a href="profile.html" class="nav-item"><i class="fas fa-user-circle"></i> <span>My Profile</span></a>
         </div>
-        <div class="logout-container">
-          <button class="logout-btn" onclick="logout()">
-            <i class="fas fa-sign-out-alt"></i> Log out
-          </button>
-        </div>
+        <div class="logout-container"><button class="logout-btn" onclick="logout()"><i class="fas fa-sign-out-alt"></i> Log out</button></div>
       </div>
 
       <div class="main-content">
@@ -59,26 +54,34 @@
             <i class="fas fa-bars menu-toggle" id="menu-toggle-btn"></i>
             <h1>Attendance Record</h1>
           </div>
-          <div class="user-profile">
-            <div class="avatar-placeholder" style="background: #28a745">S</div>
-            <span id="header-user-name">Student</span>
-          </div>
+          <div class="user-profile"><div class="avatar-placeholder" style="background: #28a745">S</div><span id="header-user-name">Student</span></div>
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <h3>Days Present</h3>
+                <div class="number text-success" id="stat-present">0</div>
+            </div>
+            <div class="stat-card">
+                <h3>Days Late</h3>
+                <div class="number text-warning" id="stat-late">0</div>
+            </div>
+            <div class="stat-card">
+                <h3>Days Absent</h3>
+                <div class="number text-danger" id="stat-absent">0</div>
+            </div>
+            <div class="stat-card">
+                <h3>Attendance Rate</h3>
+                <div class="number" style="color: #007bff" id="stat-rate">0%</div>
+            </div>
         </div>
 
         <div class="content-section">
-          <div
-            style="
-              display: flex;
-              justify-content: space-between;
-              align-items: center;
-              margin-bottom: 20px;
-            "
-          >
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
             <h2 style="color: var(--primary-color)">My Log</h2>
-            <select class="form-control" style="width: 200px">
-              <option>This Month</option>
-              <option>Last Month</option>
-              <option>All Time</option>
+            <select class="form-control" style="width: 200px" id="month-filter" onchange="filterAttendance()">
+              <option value="all">All Time</option>
+              <option value="this_month">This Month</option>
             </select>
           </div>
           <table class="teachers-table">
@@ -86,16 +89,12 @@
               <tr>
                 <th>Date</th>
                 <th>Subject</th>
-                <th>Time</th>
                 <th>Status</th>
+                <th>Remarks</th>
               </tr>
             </thead>
             <tbody id="attendance-list-body">
-              <tr>
-                <td colspan="4" class="loading-cell">
-                  No attendance records found yet.
-                </td>
-              </tr>
+              <tr><td colspan="4" class="loading-cell">Loading attendance records...</td></tr>
             </tbody>
           </table>
         </div>
