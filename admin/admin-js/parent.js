@@ -1,19 +1,33 @@
 /**
  * parent.js
- * Manages Parent List & Add Functionality
- * Filters users by role: 'parent'
+ * DERIVED Parent List from Student Records
+ * Groups students by their listed Parent Contact/Name
  */
 
+// ==========================================
+// 1. GLOBAL SCOPE EXPORTS
+// ==========================================
+window.togglePasswordView = togglePasswordView;
+window.searchParents = searchParents; 
+window.viewParentDetails = viewParentDetails;
+window.toggleActionMenu = toggleActionMenu;
+window.closeModal = closeModal;
+window.viewAssociatedStudents = viewAssociatedStudents; 
+window.loadParents = loadParents; 
+
+// ==========================================
+// 2. VARIABLES & INITIALIZATION
+// ==========================================
 let allParents = []; 
 let currentViewPassword = "";
 
 document.addEventListener('DOMContentLoaded', () => {
     setTimeout(() => {
         if (window.db) {
-            console.log("Database connected. Fetching parents...");
+            console.log("✅ Database connection confirmed. Aggregating parents from students...");
             loadParents();
         } else {
-            console.error("Firebase DB not initialized.");
+            console.error("❌ Firebase DB not initialized. Check admin-js/admin-config.js file.");
         }
     }, 500);
 
@@ -31,69 +45,91 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 
-// --- HELPER: Generate Password ---
-function generatePassword() {
-    const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-    let password = "";
-    for (let i = 0; i < 8; i++) {
-        password += chars.charAt(Math.floor(Math.random() * chars.length));
-    }
-    return password;
-}
+// ==========================================
+// 3. DATA FETCHING & RENDERING (AGGREGATION LOGIC)
+// ==========================================
 
-// 1. FETCH DATA
-function loadParents() {
+async function loadParents() {
     const tableBody = document.getElementById('parent-list-body');
+    tableBody.innerHTML = '<tr><td colspan="6" class="loading-cell">Loading parent information...</td></tr>';
     
-    window.db.collection('users')
-        .where('role', '==', 'parent')
-        .get()
-        .then((querySnapshot) => {
+    try {
+        // FETCH STUDENTS ONLY
+        const snapshot = await window.db.collection('users').where('role', '==', 'student').get();
+        
+        if (snapshot.empty) {
+            tableBody.innerHTML = '<tr><td colspan="6" style="text-align:center;">No students (and thus no parents) found.</td></tr>';
             allParents = [];
+            return;
+        }
+
+        const parentMap = {}; // Key = Unique Identifier (Name + Contact)
+
+        snapshot.forEach(doc => {
+            const data = doc.data();
             
-            if (querySnapshot.empty) {
-                tableBody.innerHTML = '<tr><td colspan="6" style="text-align:center;">No parents registered yet.</td></tr>';
-                return;
+            // Extract Parent Info
+            const pFName = data.parentFirstName || '';
+            const pLName = data.parentLastName || '';
+            const pFullName = data.parentFullName || `${pFName} ${pLName}`.trim();
+            const pContact = data.parentContact || 'N/A';
+            const pEmail = data.parentEmail || 'N/A';
+
+            // Skip if no parent info exists at all
+            if (!pFullName && pContact === 'N/A') return;
+
+            // GENERATE UNIQUE KEY TO GROUP SIBLINGS
+            // We use Phone + Name. If phone is N/A, we use Name only.
+            const uniqueKey = (pContact !== 'N/A') ? (pFullName + pContact) : (pFullName + doc.id);
+
+            // If this parent isn't in our list yet, add them
+            if (!parentMap[uniqueKey]) {
+                parentMap[uniqueKey] = {
+                    docId: "derived_" + doc.id, // Fake ID for UI logic
+                    parentId: "Linked to Student", // No separate Parent ID
+                    firstName: pFName,
+                    lastName: pLName,
+                    fullName: pFullName || "Unknown Parent",
+                    email: pEmail,
+                    phone: pContact,
+                    address: data.address || 'N/A', // Usually in student record
+                    status: 'Active',
+                    createdAt: data.createdAt ? new Date(data.createdAt.seconds * 1000).toLocaleDateString() : 'N/A',
+                    
+                    // We can't show a parent password because they share the student's account
+                    password: "Uses Student Account", 
+                    
+                    studentCount: 0,
+                    associatedStudents: []
+                };
             }
 
-            querySnapshot.forEach((doc) => {
-                const data = doc.data();
-                
-                // Format Timestamp
-                let createdStr = "Unknown";
-                if (data.createdAt && data.createdAt.toDate) {
-                    createdStr = data.createdAt.toDate().toLocaleDateString();
-                } else if (data.createdAt) {
-                    createdStr = new Date(data.createdAt).toLocaleDateString();
-                }
-
-                allParents.push({
-                    docId: doc.id,
-                    parentId: data.parentId || 'N/A',
-                    firstName: data.firstName || '',
-                    lastName: data.lastName || '',
-                    fullName: `${data.firstName} ${data.lastName}`,
-                    email: data.email || 'N/A',
-                    phone: data.phone || 'N/A',
-                    address: data.address || 'N/A',
-                    password: data.password || '******',
-                    status: data.status || 'Active',
-                    createdAt: createdStr
-                });
+            // Add this student to the parent's list
+            parentMap[uniqueKey].studentCount++;
+            parentMap[uniqueKey].associatedStudents.push({
+                studentId: data.studentId || 'N/A',
+                fullName: `${data.firstName || ''} ${data.lastName || ''}`,
+                gradeLevel: data.gradeLevel || 'N/A',
+                section: data.sectionName || 'N/A'
             });
-            
-            // Sort by Last Name
-            allParents.sort((a, b) => a.lastName.localeCompare(b.lastName));
-            
-            renderTable(allParents);
-        })
-        .catch((error) => {
-            console.error("Error:", error);
-            tableBody.innerHTML = `<tr><td colspan="6" style="text-align:center; color:red;">Error: ${error.message}</td></tr>`;
         });
+
+        // Convert Map to Array
+        allParents = Object.values(parentMap);
+        
+        // Sort by Last Name
+        allParents.sort((a, b) => a.lastName.localeCompare(b.lastName));
+        
+        console.log(`Unique Parents Derived: ${allParents.length}`);
+        renderTable(allParents);
+
+    } catch (error) {
+        console.error("❌ Critical Error in loadParents:", error);
+        tableBody.innerHTML = `<tr><td colspan="6" style="text-align:center; color:red;">Error fetching data: ${error.message}</td></tr>`;
+    }
 }
 
-// 2. RENDER TABLE
+// 2. RENDER TABLE 
 function renderTable(data) {
     const tableBody = document.getElementById('parent-list-body');
     tableBody.innerHTML = '';
@@ -106,16 +142,16 @@ function renderTable(data) {
     data.forEach(p => {
         const row = document.createElement('tr');
         
-        let statusBadge = p.status === 'Active' 
-            ? `<span class="badge-success">${p.status}</span>` 
-            : `<span class="badge-success" style="background:#ffebee; color:#c62828;">${p.status}</span>`;
+        let studentCountBadge = p.studentCount > 0 
+            ? `<span class="badge-success" style="background:#e8f5e9; color:#2e7d32; cursor:pointer;" onclick="viewAssociatedStudents('${p.docId}')">${p.studentCount} Child(ren)</span>`
+            : `<span class="badge-success" style="background:#f0f0f0; color:#6c757d;">0 Students</span>`;
 
         row.innerHTML = `
-            <td><strong>${p.parentId}</strong></td>
-            <td>${p.fullName}</td>
+            <td><span style="font-size:0.85rem; color:#888;">${p.parentId}</span></td>
+            <td><strong>${p.fullName}</strong></td>
             <td>${p.email}</td>
             <td>${p.phone}</td>
-            <td>${statusBadge}</td>
+            <td>${studentCountBadge}</td>
             <td style="text-align: right;">
                 <div class="action-menu-container">
                     <button class="btn-icon" onclick="toggleActionMenu('menu-${p.docId}')">
@@ -125,6 +161,9 @@ function renderTable(data) {
                         <div onclick="viewParentDetails('${p.docId}')">
                             <i class="fas fa-eye" style="color:#6c757d"></i> View Profile
                         </div>
+                        <div onclick="viewAssociatedStudents('${p.docId}')">
+                            <i class="fas fa-user-graduate" style="color:#007bff"></i> View Children
+                        </div>
                     </div>
                 </div>
             </td>
@@ -133,79 +172,40 @@ function renderTable(data) {
     });
 }
 
-// 3. ADD NEW PARENT
-function addNewParent() {
-    const parentId = document.getElementById('new-parent-id').value;
-    const firstName = document.getElementById('new-firstname').value;
-    const middleName = document.getElementById('new-middlename').value;
-    const lastName = document.getElementById('new-lastname').value;
-    const email = document.getElementById('new-email').value;
-    const phone = document.getElementById('new-phone').value;
-    const address = document.getElementById('new-address').value;
+// ==========================================
+// 4. SEARCH FUNCTION (FIXED & SAFE)
+// ==========================================
 
-    if (!parentId || !firstName || !lastName || !email || !phone) {
-        alert("Please fill in all required fields.");
-        return;
-    }
-
-    const password = generatePassword();
-
-    const newParent = {
-        parentId: parentId, // Manual ID
-        firstName: firstName,
-        middleName: middleName,
-        lastName: lastName,
-        email: email,
-        phone: phone,
-        address: address,
-        password: password,
-        role: 'parent',
-        status: 'Active',
-        createdAt: new Date()
-    };
-
-    const btn = document.querySelector('#add-parent-modal .btn-primary');
-    const originalText = btn.innerText;
-    btn.innerText = "Saving...";
-    btn.disabled = true;
-
-    window.db.collection('users').add(newParent)
-        .then(() => {
-            alert(`Parent Added Successfully!\n\nID: ${parentId}\nPassword: ${password}`);
-            closeModal('add-parent-modal');
-            loadParents();
-        })
-        .catch((error) => {
-            alert("Error: " + error.message);
-        })
-        .finally(() => {
-            btn.innerText = originalText;
-            btn.disabled = false;
-        });
-}
-
-// 4. SEARCH
 function searchParents() {
-    const input = document.getElementById('search-input').value.toLowerCase();
+    if (!Array.isArray(allParents) || allParents.length === 0) {
+        console.warn("Attempted search before parent data was fully loaded.");
+        return; 
+    }
+    
+    const input = document.getElementById('search-input').value.toLowerCase().trim();
     
     const filtered = allParents.filter(p => {
-        return p.fullName.toLowerCase().includes(input) || 
-               p.parentId.toLowerCase().includes(input) ||
-               p.phone.includes(input) ||
-               p.email.toLowerCase().includes(input);
+        const nameMatch = String(p.fullName).toLowerCase().includes(input);
+        const phoneMatch = String(p.phone).includes(input);
+        const emailMatch = String(p.email).toLowerCase().includes(input);
+
+        return nameMatch || phoneMatch || emailMatch;
     });
     
     renderTable(filtered);
 }
 
-// 5. VIEW DETAILS
+// ==========================================
+// 5. UI MANAGEMENT FUNCTIONS
+// ==========================================
+
 function viewParentDetails(docId) {
     const parent = allParents.find(p => p.docId === docId);
     
     if (parent) {
-        document.getElementById('view-avatar').innerText = parent.firstName.charAt(0);
+        document.getElementById('view-avatar').innerText = parent.firstName.charAt(0) || 'P';
         document.getElementById('view-fullname').innerText = parent.fullName;
-        document.getElementById('view-id').innerText = parent.parentId;
+        document.getElementById('view-id').innerText = parent.phone; // Show Phone instead of ID
         
         document.getElementById('view-phone').innerText = parent.phone;
         document.getElementById('view-email').innerText = parent.email;
@@ -214,35 +214,60 @@ function viewParentDetails(docId) {
         document.getElementById('view-timestamp').innerText = parent.createdAt;
         document.getElementById('view-status').innerText = parent.status;
 
-        // Password Reveal Logic
-        currentViewPassword = parent.password || 'Not Set';
         const passField = document.getElementById('view-password');
         const icon = document.getElementById('toggle-password-btn');
-        passField.innerText = "********"; 
-        icon.className = "fas fa-eye";
+        
+        // Disable Password view since they use Student Account
+        passField.innerText = "Uses Student Login"; 
+        passField.style.fontSize = "0.9rem";
+        passField.style.color = "#666";
+        icon.style.display = "none";
         
         document.getElementById('view-parent-modal').style.display = 'block';
     }
 }
 
 function togglePasswordView() {
-    const passField = document.getElementById('view-password');
-    const icon = document.getElementById('toggle-password-btn');
-    
-    if (passField.innerText === "********") {
-        passField.innerText = currentViewPassword;
-        icon.className = "fas fa-eye-slash"; 
-    } else {
-        passField.innerText = "********";
-        icon.className = "fas fa-eye"; 
-    }
+    // Disabled in this mode
 }
 
-// 6. UI HELPERS
-function showAddParentModal() {
-    document.getElementById('add-parent-form').reset();
-    document.getElementById('add-parent-modal').style.display = 'block';
+function viewAssociatedStudents(docId) {
+    const parent = allParents.find(p => p.docId === docId);
+    if (!parent) return;
+    
+    const modal = document.getElementById("view-associated-students-modal");
+    const title = document.getElementById("students-modal-title");
+    const loading = document.getElementById("students-loading");
+    const table = document.getElementById("associated-students-table");
+    const tbody = document.getElementById("associated-students-body");
+    const emptyMsg = document.getElementById("students-empty");
+
+    title.innerText = `Children of ${parent.fullName}`;
+    modal.style.display = "block";
+    
+    loading.style.display = "none";
+    tbody.innerHTML = "";
+
+    if (parent.associatedStudents.length === 0) {
+        table.style.display = "none";
+        emptyMsg.style.display = "block";
+        return;
+    }
+
+    table.style.display = "table";
+    emptyMsg.style.display = "none";
+
+    parent.associatedStudents.forEach((s) => {
+        const row = document.createElement("tr");
+        row.innerHTML = `
+            <td><strong>${s.studentId}</strong></td>
+            <td>${s.fullName}</td>
+            <td>${s.gradeLevel} - ${s.section}</td>
+        `;
+        tbody.appendChild(row);
+    });
 }
+
 
 function toggleActionMenu(menuId) {
     const dropdowns = document.getElementsByClassName("action-dropdown");

@@ -1,10 +1,10 @@
 /**
  * students.js (Teacher)
- * Features: Class Cards, Drill-down View, Batch Add Existing Students
+ * Features: Class Cards, Drill-down View, Batch Add Existing Students to Class Session
  */
 
-let currentActiveSection = null; // Stores currently opened section (e.g., "Grade 7 - Rizal")
-let currentActiveGrade = null;   // Stores grade level
+let currentActiveSection = null; // Display name for UI
+let currentClassId = null;       // CRITICAL: The specific Firestore Doc ID of the Class Session
 let allDbStudents = [];          // Cache for search
 let batchList = [];              // Temp list for modal
 
@@ -28,7 +28,7 @@ async function loadTeacherClasses(teacherName) {
     const container = document.getElementById('classes-container');
     
     try {
-        // Dual Query
+        // Dual Query to catch 'teacherName' or 'teacher' field
         const [snap1, snap2] = await Promise.all([
             window.db.collection('classSessions').where('teacherName', '==', teacherName).get(),
             window.db.collection('classSessions').where('teacher', '==', teacherName).get()
@@ -38,10 +38,12 @@ async function loadTeacherClasses(teacherName) {
 
         const process = (doc) => {
             const d = doc.data();
-            // Key: Section + Subject (to make unique cards)
-            const key = `${d.section}-${d.subject}`; 
-            if(!classMap.has(key)) {
-                classMap.set(key, d);
+            // Use Doc ID as key to ensure uniqueness
+            if(!classMap.has(doc.id)) {
+                classMap.set(doc.id, {
+                    docId: doc.id, // Store the Firestore ID
+                    ...d
+                });
             }
         };
 
@@ -58,6 +60,7 @@ async function loadTeacherClasses(teacherName) {
             // Card HTML
             const card = document.createElement('div');
             card.className = 'class-card';
+            // Pass the entire object including docId
             card.onclick = () => openClassDetail(c);
             
             card.innerHTML = `
@@ -67,6 +70,9 @@ async function loadTeacherClasses(teacherName) {
                     <div class="card-section">${c.section}</div>
                     <div class="card-meta"><i class="fas fa-clock"></i> ${formatTime(c.startTime)} - ${formatTime(c.endTime)}</div>
                     <div class="card-meta"><i class="fas fa-calendar-alt"></i> ${c.days || 'Daily'}</div>
+                    <div class="card-meta" style="font-size: 0.8rem; color: #888; margin-top:5px;">
+                        <i class="fas fa-users"></i> ${c.students ? c.students.length : 0} Students
+                    </div>
                 </div>
                 <div class="card-footer">
                     <span>Manage Students</span>
@@ -87,14 +93,8 @@ async function loadTeacherClasses(teacherName) {
 // ==========================================
 function openClassDetail(classData) {
     // Store Context
-    currentActiveSection = classData.section; // e.g. "Grade 7 - Rizal" or "Rizal"
-    
-    // Parse Grade if possible (assuming format "Grade 7 - Rizal")
-    if(currentActiveSection.includes(' - ')) {
-        currentActiveGrade = currentActiveSection.split(' - ')[0].trim();
-    } else {
-        currentActiveGrade = ""; // Will update without changing grade if unknown
-    }
+    currentActiveSection = classData.section; 
+    currentClassId = classData.docId; // Store the specific document ID
 
     // UI Updates
     document.getElementById('view-classes-grid').style.display = 'none';
@@ -112,48 +112,57 @@ function backToGrid() {
     document.getElementById('view-class-detail').style.display = 'none';
     document.getElementById('page-title').innerText = "My Classes";
     currentActiveSection = null;
+    currentClassId = null;
+    
+    // Reload grid to update student counts
+    const user = window.sessionManager.getSession();
+    loadTeacherClasses(user.name);
 }
 
 // ==========================================
-// 3. LOAD STUDENTS IN ACTIVE CLASS
+// 3. LOAD STUDENTS IN ACTIVE CLASS (UPDATED)
 // ==========================================
 async function loadStudentsInClass() {
     const tbody = document.getElementById('class-students-body');
     tbody.innerHTML = '<tr><td colspan="4" class="loading-cell">Loading students...</td></tr>';
 
+    if (!currentClassId) {
+        tbody.innerHTML = '<tr><td colspan="4" style="color:red">Error: No Class ID selected.</td></tr>';
+        return;
+    }
+
     try {
-        // Parse section name for query (if DB stores "Rizal" but display is "Grade 7 - Rizal")
-        let searchSec = currentActiveSection;
-        if(currentActiveSection.includes(' - ')) {
-            searchSec = currentActiveSection.split(' - ')[1].trim();
-        }
-
-        // Query
-        const snapshot = await window.db.collection('users')
-            .where('role', '==', 'student')
-            .where('section', '==', searchSec)
-            .get();
-
-        tbody.innerHTML = '';
-        if(snapshot.empty) {
-            tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;">No students in this class yet.</td></tr>';
+        // Fetch the specific Class Session Document
+        const doc = await window.db.collection('classSessions').doc(currentClassId).get();
+        
+        if (!doc.exists) {
+            tbody.innerHTML = '<tr><td colspan="4">Class session not found.</td></tr>';
             return;
         }
 
-        let students = [];
-        snapshot.forEach(doc => students.push({ id: doc.id, ...doc.data() }));
-        
-        // Sort Alphabetical
-        students.sort((a,b) => a.lastName.localeCompare(b.lastName));
+        const data = doc.data();
+        const enrolledStudents = data.students || []; // Get the array of students
 
-        students.forEach(s => {
+        tbody.innerHTML = '';
+        if (enrolledStudents.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;">No students added to this class yet.</td></tr>';
+            return;
+        }
+
+        // Sort Alphabetical
+        enrolledStudents.sort((a,b) => a.fullName.localeCompare(b.fullName));
+
+        // Render from the array stored in classSessions
+        enrolledStudents.forEach(s => {
+            // Note: s contains { uid, fullName, lrn }
             tbody.innerHTML += `
                 <tr>
                     <td>${s.lrn || 'N/A'}</td>
-                    <td><strong>${s.lastName}, ${s.firstName}</strong></td>
-                    <td>${s.gender || '-'}</td>
+                    <td><strong>${s.fullName}</strong></td>
+                    <td><span style="color:#666; font-size:0.85rem">Enrolled</span></td>
                     <td>
-                        <button class="btn-icon" style="color:#dc3545" title="Remove" onclick="removeStudent('${s.id}')">
+                        <button class="btn-icon" style="color:#dc3545" title="Remove" 
+                            onclick="removeStudent('${s.uid}', '${s.fullName.replace(/'/g, "\\'")}', '${s.lrn}')">
                             <i class="fas fa-times"></i>
                         </button>
                     </td>
@@ -162,7 +171,8 @@ async function loadStudentsInClass() {
         });
 
     } catch(e) {
-        console.error(e);
+        console.error("Error loading students:", e);
+        tbody.innerHTML = `<tr><td colspan="4" style="color:red">Error: ${e.message}</td></tr>`;
     }
 }
 
@@ -216,7 +226,9 @@ function addToBatch() {
     const val = document.getElementById('search-db-input').value;
     const student = allDbStudents.find(s => `${s.fullName} (${s.lrn})` === val);
 
-    if(!student) { alert("Please select a valid student."); return; }
+    if(!student) { alert("Please select a valid student from the list."); return; }
+    
+    // Check if already in batch list
     if(batchList.find(b => b.id === student.id)) { alert("Already in list."); return; }
 
     batchList.push(student);
@@ -253,37 +265,37 @@ function removeFromBatch(idx) {
     renderBatchList();
 }
 
+// ==========================================
+// 5. SAVE STUDENTS TO classSessions (UPDATED)
+// ==========================================
 async function saveBatchStudents() {
     const btn = document.getElementById('btn-save-batch');
-    btn.innerText = "Saving...";
+    btn.innerText = "Enrolling...";
     btn.disabled = true;
 
     try {
-        // Prepare Data (Only Update Section and Grade)
-        // Note: This moves the student to this class. If you want them in multiple classes, 
-        // you need a separate 'enrollments' collection instead of updating the 'users' doc.
-        // Assuming 1 Section per Student logic based on previous chats:
-        
-        const updates = batchList.map(s => {
-            // Only update grade if we know it, otherwise keep existing
-            let updateData = { section: currentActiveSection };
-            if(currentActiveGrade) updateData.gradeLevel = currentActiveGrade;
-            
-            // Handle split string "Grade 7 - Rizal" -> "Rizal"
-            if(currentActiveSection.includes(' - ')) {
-                updateData.section = currentActiveSection.split(' - ')[1].trim();
-            }
+        if (!currentClassId) throw new Error("No Class Session ID found.");
 
-            return window.db.collection('users').doc(s.id).update(updateData);
+        const classRef = window.db.collection('classSessions').doc(currentClassId);
+
+        // Prepare simple objects to save inside the array
+        const studentsToAdd = batchList.map(s => ({
+            uid: s.id,
+            fullName: s.fullName,
+            lrn: s.lrn
+        }));
+
+        // Use arrayUnion to add students to the 'students' array field in classSessions
+        await classRef.update({
+            students: firebase.firestore.FieldValue.arrayUnion(...studentsToAdd)
         });
-
-        await Promise.all(updates);
         
-        alert("Students Added!");
+        alert("Students successfully enrolled!");
         closeModal('add-student-modal');
         loadStudentsInClass();
 
     } catch(e) {
+        console.error(e);
         alert("Error: " + e.message);
     } finally {
         btn.innerText = "Confirm & Enroll";
@@ -291,12 +303,31 @@ async function saveBatchStudents() {
     }
 }
 
-function removeStudent(id) {
-    if(confirm("Remove student from this class?")) {
-        window.db.collection('users').doc(id).update({
-            section: "Unassigned",
-            gradeLevel: "Unassigned"
-        }).then(() => loadStudentsInClass());
+// ==========================================
+// 6. REMOVE STUDENT FROM CLASS (UPDATED)
+// ==========================================
+function removeStudent(uid, fullName, lrn) {
+    if(confirm(`Remove ${fullName} from this class?`)) {
+        if (!currentClassId) return;
+
+        const classRef = window.db.collection('classSessions').doc(currentClassId);
+
+        // Construct the EXACT object to remove (Firestore needs exact match for arrayRemove)
+        const studentToRemove = {
+            uid: uid,
+            fullName: fullName,
+            lrn: lrn
+        };
+
+        classRef.update({
+            students: firebase.firestore.FieldValue.arrayRemove(studentToRemove)
+        })
+        .then(() => {
+            loadStudentsInClass();
+        })
+        .catch(err => {
+            alert("Error removing student: " + err.message);
+        });
     }
 }
 

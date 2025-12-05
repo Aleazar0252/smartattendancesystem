@@ -1,362 +1,300 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Student List - ZSNHS</title>
 
-    <link rel="stylesheet" href="admin-css/styles.css" />
-    <link
-      rel="stylesheet"
-      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
-    />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Playfair+Display:wght@700&display=swap"
-      rel="stylesheet"
-    />
-  </head>
-  <body>
-    <div class="overlay" id="mobile-overlay"></div>
-    <div id="preloader">
-      <div class="spinner"></div>
-      <div class="loading-text">ZSNHS...</div>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Student List - ZSNHS</title>
+
+  <link rel="stylesheet" href="admin-css/styles.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet" />
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+</head>
+
+<body>
+  <div class="overlay" id="mobile-overlay"></div>
+  <div id="preloader">
+    <div class="spinner"></div>
+    <div class="loading-text">ZSNHS...</div>
+  </div>
+
+  <div class="dashboard">
+    <div class="sidebar" id="sidebar">
+      <div class="logo">
+        <div class="logo-placeholder">ZSNHS</div>
+        <h1>ZSNHS</h1>
+      </div>
+      <div class="nav-menu">
+        <h2>Dashboard</h2>
+        <div class="nav-item" onclick="window.location.href='admin.html'">
+          <i class="fas fa-tachometer-alt"></i> <span>Overview</span>
+        </div>
+        <div class="nav-item" onclick="toggleDropdown('academics-dropdown', this)">
+          <div style="display: flex; align-items: center; gap: 15px">
+            <i class="fas fa-graduation-cap"></i>
+            <span>Academics</span>
+          </div>
+          <i class="fas fa-chevron-down chevron-icon"></i>
+        </div>
+        <div class="nav-dropdown" id="academics-dropdown">
+          <a href="teachers.html" class="nav-sub-item">Teacher Management</a>
+          <a href="subjects.html" class="nav-sub-item">Subjects</a>
+          <a href="sections.html" class="nav-sub-item">Grade Level & Sections</a>
+          <a href="schedules.html" class="nav-sub-item">Class Schedules</a>
+        </div>
+        <div class="nav-item" onclick="window.location.href='guidance.html'">
+          <i class="fas fa-hands-helping"></i> <span>Guidance</span>
+        </div>
+        <div class="nav-item active" onclick="window.location.href='students.html'">
+          <i class="fas fa-user-graduate"></i> <span>Students</span>
+        </div>
+        <div class="nav-item" onclick="window.location.href='parent.html'">
+          <i class="fas fa-users"></i> <span>Parents</span>
+        </div>
+        <div class="nav-item" onclick="window.location.href='reports.html'">
+          <i class="fas fa-chart-pie"></i> <span>Reports</span>
+        </div>
+        <div class="nav-item" onclick="window.location.href='settings.html'">
+          <i class="fas fa-cog"></i> <span>Settings</span>
+        </div>
+      </div>
+      <div class="logout-container">
+        <button class="logout-btn" onclick="logout()">
+          <i class="fas fa-sign-out-alt"></i> Log out
+        </button>
+      </div>
     </div>
 
-    <div class="dashboard">
-      <div class="sidebar" id="sidebar">
-        <div class="logo">
-          <div class="logo-placeholder">ZSNHS</div>
-          <h1>ZSNHS</h1>
-        </div>
-        <div class="nav-menu">
-          <h2>Dashboard</h2>
-
-          <div class="nav-item" onclick="window.location.href='admin.html'">
-            <i class="fas fa-tachometer-alt"></i> <span>Overview</span>
-          </div>
-
-          <div
-            class="nav-item"
-            onclick="toggleDropdown('academics-dropdown', this)"
-          >
-            <div style="display: flex; align-items: center; gap: 15px">
-              <i class="fas fa-graduation-cap"></i>
-              <span>Academics</span>
-            </div>
-            <i class="fas fa-chevron-down chevron-icon"></i>
-          </div>
-          <div class="nav-dropdown" id="academics-dropdown">
-            <a href="teachers.html" class="nav-sub-item">Teacher Management</a>
-            <a href="subjects.html" class="nav-sub-item">Subjects</a>
-            <a href="sections.html" class="nav-sub-item"
-              >Grade Level & Sections</a
-            >
-            <a href="schedules.html" class="nav-sub-item">Class Schedules</a>
-          </div>
-
-          <div class="nav-item" onclick="window.location.href='guidance.html'">
-            <i class="fas fa-hands-helping"></i> <span>Guidance</span>
-          </div>
-          <div
-            class="nav-item active"
-            onclick="window.location.href='students.html'"
-          >
-            <i class="fas fa-user-graduate"></i> <span>Students</span>
-          </div>
-          <div class="nav-item" onclick="window.location.href='parent.html'">
-            <i class="fas fa-users"></i> <span>Parents</span>
-          </div>
-          <div class="nav-item" onclick="window.location.href='reports.html'">
-            <i class="fas fa-chart-pie"></i> <span>Reports</span>
-          </div>
-          <div class="nav-item" onclick="window.location.href='settings.html'">
-            <i class="fas fa-cog"></i> <span>Settings</span>
-          </div>
-        </div>
-
-        <div class="logout-container">
-          <button class="logout-btn" onclick="logout()">
-            <i class="fas fa-sign-out-alt"></i> Log out
-          </button>
+    <div class="main-content">
+      <div class="header">
+        <i class="fas fa-bars menu-toggle" id="menu-toggle-btn"></i>
+        <h1>Student Master List</h1>
+        <div class="user-profile">
+          <div class="avatar-placeholder">A</div>
+          <span>Admin</span>
         </div>
       </div>
 
-      <div class="main-content">
-        <div class="header">
-          <i class="fas fa-bars menu-toggle" id="menu-toggle-btn"></i>
-          <h1>Student Master List</h1>
-          <div class="user-profile">
-            <div class="avatar-placeholder">A</div>
-            <span>Admin</span>
+      <div class="content-section">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+          <h2 style="color: var(--primary-color)">Enrolled Students</h2>
+          <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+            
+            <input type="text" id="search-input" onkeyup="searchStudents()" placeholder="Search Name, ID, or Parent..." style="padding: 10px; border: 1px solid #ddd; border-radius: 5px; width: 250px;" />
+            
+            <button class="btn" onclick="showBulkUploadModal()" style="background-color: #28a745; color: white;">
+              <i class="fas fa-file-excel"></i> Bulk Upload
+            </button>
+            
+            <button class="btn btn-primary" onclick="showAddStudentModal()">
+              <i class="fas fa-plus"></i> Add Student
+            </button>
           </div>
         </div>
 
-        <div class="content-section">
-          <div
-            style="
-              display: flex;
-              justify-content: space-between;
-              align-items: center;
-              margin-bottom: 20px;
-            "
-          >
-            <h2 style="color: var(--primary-color)">Enrolled Students</h2>
-            <div style="display: flex; gap: 10px">
-              <select
-                id="filter-grade"
-                onchange="searchStudents()"
-                style="
-                  padding: 10px;
-                  border: 1px solid #ddd;
-                  border-radius: 5px;
-                  cursor: pointer;
-                "
-              >
-                <option value="All">All Levels</option>
-                <option value="Grade 7">Grade 7</option>
-                <option value="Grade 8">Grade 8</option>
-                <option value="Grade 9">Grade 9</option>
-                <option value="Grade 10">Grade 10</option>
-                <option value="Grade 11">Grade 11</option>
-                <option value="Grade 12">Grade 12</option>
-              </select>
-              <input
-                type="text"
-                id="search-input"
-                onkeyup="searchStudents()"
-                placeholder="Search Name or ID..."
-                style="
-                  padding: 10px;
-                  border: 1px solid #ddd;
-                  border-radius: 5px;
-                  width: 250px;
-                "
-              />
-              <button class="btn btn-primary" onclick="showAddStudentModal()">
-                <i class="fas fa-plus"></i> Add Student
-              </button>
-            </div>
-          </div>
-
-          <table class="teachers-table">
+        <div class="table-responsive">
+            <table class="teachers-table">
             <thead>
-              <tr>
+                <tr>
                 <th>Student ID</th>
                 <th>LRN</th>
-                <th>Name</th>
-                <th>Year Level</th>
-                <th>Section</th>
+                <th>Student Name</th>
+                <th>Parent Name</th>
+                <th>Parent Contact</th>
                 <th style="text-align: right">Actions</th>
-              </tr>
+                </tr>
             </thead>
             <tbody id="students-list-body">
-              <tr>
+                <tr>
                 <td colspan="6" class="loading-cell">Loading students...</td>
-              </tr>
+                </tr>
             </tbody>
-          </table>
+            </table>
         </div>
       </div>
     </div>
+  </div>
 
-    <div id="add-student-modal" class="modal">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h2>Add New Student</h2>
-          <span class="close-modal" onclick="closeModal('add-student-modal')"
-            >&times;</span
-          >
-        </div>
-        <div class="modal-body">
-          <form
-            id="add-student-form"
-            onsubmit="event.preventDefault(); addNewStudent();"
-          >
-            <div class="form-row" style="display: flex; gap: 10px">
-              <div class="form-group" style="flex: 1">
-                <label>Student ID</label>
-                <input
-                  type="text"
-                  id="new-student-id"
-                  class="form-control"
-                  placeholder="e.g. 2023-0001"
-                  required
-                />
-              </div>
-              <div class="form-group" style="flex: 1">
-                <label>LRN</label>
-                <input
-                  type="text"
-                  id="new-lrn"
-                  class="form-control"
-                  placeholder="12-digit LRN"
-                  required
-                />
-              </div>
+  <div id="add-student-modal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Add New Student</h2>
+        <span class="close-modal" onclick="closeModal('add-student-modal')">&times;</span>
+      </div>
+      <div class="modal-body">
+        <form id="add-student-form" onsubmit="event.preventDefault(); addNewStudent();">
+          <div class="form-row" style="display: flex; gap: 10px">
+            <div class="form-group" style="flex: 1">
+              <label>Student ID</label>
+              <input type="text" id="new-student-id" class="form-control" placeholder="Calculating next ID..." readonly />
             </div>
+            <div class="form-group" style="flex: 1">
+              <label>LRN</label>
+              <input type="text" id="new-lrn" class="form-control" placeholder="12-digit LRN" required />
+            </div>
+          </div>
 
-            <div class="form-row" style="display: flex; gap: 10px">
-              <div class="form-group" style="flex: 1">
-                <label>First Name</label>
-                <input
-                  type="text"
-                  id="new-firstname"
-                  class="form-control"
-                  required
-                />
-              </div>
-              <div class="form-group" style="flex: 1">
-                <label>Middle Name</label>
-                <input
-                  type="text"
-                  id="new-middlename"
-                  class="form-control"
-                  placeholder="Optional"
-                />
-              </div>
-              <div class="form-group" style="flex: 1">
-                <label>Last Name</label>
-                <input
-                  type="text"
-                  id="new-lastname"
-                  class="form-control"
-                  required
-                />
-              </div>
+          <div class="form-row" style="display: flex; gap: 10px">
+            <div class="form-group" style="flex: 1">
+              <label>First Name</label>
+              <input type="text" id="new-firstname" class="form-control" required />
             </div>
+            <div class="form-group" style="flex: 1">
+              <label>Middle Name</label>
+              <input type="text" id="new-middlename" class="form-control" placeholder="Optional" />
+            </div>
+            <div class="form-group" style="flex: 1">
+              <label>Last Name</label>
+              <input type="text" id="new-lastname" class="form-control" required />
+            </div>
+          </div>
+          
+          <div class="form-group">
+            <label>Student Email</label>
+            <input type="email" id="new-email" class="form-control" placeholder="student@gmail.com" required />
+          </div>
 
-            <div class="form-group">
-              <label>Email</label>
-              <input
-                type="email"
-                id="new-email"
-                class="form-control"
-                placeholder="student@gmail.com"
-                required
-              />
+          <div class="form-group">
+            <label>Student Phone Number</label>
+            <input type="text" id="new-student-phone" class="form-control" placeholder="09xxxxxxxxx (Optional)" />
+          </div>
+          <hr style="border: 0; border-top: 1px dashed #ddd; margin: 20px 0" />
+          
+          <h4 style="color: var(--primary-color); margin-bottom: 10px;">Parent/Guardian Information</h4>
+          
+          <div class="form-row" style="display: flex; gap: 10px">
+            <div class="form-group" style="flex: 1">
+                <label>Parent First Name</label>
+                <input type="text" id="new-parent-firstname" class="form-control" required />
             </div>
-
-            <div class="form-group">
-              <label>Assign Grade & Section</label>
-              <input
-                type="text"
-                id="new-section-input"
-                list="sections-list"
-                class="form-control"
-                placeholder="e.g. Grade 10 - Rizal"
-                required
-                autocomplete="off"
-              />
-              <datalist id="sections-list"> </datalist>
+            <div class="form-group" style="flex: 1">
+                <label>Parent Middle Name</label>
+                <input type="text" id="new-parent-middlename" class="form-control" placeholder="Optional" />
             </div>
-          </form>
-        </div>
-        <div class="modal-footer">
-          <button class="btn" onclick="closeModal('add-student-modal')">
-            Cancel
-          </button>
-          <button class="btn btn-primary" onclick="addNewStudent()">
-            Save Student
-          </button>
-        </div>
+            <div class="form-group" style="flex: 1">
+                <label>Parent Last Name</label>
+                <input type="text" id="new-parent-lastname" class="form-control" required />
+            </div>
+          </div>
+          
+          <div class="form-row" style="display: flex; gap: 10px">
+            <div class="form-group" style="flex: 1">
+              <label>Parent Email</label>
+              <input type="email" id="new-parent-email" class="form-control" placeholder="parent@mail.com" />
+            </div>
+            <div class="form-group" style="flex: 1">
+              <label>Parent Contact #</label>
+              <input type="text" id="new-parent-contact" class="form-control" placeholder="09xxxxxxxxx" required />
+            </div>
+          </div>
+          
+          <div class="modal-footer" style="padding: 0; margin-top: 20px;">
+            <button type="button" class="btn" onclick="closeModal('add-student-modal')">Cancel</button>
+            <button type="submit" class="btn btn-primary">Save Student</button>
+          </div>
+        </form>
       </div>
     </div>
+  </div>
 
-    <div id="view-student-modal" class="modal">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h2>Student Profile</h2>
-          <span class="close-modal" onclick="closeModal('view-student-modal')"
-            >&times;</span
-          >
-        </div>
-        <div class="modal-body">
-          <div class="profile-view">
-            <div
-              class="profile-avatar-large"
-              id="view-avatar"
-              style="background-color: #0d47a1"
-            ></div>
-            <h3
-              id="view-fullname"
-              style="color: var(--text-dark); margin-bottom: 5px"
-            ></h3>
-            <span
-              id="view-id"
-              style="color: var(--text-light); font-size: 0.9rem"
-            ></span>
-          </div>
-
-          <div class="detail-row">
-            <span class="detail-label">LRN:</span>
-            <span class="detail-value" id="view-lrn"></span>
-          </div>
-
-          <div class="detail-row">
-            <span class="detail-label">Grade Level:</span>
-            <span class="detail-value" id="view-grade"></span>
-          </div>
-          <div class="detail-row">
-            <span class="detail-label">Section:</span>
-            <span class="detail-value" id="view-section"></span>
-          </div>
-          <div class="detail-row">
-            <span class="detail-label">Email:</span>
-            <span class="detail-value" id="view-email"></span>
-          </div>
-
-          <div class="detail-row" style="align-items: center">
-            <span class="detail-label">Password:</span>
-            <span
-              class="detail-value"
-              id="view-password"
-              style="
-                font-family: monospace;
-                letter-spacing: 1px;
-                color: #d63384;
-                font-weight: bold;
-                margin-right: 10px;
-              "
-              >********</span
-            >
-            <i
-              class="fas fa-eye"
-              id="toggle-password-btn"
-              onclick="togglePasswordView()"
-              style="cursor: pointer; color: #666"
-            ></i>
-          </div>
-
-          <hr style="border: 0; border-top: 1px solid #eee; margin: 15px 0" />
-
-          <div class="detail-row">
-            <span class="detail-label">Date Added:</span>
-            <span
-              class="detail-value"
-              id="view-timestamp"
-              style="font-size: 0.9rem; color: #666"
-            ></span>
-          </div>
-        </div>
-        <div class="modal-footer">
-          <button class="btn" onclick="closeModal('view-student-modal')">
-            Close
+  <div id="bulk-upload-modal" class="modal">
+    <div class="modal-content" style="max-width: 600px;">
+      <div class="modal-header">
+        <h2>Bulk Upload Students</h2>
+        <span class="close-modal" onclick="closeModal('bulk-upload-modal')">&times;</span>
+      </div>
+      <div class="modal-body">
+        <div style="margin-bottom: 20px; padding: 15px; background: #e9ecef; border-radius: 5px;">
+          <p style="margin-bottom: 10px; font-size: 0.9rem;"><strong>Step 1:</strong> Download the template. *Template headers changed to match new Parent fields.</p>
+          <button class="btn" onclick="downloadTemplate()" style="background-color: #17a2b8; color: white; font-size: 0.85rem;">
+            <i class="fas fa-download"></i> Download CSV Template
           </button>
         </div>
+
+        <div style="margin-bottom: 20px;">
+          <p style="margin-bottom: 10px; font-size: 0.9rem;"><strong>Step 2:</strong> Upload your filled Excel or CSV file.</p>
+          <input type="file" id="bulk-file-input" accept=".csv, .xlsx, .xls" class="form-control" />
+        </div>
+
+        <div id="upload-status" style="display: none; margin-top: 15px;">
+          <div style="background: #f8f9fa; border: 1px solid #ddd; padding: 10px; max-height: 150px; overflow-y: auto; font-size: 0.85rem;" id="upload-logs">
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn" onclick="closeModal('bulk-upload-modal')">Cancel</button>
+        <button class="btn btn-primary" onclick="processBulkUpload()" id="btn-process-upload">Upload & Process</button>
       </div>
     </div>
+  </div>
 
-    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
-    <script src="admin-js/admin-config.js"></script>
-    <script>
-      function toggleDropdown(id, el) {
-        document.getElementById(id).classList.toggle("show");
-        el.classList.toggle("dropdown-open");
-      }
-    </script>
-    <script src="admin-js/ui.js"></script>
-    <script src="admin-js/students.js"></script>
-  </body>
+  <div id="view-student-modal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Student Profile</h2>
+        <span class="close-modal" onclick="closeModal('view-student-modal')">&times;</span>
+      </div>
+      <div class="modal-body">
+        <div class="profile-view">
+          <div class="profile-avatar-large" id="view-avatar" style="background-color: #0d47a1">A</div>
+          <h3 id="view-fullname" style="color: var(--text-dark); margin-bottom: 5px"></h3>
+          <span id="view-id" style="color: var(--text-light); font-size: 0.9rem"></span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">LRN:</span>
+          <span class="detail-value" id="view-lrn"></span>
+        </div>
+        
+        <div class="detail-row">
+          <span class="detail-label">Student Email:</span>
+          <span class="detail-value" id="view-email"></span>
+        </div>
+
+        <div class="detail-row">
+          <span class="detail-label">Student Phone:</span>
+          <span class="detail-value" id="view-student-phone"></span>
+        </div>
+        <hr style="border: 0; border-top: 1px dashed #ddd; margin: 15px 0" />
+
+        <h4 style="color: var(--primary-color); margin-bottom: 10px;">Parent/Guardian Contact</h4>
+
+        <div class="detail-row">
+          <span class="detail-label">Parent Full Name:</span>
+          <span class="detail-value" id="view-parent-fullname"></span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">Parent Email:</span>
+          <span class="detail-value" id="view-parent-email"></span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">Parent Contact:</span>
+          <span class="detail-value" id="view-parent-contact"></span>
+        </div>
+
+        <div class="detail-row" style="align-items: center">
+          <span class="detail-label">Password:</span>
+          <span class="detail-value" id="view-password" style="font-family: monospace; letter-spacing: 1px; color: #d63384; font-weight: bold; margin-right: 10px;">********</span>
+          <i class="fas fa-eye" id="toggle-password-btn" onclick="togglePasswordView()" style="cursor: pointer; color: #666"></i>
+        </div>
+        <hr style="border: 0; border-top: 1px solid #eee; margin: 15px 0" />
+        <div class="detail-row">
+          <span class="detail-label">Date Added:</span>
+          <span class="detail-value" id="view-timestamp" style="font-size: 0.9rem; color: #666"></span>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn" onclick="closeModal('view-student-modal')">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
+  <script src="admin-js/admin-config.js"></script>
+  <script src="admin-js/ui.js"></script>
+  <script src="admin-js/students.js"></script>
+</body>
 </html>

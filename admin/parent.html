@@ -90,10 +90,7 @@
                     <h2 style="color: var(--primary-color);">Registered Parents</h2>
                     <div style="display: flex; gap: 10px;">
                         <input type="text" id="search-input" onkeyup="searchParents()" placeholder="Search Name, ID, or Phone..." style="padding: 10px; border: 1px solid #ddd; border-radius: 5px; width: 250px;">
-                        <button class="btn btn-primary" onclick="showAddParentModal()">
-                            <i class="fas fa-plus"></i> Add Parent
-                        </button>
-                    </div>
+                        </div>
                 </div>
 
                 <table class="teachers-table">
@@ -103,7 +100,7 @@
                             <th>Name</th>
                             <th>Email Address</th>
                             <th>Phone Number</th>
-                            <th>Status</th>
+                            <th>Children</th>
                             <th style="text-align: right;">Actions</th>
                         </tr>
                     </thead>
@@ -113,59 +110,6 @@
                 </table>
             </div>
         </div>
-    </div>
-
-    <div id="add-parent-modal" class="modal">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h2>Add New Parent</h2>
-          <span class="close-modal" onclick="closeModal('add-parent-modal')">&times;</span>
-        </div>
-        <div class="modal-body">
-          <form id="add-parent-form" onsubmit="event.preventDefault(); addNewParent();">
-            
-            <div class="form-group">
-                <label>Parent ID</label>
-                <input type="text" id="new-parent-id" class="form-control" placeholder="e.g. P-2023-001" required />
-            </div>
-
-            <div class="form-row" style="display: flex; gap: 10px">
-              <div class="form-group" style="flex: 1">
-                <label>First Name</label>
-                <input type="text" id="new-firstname" class="form-control" required />
-              </div>
-              <div class="form-group" style="flex: 1">
-                <label>Middle Name</label>
-                <input type="text" id="new-middlename" class="form-control" placeholder="Optional" />
-              </div>
-              <div class="form-group" style="flex: 1">
-                <label>Last Name</label>
-                <input type="text" id="new-lastname" class="form-control" required />
-              </div>
-            </div>
-
-            <div class="form-group">
-                <label>Email Address</label>
-                <input type="email" id="new-email" class="form-control" placeholder="parent@gmail.com" required />
-            </div>
-
-            <div class="form-group">
-                <label>Phone Number</label>
-                <input type="text" id="new-phone" class="form-control" placeholder="09xxxxxxxxx" required />
-            </div>
-
-            <div class="form-group">
-                <label>Address</label>
-                <input type="text" id="new-address" class="form-control" placeholder="City / Municipality" required />
-            </div>
-
-          </form>
-        </div>
-        <div class="modal-footer">
-          <button class="btn" onclick="closeModal('add-parent-modal')">Cancel</button>
-          <button class="btn btn-primary" onclick="addNewParent()">Save Parent</button>
-        </div>
-      </div>
     </div>
 
     <div id="view-parent-modal" class="modal">
@@ -216,7 +160,36 @@
         </div>
       </div>
     </div>
-
+    
+    <div id="view-associated-students-modal" class="modal">
+      <div class="modal-content" style="max-width: 700px">
+        <div class="modal-header">
+          <h2 id="students-modal-title">Associated Students</h2>
+          <span class="close-modal" onclick="closeModal('view-associated-students-modal')">&times;</span>
+        </div>
+        <div class="modal-body">
+          <div id="students-loading" style="text-align: center; padding: 20px; display: none;">
+            <i class="fas fa-spinner fa-spin"></i> Loading students...
+          </div>
+          <table class="teachers-table" id="associated-students-table" style="display: none; width: 100%; margin-top: 0">
+            <thead>
+              <tr>
+                <th>Student ID</th>
+                <th>Name</th>
+                <th>Grade & Section</th>
+              </tr>
+            </thead>
+            <tbody id="associated-students-body"></tbody>
+          </table>
+          <p id="students-empty" style="display: none; text-align: center; color: #666; padding: 20px;">
+            This parent is not associated with any registered student.
+          </p>
+        </div>
+        <div class="modal-footer">
+          <button class="btn" onclick="closeModal('view-associated-students-modal')">Close</button>
+        </div>
+      </div>
+    </div>
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>

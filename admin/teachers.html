@@ -14,6 +14,7 @@
       href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Playfair+Display:wght@700&display=swap"
       rel="stylesheet"
     />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script> 
   </head>
   <body>
     <div class="overlay" id="mobile-overlay"></div>
@@ -107,6 +108,9 @@
                   width: 250px;
                 "
               />
+              <button class="btn" onclick="showBulkUploadModal()" style="background-color: #28a745; color: white;">
+                <i class="fas fa-file-excel"></i> Bulk Upload
+              </button>
               <button class="btn btn-primary" onclick="showAddTeacherModal()">
                 <i class="fas fa-plus"></i> Add Teacher
               </button>
@@ -206,6 +210,36 @@
       </div>
     </div>
 
+    <div id="bulk-upload-modal" class="modal">
+      <div class="modal-content" style="max-width: 600px;">
+        <div class="modal-header">
+          <h2>Bulk Upload Teachers</h2>
+          <span class="close-modal" onclick="closeModal('bulk-upload-modal')">&times;</span>
+        </div>
+        <div class="modal-body">
+          <div style="margin-bottom: 20px; padding: 15px; background: #e9ecef; border-radius: 5px;">
+            <p style="margin-bottom: 10px; font-size: 0.9rem;"><strong>Step 1:</strong> Download the template. You can leave the "Teacher ID" column blank to automatically generate IDs (T-YYYY-NNN format).</p>
+            <button class="btn" onclick="downloadTemplate()" style="background-color: #17a2b8; color: white; font-size: 0.85rem;">
+              <i class="fas fa-download"></i> Download CSV Template
+            </button>
+          </div>
+
+          <div style="margin-bottom: 20px;">
+            <p style="margin-bottom: 10px; font-size: 0.9rem;"><strong>Step 2:</strong> Upload your filled Excel or CSV file.</p>
+            <input type="file" id="bulk-file-input" accept=".csv, .xlsx, .xls" class="form-control" />
+          </div>
+
+          <div id="upload-status" style="display: none; margin-top: 15px;">
+            <div style="background: #f8f9fa; border: 1px solid #ddd; padding: 10px; max-height: 150px; overflow-y: auto; font-size: 0.85rem;" id="upload-logs">
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn" onclick="closeModal('bulk-upload-modal')">Cancel</button>
+          <button class="btn btn-primary" onclick="processBulkUpload()" id="btn-process-upload">Upload & Process</button>
+        </div>
+      </div>
+    </div>
     <div id="view-teacher-modal" class="modal">
       <div class="modal-content">
         <div class="modal-header">
