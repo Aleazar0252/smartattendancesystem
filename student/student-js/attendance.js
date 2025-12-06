@@ -1,6 +1,6 @@
 /**
- * attendance.js (Student)
- * Features: View Attendance History, Calculate Stats
+ * attendance.js (Student) - DEBUG VERSION
+ * Shows specific error messages to help debugging.
  */
 
 let allAttendanceRecords = [];
@@ -10,29 +10,34 @@ document.addEventListener('DOMContentLoaded', () => {
         const user = window.sessionManager.getSession();
         document.getElementById('header-user-name').innerText = user.name;
         
-        loadStudentAttendance(user);
+        // Try all possible ID fields
+        const searchId = user.userId || user.studentId || user.id || user.uid;
+        
+        if (!searchId) {
+            alert("Error: Could not find your Student ID in the session. Please logout and login again.");
+            return;
+        }
+
+        console.log("Searching attendance for ID:", searchId);
+        loadStudentAttendance(searchId);
     } else {
         window.location.href = '../index.html';
     }
 });
 
-async function loadStudentAttendance(user) {
+async function loadStudentAttendance(studentId) {
     const tbody = document.getElementById('attendance-list-body');
+    tbody.innerHTML = '<tr><td colspan="4" class="loading-cell">Checking records...</td></tr>';
     
-    // Construct Section String to match Teacher's save format: "Grade X - SectionName"
-    // Assuming user has user.gradeLevel and user.section
-    const sectionString = `${user.gradeLevel} - ${user.section}`;
-
-    console.log("Fetching attendance for section:", sectionString);
-
     try {
-        // 1. Get all attendance sheets for this section
-        const snapshot = await window.db.collection('attendance_records')
-            .where('section', '==', sectionString)
+        // 1. Query the 'attendance' collection
+        const snapshot = await window.db.collection('attendance')
+            .where('studentId', '==', studentId)
             .get();
 
         if (snapshot.empty) {
-            tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;">No attendance records found for your section.</td></tr>';
+            tbody.innerHTML = `<tr><td colspan="4" style="text-align:center;">No records found for ID: <strong>${studentId}</strong></td></tr>`;
+            updateStats({ present: 0, late: 0, absent: 0, total: 0 });
             return;
         }
 
@@ -42,51 +47,40 @@ async function loadStudentAttendance(user) {
         snapshot.forEach(doc => {
             const data = doc.data();
             
-            // 2. Find MY record inside the 'students' array
-            if (data.students && Array.isArray(data.students)) {
-                // We match by ID (preferred) or Name
-                const myRecord = data.students.find(s => s.id === user.uid || s.id === user.docId);
-                
-                if (myRecord) {
-                    // Save for display
-                    myRecords.push({
-                        date: data.date,
-                        subject: data.subject,
-                        status: myRecord.status,
-                        remarks: myRecord.remarks || '-'
-                    });
+            myRecords.push({
+                date: data.attendanceTime, 
+                subject: data.subject,
+                status: data.status,
+                remarks: data.remarks || '-' 
+            });
 
-                    // Update Stats
-                    stats.total++;
-                    if(myRecord.status === 'Present') stats.present++;
-                    else if(myRecord.status === 'Late') stats.late++;
-                    else if(myRecord.status === 'Absent') stats.absent++;
-                }
-            }
+            stats.total++;
+            if (data.status === 'Present') stats.present++;
+            else if (data.status === 'Late') stats.late++;
+            else if (data.status === 'Absent') stats.absent++;
         });
 
-        // 3. Update Stats UI
-        document.getElementById('stat-present').innerText = stats.present;
-        document.getElementById('stat-late').innerText = stats.late;
-        document.getElementById('stat-absent').innerText = stats.absent;
-        
-        // Calculate Rate: (Present + Late) / Total
-        let rate = 0;
-        if(stats.total > 0) {
-            rate = ((stats.present + stats.late) / stats.total) * 100;
-        }
-        document.getElementById('stat-rate').innerText = Math.round(rate) + "%";
-
-        // 4. Render Table
-        renderAttendanceTable(myRecords);
-        
-        // Store for filtering later
+        updateStats(stats);
         allAttendanceRecords = myRecords;
+        renderAttendanceTable(myRecords);
 
     } catch (e) {
-        console.error("Error loading attendance:", e);
-        tbody.innerHTML = '<tr><td colspan="4" style="color:red; text-align:center;">Error loading data.</td></tr>';
+        console.error("Attendance Load Error:", e);
+        // CRITICAL: This will show the ACTUAL error on your screen
+        tbody.innerHTML = `<tr><td colspan="4" style="color:red; text-align:center;"><strong>Error:</strong> ${e.message}</td></tr>`;
     }
+}
+
+function updateStats(stats) {
+    document.getElementById('stat-present').innerText = stats.present;
+    document.getElementById('stat-late').innerText = stats.late;
+    document.getElementById('stat-absent').innerText = stats.absent;
+    
+    let rate = 0;
+    if(stats.total > 0) {
+        rate = ((stats.present + stats.late) / stats.total) * 100;
+    }
+    document.getElementById('stat-rate').innerText = Math.round(rate) + "%";
 }
 
 function renderAttendanceTable(records) {
@@ -94,26 +88,20 @@ function renderAttendanceTable(records) {
     tbody.innerHTML = '';
 
     if (records.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;">No records found for you.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;">No records found.</td></tr>';
         return;
     }
 
-    // Sort by Date (Newest First)
     records.sort((a, b) => new Date(b.date) - new Date(a.date));
 
     records.forEach(r => {
-        let badgeClass = 'badge-success';
-        let bgStyle = '';
-        
-        if (r.status === 'Late') {
-            bgStyle = 'background:#fff3cd; color:#856404;'; // Yellow
-        } else if (r.status === 'Absent') {
-            bgStyle = 'background:#f8d7da; color:#721c24;'; // Red
-        } else {
-            bgStyle = 'background:#d4edda; color:#155724;'; // Green
-        }
+        let badgeStyle = '';
+        if (r.status === 'Late') badgeStyle = 'background:#fff3cd; color:#856404;'; 
+        else if (r.status === 'Absent') badgeStyle = 'background:#f8d7da; color:#721c24;'; 
+        else badgeStyle = 'background:#d4edda; color:#155724;'; 
 
-        const dateDisplay = new Date(r.date).toLocaleDateString('en-US', {
+        const dateObj = new Date(r.date);
+        const dateDisplay = isNaN(dateObj) ? r.date : dateObj.toLocaleDateString('en-US', {
             weekday: 'short', year: 'numeric', month: 'short', day: 'numeric'
         });
 
@@ -121,7 +109,7 @@ function renderAttendanceTable(records) {
             <tr>
                 <td>${dateDisplay}</td>
                 <td><strong>${r.subject}</strong></td>
-                <td><span class="badge-success" style="${bgStyle} border:none;">${r.status}</span></td>
+                <td><span class="badge-success" style="${badgeStyle} border:none; padding: 5px 10px; border-radius: 15px; font-size: 0.85rem;">${r.status}</span></td>
                 <td style="color:#666; font-size:0.9rem;">${r.remarks}</td>
             </tr>
         `;
@@ -129,10 +117,8 @@ function renderAttendanceTable(records) {
     });
 }
 
-// Simple Filter (Optional)
 window.filterAttendance = function() {
     const filter = document.getElementById('month-filter').value;
-    
     if (filter === 'all') {
         renderAttendanceTable(allAttendanceRecords);
     } else if (filter === 'this_month') {

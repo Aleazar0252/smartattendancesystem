@@ -1,33 +1,10 @@
 /**
  * teacher.js
  * Manages Personnel & Displays Workloads
- * ADDED: Bulk Upload Functionality and auto-ID generation logic (T-YYYY-NNN)
  */
 
-// ==========================================
-// 1. GLOBAL SCOPE EXPORTS (REQUIRED FOR HOSTING)
-// ==========================================
-window.validateEmailInput = validateEmailInput;
-window.validatePhoneInput = validatePhoneInput;
-window.togglePasswordView = togglePasswordView;
-window.showAddTeacherModal = showAddTeacherModal;
-window.showBulkUploadModal = showBulkUploadModal; // NEW
-window.downloadTemplate = downloadTemplate;         // NEW
-window.processBulkUpload = processBulkUpload;       // NEW
-window.searchTeachers = searchTeachers;
-window.viewTeacherDetails = viewTeacherDetails;
-window.viewTeacherSchedules = viewTeacherSchedules;
-window.archiveTeacher = archiveTeacher;
-window.toggleActionMenu = toggleActionMenu;
-window.closeModal = closeModal;
-window.addNewTeacher = addNewTeacher;
-
-// ==========================================
-// 2. VARIABLES & INITIALIZATION
-// ==========================================
 let allTeachers = [];
 let currentViewPassword = "";
-let latestLocalTeacherId = 0; // NEW: To track highest ID locally (e.g., 001)
 
 document.addEventListener("DOMContentLoaded", () => {
   setTimeout(() => {
@@ -55,10 +32,6 @@ document.addEventListener("DOMContentLoaded", () => {
   };
 });
 
-// ==========================================
-// 3. CORE HELPERS
-// ==========================================
-
 // --- HELPER: Generate Password ---
 function generatePassword() {
   const chars =
@@ -69,46 +42,6 @@ function generatePassword() {
   }
   return password;
 }
-
-// --- NEW HELPER: Generate Next Teacher ID (T-YYYY-NNN) ---
-async function generateNextTeacherId(currentHighestNum = 0) {
-    const currentYear = new Date().getFullYear(); 
-    
-    let dbHighestNum = 0;
-    
-    // Only query DB if no currentHighestNum is provided (i.e., this is the first call in a batch or for single add)
-    if (currentHighestNum === 0) {
-        try {
-            const snapshot = await window.db.collection('users')
-                .where('role', '==', 'teacher')
-                .orderBy('userId', 'desc') 
-                .limit(1)
-                .get();
-            if (!snapshot.empty) {
-                const lastId = snapshot.docs[0].data().userId;
-                if (lastId && lastId.startsWith('T-')) {
-                    const parts = lastId.split('-');
-                    if (parts.length === 3) {
-                        dbHighestNum = parseInt(parts[2]);
-                    }
-                }
-            }
-        } catch (e) { console.warn("First run or index building for teacher ID:", e); }
-    }
-    
-    // Use whichever is higher: DB, passed argument, or local tracker
-    const actualHighest = Math.max(dbHighestNum, currentHighestNum, latestLocalTeacherId);
-    
-    const nextNum = actualHighest + 1;
-    // Pad with zeros to 3 digits (e.g., 1 -> 001)
-    const paddedNum = String(nextNum).padStart(3, '0');
-    
-    return { 
-        nextId: `T-${currentYear}-${paddedNum}`, 
-        nextNum: nextNum 
-    };
-}
-
 
 // --- VALIDATION FUNCTIONS ---
 
@@ -138,11 +71,7 @@ function validatePhoneInput() {
   }
 }
 
-// ==========================================
-// 4. DATA FETCH & RENDERING
-// ==========================================
-
-// 1. FETCH DATA (UPDATED to track latestLocalTeacherId)
+// 1. FETCH DATA
 async function loadTeachersWithLoad() {
   const tableBody = document.getElementById("teachers-list-body");
   if (allTeachers.length === 0) {
@@ -169,28 +98,14 @@ async function loadTeachersWithLoad() {
 
     allTeachers = [];
     if (teachersSnap.empty) {
-        latestLocalTeacherId = 0; // Reset if empty
-        tableBody.innerHTML =
+      tableBody.innerHTML =
         '<tr><td colspan="5" style="text-align:center;">No teachers found.</td></tr>';
       return;
     }
-    
-    // Reset global tracker for accurate max ID
-    latestLocalTeacherId = 0; 
 
     teachersSnap.forEach((doc) => {
       const data = doc.data();
       const fullName = `${data.firstName} ${data.lastName}`;
-      
-      // NEW: Track highest ID
-      if (data.userId && data.userId.startsWith('T-')) {
-        const parts = data.userId.split('-');
-        if (parts.length === 3) {
-            const currentIdNum = parseInt(parts[2]);
-            if (currentIdNum > latestLocalTeacherId) latestLocalTeacherId = currentIdNum;
-        }
-      }
-      // END NEW
 
       let createdStr = "N/A";
       if (data.createdAt && data.createdAt.toDate) {
@@ -223,7 +138,7 @@ async function loadTeachersWithLoad() {
   }
 }
 
-// 2. RENDER TABLE (No changes needed)
+// 2. RENDER TABLE
 function renderTable(data) {
   const tableBody = document.getElementById("teachers-list-body");
   tableBody.innerHTML = "";
@@ -271,12 +186,67 @@ function renderTable(data) {
   });
 }
 
-// ==========================================
-// 5. CRUD & UI MANAGEMENT
-// ==========================================
+// // 3. ADD NEW TEACHER
+// function addNewTeacher() {
+//   const id = document.getElementById("new-id").value;
+//   const firstName = document.getElementById("new-firstname").value;
+//   const middleName = document.getElementById("new-middlename").value;
+//   const lastName = document.getElementById("new-lastname").value;
+//   const email = document.getElementById("new-email").value;
+//   const phone = document.getElementById("new-phone").value;
 
-// 3. ADD NEW TEACHER (No changes needed)
-function addNewTeacher() {
+//   // Check basic required fields
+//   if (!id || !firstName || !lastName || !email || !phone) {
+//     alert("Please fill in required fields.");
+//     return;
+//   }
+
+//   // Run format validations
+//   if (!validateEmailInput() || !validatePhoneInput()) {
+//     alert("Please correct the errors in the form (Email or Phone).");
+//     return;
+//   }
+
+//   const password = generatePassword();
+
+//   const newTeacher = {
+//     userId: id, // Manual ID from Input
+//     password: password,
+//     firstName: firstName,
+//     middleName: middleName,
+//     lastName: lastName,
+//     email: email,
+//     phone: phone,
+//     status: "Active",
+//     role: "teacher",
+//     createdAt: new Date(),
+//   };
+
+//   const btn = document.querySelector("#add-teacher-modal .btn-primary");
+//   const originalText = btn.innerText;
+//   btn.innerText = "Saving...";
+//   btn.disabled = true;
+
+//   window.db
+//     .collection("users")
+//     .add(newTeacher)
+//     .then(() => {
+//       alert(
+//         `Teacher Added Successfully!\n\nID: ${id}\nPassword: ${password}\nEmail:${email}`
+//       );
+//       closeModal("add-teacher-modal");
+//       loadTeachersWithLoad();
+//     })
+//     .catch((error) => {
+//       alert("Error: " + error.message);
+//     })
+//     .finally(() => {
+//       btn.innerText = originalText;
+//       btn.disabled = false;
+//     });
+// }
+// 3. ADD NEW TEACHER WITH EMAIL NOTIFICATION (Updated error handling)
+async function addNewTeacher() {
   const id = document.getElementById("new-id").value;
   const firstName = document.getElementById("new-firstname").value;
   const middleName = document.getElementById("new-middlename").value;
@@ -299,7 +269,7 @@ function addNewTeacher() {
   const password = generatePassword();
 
   const newTeacher = {
-    userId: id, // Manual ID from Input
+    userId: id,
     password: password,
     firstName: firstName,
     middleName: middleName,
@@ -316,35 +286,119 @@ function addNewTeacher() {
   btn.innerText = "Saving...";
   btn.disabled = true;
 
-  window.db
-    .collection("users")
-    .add(newTeacher)
-    .then(() => {
-        // Update local tracker if the ID follows the pattern, for future reference
-        if (id && id.startsWith('T-')) {
-            const parts = id.split('-');
-            if (parts.length === 3) {
-                const currentIdNum = parseInt(parts[2]);
-                if (currentIdNum > latestLocalTeacherId) latestLocalTeacherId = currentIdNum;
-            }
-        }
-        
-      alert(
-        `Teacher Added Successfully!\n\nID: ${id}\nPassword: ${password}`
-      );
-      closeModal("add-teacher-modal");
-      loadTeachersWithLoad();
-    })
-    .catch((error) => {
-      alert("Error: " + error.message);
-    })
-    .finally(() => {
-      btn.innerText = originalText;
-      btn.disabled = false;
+  try {
+    // Step 1: Save to Firebase
+    await window.db.collection("users").add(newTeacher);
+    
+    // Step 2: Try to send email
+    const emailResult = await sendTeacherCredentials({
+      email: email,
+      id: id,
+      password: password,
+      firstName: firstName,
+      lastName: lastName
     });
+    
+    if (emailResult.success) {
+      alert(`Teacher Added Successfully!\n\nID: ${id}\nPassword: ${password}\n\nCredentials have been sent to: ${email}`);
+    } else {
+      alert(`Teacher Added Successfully!\n\nID: ${id}\nPassword: ${password}\n\nBUT email failed to send: ${emailResult.message}\n\nPlease provide these credentials manually to the teacher.`);
+    }
+    
+    // Close modal and refresh
+    closeModal("add-teacher-modal");
+    loadTeachersWithLoad();
+    
+  } catch (error) {
+    console.error("Error:", error);
+    
+    // Check if it's a Firebase error
+    if (error.message && error.message.includes("Firebase")) {
+      alert("Error saving teacher to database: " + error.message);
+    } else {
+      alert("Unexpected error: " + error.message);
+    }
+  } finally {
+    btn.innerText = originalText;
+    btn.disabled = false;
+  }
 }
-
-// --- UI HELPERS (No changes needed) ---
+// 4. SEND EMAIL FUNCTION - FIXED PATH
+async function sendTeacherCredentials(teacherData) {
+  try {
+    console.log('Attempting to send email...');
+    
+    // Try different possible paths
+    const possiblePaths = [
+      'send-teacher-credentials.php',
+      './send-teacher-credentials.php',
+      'admin-js/send-teacher-credentials.php',
+      '/admin/admin-js/send-teacher-credentials.php'
+    ];
+    
+    let response;
+    let successfulPath;
+    
+    // Try each path until one works
+    for (const path of possiblePaths) {
+      try {
+        console.log('Trying path:', path);
+        response = await fetch(path, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(teacherData),
+          mode: 'cors'
+        });
+        
+        if (response.ok) {
+          successfulPath = path;
+          console.log('Success with path:', path);
+          break;
+        } else if (response.status !== 404) {
+          // If it's not 404, we found the file but it has an error
+          successfulPath = path;
+          break;
+        }
+      } catch (err) {
+        console.log('Failed with path', path, ':', err.message);
+      }
+    }
+    
+    if (!response) {
+      throw new Error('Could not find email endpoint. All paths failed.');
+    }
+    
+    console.log('Response status:', response.status);
+    
+    const text = await response.text();
+    console.log('Response text:', text.substring(0, 200));
+    
+    let result;
+    try {
+      result = JSON.parse(text);
+    } catch (e) {
+      throw new Error('Server returned invalid JSON: ' + text.substring(0, 100));
+    }
+    
+    if (!result.success) {
+      throw new Error(result.message || 'Email sending failed');
+    }
+    
+    return result;
+    
+  } catch (error) {
+    console.error('Email error:', error);
+    return {
+      success: false,
+      message: error.message,
+      credentials: {
+        id: teacherData.id,
+        password: teacherData.password
+      }
+    };
+  }
+}
+// --- UI HELPERS ---
 
 function showAddTeacherModal() {
   document.getElementById("add-teacher-form").reset();
@@ -496,169 +550,7 @@ function closeModal(modalId) {
   document.getElementById(modalId).style.display = "none";
 }
 
-
-// ==========================================
-// 6. BULK UPLOAD LOGIC (NEW)
-// ==========================================
-
-function showBulkUploadModal() {
-    document.getElementById('bulk-upload-modal').style.display = 'block';
-    document.getElementById('bulk-file-input').value = ""; 
-    document.getElementById('upload-status').style.display = 'none'; 
-    document.getElementById('upload-logs').innerHTML = "";
-}
-
-function downloadTemplate() {
-    // Headers matching the processor
-    const headers = ["Teacher ID", "First Name", "Lastname", "Middle name", "email", "phone"];
-    const dummy = ["T-2024-001", "Jane", "Doe", "A", "jane@gmail.com", "09171234567"];
-    
-    const rows = [headers, dummy];
-    const csvContent = "data:text/csv;charset=utf-8," + rows.map(e => e.join(",")).join("\n");
-    
-    const link = document.createElement("a");
-    link.href = encodeURI(csvContent);
-    link.download = "teacher_template.csv";
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-}
-
-async function processBulkUpload() {
-    const fileInput = document.getElementById('bulk-file-input');
-    const logsDiv = document.getElementById('upload-logs');
-    const statusDiv = document.getElementById('upload-status');
-    const btn = document.getElementById('btn-process-upload');
-
-    // 1. Validation
-    if (fileInput.files.length === 0) { 
-        alert("Please select a file first!"); 
-        return; 
-    }
-    
-    // 2. Check Library
-    if (!window.XLSX) {
-        alert("Error: Excel Library (SheetJS) is not loaded. Please refresh.");
-        return;
-    }
-
-    btn.innerText = "Processing...";
-    btn.disabled = true;
-    statusDiv.style.display = 'block';
-    logsDiv.innerHTML = "<div>Reading file...</div>";
-
-    const reader = new FileReader();
-    
-    reader.onload = async function(e) {
-        try {
-            const workbook = window.XLSX.read(new Uint8Array(e.target.result), { type: 'array' });
-            const firstSheetName = workbook.SheetNames[0];
-            const jsonData = window.XLSX.utils.sheet_to_json(workbook.Sheets[firstSheetName]);
-            
-            if (jsonData.length === 0) {
-                logsDiv.innerHTML += "<div style='color:red;'>File is empty!</div>";
-                btn.innerText = "Upload & Process";
-                btn.disabled = false;
-                return;
-            }
-
-            logsDiv.innerHTML += `<div>Found ${jsonData.length} rows. Generating IDs...</div>`;
-
-            // 3. Initial ID Fetch
-            let currentIdInfo = await generateNextTeacherId(0);
-            let currentIdNum = currentIdInfo.nextNum - 1; // Start from highest existing
-            
-            let successCount = 0;
-            let failCount = 0;
-            
-            for (let i = 0; i < jsonData.length; i++) {
-                const row = jsonData[i];
-
-                // 4. Loose Header Matching and Data Extraction
-                const tId = String(row["Teacher ID"] || row["TeacherID"] || row["ID"] || "").trim();
-                const fName = row["First Name"] || row["firstname"] || row["Firstname"];
-                const lName = row["Lastname"] || row["lastname"] || row["Last Name"];
-                const email = row["email"] || row["Email"];
-                const phone = String(row["phone"] || row["Phone"] || "");
-
-                
-                if(!fName || !lName || !email || !phone) {
-                    logsDiv.innerHTML += `<div style='color:orange;'>Row ${i+1}: Skipped (Missing Name, Email, or Phone)</div>`;
-                    failCount++;
-                    continue;
-                }
-                
-                let teacherId = tId;
-                if (!teacherId || teacherId === "") {
-                    // Generate new ID if missing
-                    currentIdNum++; 
-                    const newIdInfo = await generateNextTeacherId(currentIdNum);
-                    teacherId = newIdInfo.nextId;
-                    currentIdNum = newIdInfo.nextNum; // Update counter in case of async gap
-                }
-
-                const newTeacher = {
-                    userId: teacherId, 
-                    firstName: fName,
-                    lastName: lName,
-                    middleName: row["Middle name"] || row["middlename"] || "",
-                    email: email,
-                    phone: phone,
-                    password: generatePassword(),
-                    status: 'Active',
-                    role: 'teacher',
-                    createdAt: new Date()
-                };
-
-                try {
-                    // Check if ID already exists (simple check, not perfect but helps)
-                    const existingSnap = await window.db.collection('users').where('userId', '==', teacherId).limit(1).get();
-                    if (!existingSnap.empty) {
-                        logsDiv.innerHTML += `<div style='color:red;'>Row ${i+1}: Skipped (ID ${teacherId} already exists)</div>`;
-                        failCount++;
-                    } else {
-                         await window.db.collection('users').add(newTeacher);
-                         logsDiv.innerHTML += `<div style='color:green; font-size:11px;'>Added: ${fName} ${lName} (${teacherId})</div>`;
-                         // If the ID was manually provided, also track it
-                         if (tId && tId.startsWith('T-')) {
-                              const parts = tId.split('-');
-                              if (parts.length === 3) {
-                                  const idNum = parseInt(parts[2]);
-                                  if (idNum > currentIdNum) currentIdNum = idNum;
-                              }
-                         }
-                         successCount++;
-                         logsDiv.scrollTop = logsDiv.scrollHeight;
-                    }
-
-                } catch(err) {
-                    console.error(err);
-                    logsDiv.innerHTML += `<div style='color:red;'>Row ${i+1} DB Error: ${err.message}</div>`;
-                    failCount++;
-                }
-            }
-
-            // Update global tracker
-            latestLocalTeacherId = currentIdNum;
-
-            logsDiv.innerHTML += `<br><strong>Done! Success: ${successCount}, Failed: ${failCount}</strong>`;
-            
-            if(successCount > 0) {
-                alert(`Upload Complete!\nSuccess: ${successCount}\nFailed: ${failCount}`);
-                loadTeachersWithLoad();
-            }
-
-        } catch (error) {
-            console.error(error);
-            logsDiv.innerHTML += `<div style='color:red;'>Critical Error: ${error.message}</div>`;
-            alert("An error occurred. Check console.");
-        } finally {
-            btn.innerText = "Upload & Process";
-            btn.disabled = false;
-        }
-    };
-
-    reader.readAsArrayBuffer(fileInput.files[0]);
-}
-
-// Global Export (Moved to top of file)
+// Global Export
+window.validateEmailInput = validateEmailInput;
+window.validatePhoneInput = validatePhoneInput;
+window.togglePasswordView = togglePasswordView;

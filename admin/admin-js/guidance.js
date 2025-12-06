@@ -159,28 +159,84 @@ function renderTable(data) {
     });
 }
 
-// 3. ADD NEW GUIDANCE
-function addNewGuidance() {
-    const id = document.getElementById('new-id').value;
-    const firstName = document.getElementById('new-firstname').value;
-    const middleName = document.getElementById('new-middlename').value;
-    const lastName = document.getElementById('new-lastname').value;
-    const email = document.getElementById('new-email').value;
-    const phone = document.getElementById('new-phone').value;
+// // 3. ADD NEW GUIDANCE
+// function addNewGuidance() {
+//     const id = document.getElementById('new-id').value;
+//     const firstName = document.getElementById('new-firstname').value;
+//     const middleName = document.getElementById('new-middlename').value;
+//     const lastName = document.getElementById('new-lastname').value;
+//     const email = document.getElementById('new-email').value;
+//     const phone = document.getElementById('new-phone').value;
 
-    if(!id || !firstName || !lastName || !email || !phone) {
-        alert("Please fill in required fields.");
-        return;
-    }
+//     if(!id || !firstName || !lastName || !email || !phone) {
+//         alert("Please fill in required fields.");
+//         return;
+//     }
 
-    if (!validateEmailInput() || !validatePhoneInput()) {
-        alert("Please correct the errors in the form.");
-        return;
-    }
+//     if (!validateEmailInput() || !validatePhoneInput()) {
+//         alert("Please correct the errors in the form.");
+//         return;
+//     }
 
-    const password = generatePassword(); 
+//     const password = generatePassword(); 
 
-    const newStaff = {
+//     const newStaff = {
+//         guidanceId: id, // Unique field name for Guidance
+//         password: password,
+//         firstName: firstName,
+//         middleName: middleName,
+//         lastName: lastName,
+//         email: email,
+//         phone: phone,
+//         status: 'Active',
+//         role: 'guidance', // IMPORTANT: Role identifier
+//         createdAt: new Date()
+//     };
+
+//     const btn = document.querySelector('#add-guidance-modal .btn-primary');
+//     const originalText = btn.innerText;
+//     btn.innerText = "Saving...";
+//     btn.disabled = true;
+
+//     window.db.collection('users').add(newStaff)
+//         .then(() => {
+//             alert(`Staff Added Successfully!\n\nID: ${id}\n\nPlease check 'View Profile' for credentials.`);
+//             closeModal('add-guidance-modal');
+//             loadGuidanceList(); 
+//         })
+//         .catch((error) => {
+//             alert("Error: " + error.message);
+//         })
+//         .finally(() => {
+//             btn.innerText = originalText;
+//             btn.disabled = false;
+//         });
+// }
+
+// 3. ADD NEW GUIDANCE WITH EMAIL NOTIFICATION (Updated error handling)
+async function addNewGuidance() {
+  const id = document.getElementById("new-id").value;
+  const firstName = document.getElementById("new-firstname").value;
+  const middleName = document.getElementById("new-middlename").value;
+  const lastName = document.getElementById("new-lastname").value;
+  const email = document.getElementById("new-email").value;
+  const phone = document.getElementById("new-phone").value;
+
+  // Check basic required fields
+  if (!id || !firstName || !lastName || !email || !phone) {
+    alert("Please fill in required fields.");
+    return;
+  }
+
+  // Run format validations
+  if (!validateEmailInput() || !validatePhoneInput()) {
+    alert("Please correct the errors in the form (Email or Phone).");
+    return;
+  }
+
+  const password = generatePassword();
+
+const newStaff = {
         guidanceId: id, // Unique field name for Guidance
         password: password,
         firstName: firstName,
@@ -192,27 +248,125 @@ function addNewGuidance() {
         role: 'guidance', // IMPORTANT: Role identifier
         createdAt: new Date()
     };
-
-    const btn = document.querySelector('#add-guidance-modal .btn-primary');
+     const btn = document.querySelector('#add-guidance-modal .btn-primary');
     const originalText = btn.innerText;
     btn.innerText = "Saving...";
     btn.disabled = true;
 
-    window.db.collection('users').add(newStaff)
-        .then(() => {
-            alert(`Staff Added Successfully!\n\nID: ${id}\n\nPlease check 'View Profile' for credentials.`);
-            closeModal('add-guidance-modal');
-            loadGuidanceList(); 
-        })
-        .catch((error) => {
-            alert("Error: " + error.message);
-        })
-        .finally(() => {
-            btn.innerText = originalText;
-            btn.disabled = false;
-        });
-}
 
+  try {
+    // Step 1: Save to Firebase
+   
+   await window.db.collection('users').add(newStaff)
+    
+    // Step 2: Try to send email
+    const emailResult = await sendGuidanceCredentials({
+      email: email,
+      id: id,
+      password: password,
+      firstName: firstName,
+      lastName: lastName
+    });
+    
+    if (emailResult.success) {
+      alert(`Guidance Added Successfully!\n\nID: ${id}\nPassword: ${password}\n\nCredentials have been sent to: ${email}`);
+    } else {
+      alert(`Guidance Added Successfully!\n\nID: ${id}\nPassword: ${password}\n\nBUT email failed to send: ${emailResult.message}\n\nPlease provide these credentials manually to the guidance.`);
+    }
+    
+    // Close modal and refresh
+    closeModal("add-guidance-modal");
+    loadGuidanceList();
+    
+  } catch (error) {
+    console.error("Error:", error);
+    
+    // Check if it's a Firebase error
+    if (error.message && error.message.includes("Firebase")) {
+      alert("Error saving guidance to database: " + error.message);
+    } else {
+      alert("Unexpected error: " + error.message);
+    }
+  } finally {
+    btn.innerText = originalText;
+    btn.disabled = false;
+  }
+}
+// 4. SEND EMAIL FUNCTION - FIXED PATH
+async function sendGuidanceCredentials(guidanceData) {
+  try {
+    console.log('Attempting to send email...');
+    
+    // Try different possible paths
+    const possiblePaths = [
+      'send-guidance-credentials.php',
+      './send-guidance-credentials.php',
+      'admin-js/send-guidance-credentials.php',
+      '/admin/admin-js/send-guidance-credentials.php'
+    ];
+    
+    let response;
+    let successfulPath;
+    
+    // Try each path until one works
+    for (const path of possiblePaths) {
+      try {
+        console.log('Trying path:', path);
+        response = await fetch(path, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(guidanceData),
+          mode: 'cors'
+        });
+        
+        if (response.ok) {
+          successfulPath = path;
+          console.log('Success with path:', path);
+          break;
+        } else if (response.status !== 404) {
+          // If it's not 404, we found the file but it has an error
+          successfulPath = path;
+          break;
+        }
+      } catch (err) {
+        console.log('Failed with path', path, ':', err.message);
+      }
+    }
+    
+    if (!response) {
+      throw new Error('Could not find email endpoint. All paths failed.');
+    }
+    
+    console.log('Response status:', response.status);
+    
+    const text = await response.text();
+    console.log('Response text:', text.substring(0, 200));
+    
+    let result;
+    try {
+      result = JSON.parse(text);
+    } catch (e) {
+      throw new Error('Server returned invalid JSON: ' + text.substring(0, 100));
+    }
+    
+    if (!result.success) {
+      throw new Error(result.message || 'Email sending failed');
+    }
+    
+    return result;
+    
+  } catch (error) {
+    console.error('Email error:', error);
+    return {
+      success: false,
+      message: error.message,
+      credentials: {
+        id: guidanceData.id,
+        password: guidanceData.password
+      }
+    };
+  }
+}
 // --- UI HELPERS ---
 
 function showAddGuidanceModal() {

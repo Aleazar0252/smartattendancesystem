@@ -127,11 +127,11 @@ async function loadStudentsInClass() {
 
     try {
         // 1. Get the list of Custom UserIDs from the class document
+        // We strictly look at the 'classStudents' field
         const classDoc = await window.db.collection('classSessions').doc(currentClassId).get();
         if (!classDoc.exists) return;
 
         const data = classDoc.data();
-        // This array now contains "2023-0001", "2023-0002" etc.
         const storedUserIds = data.classStudents || []; 
 
         if (!storedUserIds || storedUserIds.length === 0) {
@@ -139,12 +139,11 @@ async function loadStudentsInClass() {
             return;
         }
 
-        // 2. Fetch details by Querying for each userId
-        // Note: Since 'userId' is a field, we must use .where(), not .doc()
+        // 2. Fetch details by Querying for each userId string
         const studentPromises = storedUserIds.map(customId => 
             window.db.collection('users')
-                .where('userId', '==', customId) // Query by custom ID
-                .where('role', '==', 'student')  // Safety check
+                .where('userId', '==', customId) // Query using the custom ID (e.g., "2024-001")
+                .where('role', '==', 'student')
                 .limit(1)
                 .get()
         );
@@ -157,9 +156,11 @@ async function loadStudentsInClass() {
                 const doc = snap.docs[0];
                 const sData = doc.data();
                 enrolledStudents.push({
-                    userId: sData.userId || 'N/A', // The ID we used to search
-                    fullName: `${sData.firstName} ${sData.lastName}`,
+                    // Capture the data to display
+                    userId: sData.userId || 'N/A', 
                     lrn: sData.lrn || 'N/A',
+                    fullName: `${sData.firstName} ${sData.lastName}`,
+                    gender: sData.gender || sData.userId, // Fallback to userId if gender is missing
                     lastName: sData.lastName || ''
                 });
             }
@@ -167,15 +168,17 @@ async function loadStudentsInClass() {
 
         // 3. Render
         tbody.innerHTML = '';
+        
+        // Sort alphabetically by last name
         enrolledStudents.sort((a,b) => a.lastName.localeCompare(b.lastName));
 
         enrolledStudents.forEach(s => {
+            // Mapping to HTML Headers: | LRN | Name | User ID (Gender col) | Action |
             tbody.innerHTML += `
                 <tr>
-                    <td>${s.userId}</td>
+                    <td>${s.lrn}</td>
                     <td><strong>${s.fullName}</strong></td>
-                    <td><span style="color:#666; font-size:0.85rem">Enrolled</span></td>
-                    <td>
+                    <td>${s.userId}</td> <td>
                         <button class="btn-icon" style="color:#dc3545" title="Remove" 
                             onclick="removeStudent('${s.userId}')">
                             <i class="fas fa-times"></i>

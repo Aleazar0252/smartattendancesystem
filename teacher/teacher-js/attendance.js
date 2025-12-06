@@ -1,17 +1,23 @@
 /**
  * attendance.js
- * Teacher Attendance: Grid View -> Daily Sheet
+ * Teacher Attendance: 
+ * Saves individual documents per student in 'attendance' collection.
  */
 
 let currentSection = "";
 let currentSubject = "";
-let loadedStudents = []; // Stores student data locally
+let currentClassId = ""; // Firestore Doc ID of the Class Session
+let currentTeacherId = ""; // To store teacherId
+let loadedStudents = []; // Stores merged data (Student Info + Attendance Status)
 
 document.addEventListener('DOMContentLoaded', () => {
     if (window.sessionManager && window.sessionManager.isLoggedIn()) {
         const user = window.sessionManager.getSession();
         document.getElementById('header-user-name').innerText = user.name;
         
+        // Store Teacher ID for the record
+        currentTeacherId = user.uid || user.id; 
+
         // 1. Load Classes
         loadTeacherClasses(user.name);
         
@@ -33,8 +39,10 @@ async function loadTeacherClasses(teacherName) {
         const classMap = new Map();
         const process = (doc) => {
             const d = doc.data();
-            const key = `${d.section}-${d.subject}`; 
-            if(!classMap.has(key)) classMap.set(key, d);
+            // Use Doc ID as key to ensure we capture the specific class ID
+            if(!classMap.has(doc.id)) {
+                classMap.set(doc.id, { docId: doc.id, ...d });
+            }
         };
 
         snap1.forEach(process);
@@ -57,7 +65,7 @@ async function loadTeacherClasses(teacherName) {
                     <div class="card-subject">${c.subject}</div>
                     <div class="card-section">${c.section}</div>
                     <div class="card-footer" style="background:transparent; padding:0; border:none;">
-                        <span style="font-size:0.85rem;"><i class="fas fa-clock"></i> ${c.days}</span>
+                        <span style="font-size:0.85rem;"><i class="fas fa-clock"></i> ${c.days || 'Daily'}</span>
                     </div>
                 </div>
                 <div class="card-footer">
@@ -73,10 +81,11 @@ async function loadTeacherClasses(teacherName) {
     }
 }
 
-// --- 2. OPEN SHEET & LOAD STUDENTS ---
+// --- 2. OPEN SHEET & PREPARE ---
 function openAttendanceSheet(classData) {
     currentSection = classData.section;
     currentSubject = classData.subject;
+    currentClassId = classData.docId; // Vital for fetching enrolled students
 
     document.getElementById('att-subject').innerText = currentSubject;
     document.getElementById('att-section').innerText = currentSection;
@@ -92,91 +101,112 @@ function backToGrid() {
     document.getElementById('view-attendance-sheet').style.display = 'none';
 }
 
-// --- 3. CHECK FOR EXISTING RECORDS OR LOAD NEW ---
+// --- 3. LOAD DATA (MERGE ENROLLED STUDENTS + EXISTING ATTENDANCE) ---
 async function loadAttendanceForDate() {
-    const date = document.getElementById('attendance-date').value;
+    const dateStr = document.getElementById('attendance-date').value;
     const tbody = document.getElementById('attendance-table-body');
-    tbody.innerHTML = '<tr><td colspan="3" class="loading-cell">Checking records...</td></tr>';
-
-    // Parse section name if needed (e.g. "Grade 7 - Rizal" -> "Rizal")
-    // Assuming Users collection stores "Rizal" or the full string. 
-    // We try to match user data structure.
-    let searchSec = currentSection;
-    if(currentSection.includes(' - ')) {
-        searchSec = currentSection.split(' - ')[1].trim();
-    }
+    tbody.innerHTML = '<tr><td colspan="3" class="loading-cell">Loading records...</td></tr>';
 
     try {
-        // A. Check if attendance already exists for this Section + Date + Subject
-        // docID format suggestion: "Section_Subject_Date" to make it unique easily
-        const docId = `${currentSection}_${currentSubject}_${date}`.replace(/ /g, '_');
+        // STEP A: Fetch Enrolled Students from classSessions
+        const classDoc = await window.db.collection('classSessions').doc(currentClassId).get();
+        if (!classDoc.exists) {
+            tbody.innerHTML = '<tr><td colspan="3">Class data not found.</td></tr>';
+            return;
+        }
         
-        const existingRecord = await window.db.collection('attendance_records').doc(docId).get();
+        const enrolledUserIds = classDoc.data().classStudents || [];
+        if (enrolledUserIds.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="3" style="text-align:center;">No students enrolled in this class.</td></tr>';
+            return;
+        }
 
-        if (existingRecord.exists) {
-            // LOAD EXISTING
-            renderTable(existingRecord.data().students);
-        } else {
-            // LOAD FRESH LIST FROM USERS
-            const snapshot = await window.db.collection('users')
-                .where('role', '==', 'student')
-                .where('section', '==', searchSec)
-                .get();
-
-            if (snapshot.empty) {
-                tbody.innerHTML = '<tr><td colspan="3" style="text-align:center;">No students enrolled in this class.</td></tr>';
-                return;
-            }
-
-            loadedStudents = [];
-            snapshot.forEach(doc => {
-                const s = doc.data();
-                loadedStudents.push({
-                    id: doc.id,
-                    name: `${s.lastName}, ${s.firstName}`,
-                    status: 'Present', // Default
+        // STEP B: Fetch Student Details (Name, etc.)
+        const studentPromises = enrolledUserIds.map(uid => 
+            window.db.collection('users').where('userId', '==', uid).get()
+        );
+        const studentSnaps = await Promise.all(studentPromises);
+        
+        let studentsBase = [];
+        studentSnaps.forEach(snap => {
+            if(!snap.empty) {
+                const s = snap.docs[0].data();
+                studentsBase.push({
+                    studentId: s.userId || s.studentId, // The Custom ID
+                    firstName: s.firstName,
+                    lastName: s.lastName,
+                    fullName: `${s.lastName}, ${s.firstName}`,
+                    status: 'Present', // Default status
                     remarks: ''
                 });
-            });
-            
-            // Sort
-            loadedStudents.sort((a,b) => a.name.localeCompare(b.name));
-            renderTable(loadedStudents);
-        }
+            }
+        });
+
+        // STEP C: Check for Existing Attendance in 'attendance' collection
+        // Query: section + subject + attendanceTime
+        const attSnap = await window.db.collection('attendance')
+            .where('section', '==', currentSection)
+            .where('subject', '==', currentSubject)
+            .where('attendanceTime', '==', dateStr)
+            .get();
+
+        // Create a map of existing attendance for quick lookup
+        const attMap = {};
+        attSnap.forEach(doc => {
+            const data = doc.data();
+            attMap[data.studentId] = data; // Key by studentId
+        });
+
+        // STEP D: Merge Data
+        loadedStudents = studentsBase.map(s => {
+            if (attMap[s.studentId]) {
+                // If record exists, use that status
+                return { 
+                    ...s, 
+                    status: attMap[s.studentId].status,
+                    remarks: attMap[s.studentId].remarks || '' // If you add remarks field later
+                };
+            }
+            return s; // Otherwise return default (Present)
+        });
+
+        // Sort by Name
+        loadedStudents.sort((a,b) => a.lastName.localeCompare(b.lastName));
+        renderTable(loadedStudents);
 
     } catch (e) {
         console.error(e);
-        tbody.innerHTML = '<tr><td colspan="3" style="color:red">Error loading data.</td></tr>';
+        tbody.innerHTML = `<tr><td colspan="3" style="color:red">Error: ${e.message}</td></tr>`;
     }
 }
 
 function renderTable(studentList) {
     const tbody = document.getElementById('attendance-table-body');
     tbody.innerHTML = '';
-    loadedStudents = studentList; // Update local cache
 
     studentList.forEach((s, index) => {
         const row = document.createElement('tr');
-        
-        // Generate Unique IDs for Radios
-        const nameId = `s_${index}`;
+        const uniqueId = `s_${index}`; // For radio grouping
         
         row.innerHTML = `
-            <td><strong>${s.name}</strong></td>
+            <td>
+                <div style="font-weight:600;">${s.lastName}, ${s.firstName}</div>
+                <div style="font-size:0.8rem; color:#666;">ID: ${s.studentId}</div>
+            </td>
             <td>
                 <div class="att-options">
-                    <input type="radio" name="${nameId}" id="${nameId}_p" class="att-radio" value="Present" ${s.status==='Present'?'checked':''} onchange="updateStatus(${index}, 'Present')">
-                    <label for="${nameId}_p" class="att-label present" title="Present">P</label>
+                    <input type="radio" name="${uniqueId}" id="${uniqueId}_p" class="att-radio" value="Present" ${s.status==='Present'?'checked':''} onchange="updateStatus(${index}, 'Present')">
+                    <label for="${uniqueId}_p" class="att-label present" title="Present">P</label>
 
-                    <input type="radio" name="${nameId}" id="${nameId}_l" class="att-radio" value="Late" ${s.status==='Late'?'checked':''} onchange="updateStatus(${index}, 'Late')">
-                    <label for="${nameId}_l" class="att-label late" title="Late">L</label>
+                    <input type="radio" name="${uniqueId}" id="${uniqueId}_l" class="att-radio" value="Late" ${s.status==='Late'?'checked':''} onchange="updateStatus(${index}, 'Late')">
+                    <label for="${uniqueId}_l" class="att-label late" title="Late">L</label>
 
-                    <input type="radio" name="${nameId}" id="${nameId}_a" class="att-radio" value="Absent" ${s.status==='Absent'?'checked':''} onchange="updateStatus(${index}, 'Absent')">
-                    <label for="${nameId}_a" class="att-label absent" title="Absent">A</label>
+                    <input type="radio" name="${uniqueId}" id="${uniqueId}_a" class="att-radio" value="Absent" ${s.status==='Absent'?'checked':''} onchange="updateStatus(${index}, 'Absent')">
+                    <label for="${uniqueId}_a" class="att-label absent" title="Absent">A</label>
                 </div>
             </td>
             <td>
-                <input type="text" class="form-control" style="margin:0; font-size:0.85rem;" placeholder="Remarks..." value="${s.remarks || ''}" oninput="updateRemarks(${index}, this.value)">
+                <span style="font-size:0.8rem; color:#888;">${s.status}</span>
             </td>
         `;
         tbody.appendChild(row);
@@ -188,17 +218,14 @@ function renderTable(studentList) {
 // --- 4. STATE MANAGEMENT ---
 window.updateStatus = function(index, status) {
     loadedStudents[index].status = status;
+    // Re-render just the summary or small UI update if needed, 
+    // but here we just recalc totals
     calculateSummary();
-};
-
-window.updateRemarks = function(index, value) {
-    loadedStudents[index].remarks = value;
 };
 
 window.markAllPresent = function() {
     loadedStudents.forEach((s, i) => {
         s.status = 'Present';
-        // Visually update radio buttons
         const radio = document.getElementById(`s_${i}_p`);
         if(radio) radio.checked = true;
     });
@@ -218,10 +245,10 @@ function calculateSummary() {
     document.getElementById('count-a').innerText = a;
 }
 
-// --- 5. SAVE TO FIREBASE ---
+// --- 5. SAVE TO FIREBASE (BATCH WRITE) ---
 window.saveAttendance = async function() {
-    const date = document.getElementById('attendance-date').value;
-    const btn = document.querySelector('.btn-primary'); // The Save Button
+    const dateStr = document.getElementById('attendance-date').value;
+    const btn = document.querySelector('.btn-primary');
     
     if(loadedStudents.length === 0) return;
 
@@ -229,16 +256,32 @@ window.saveAttendance = async function() {
     btn.disabled = true;
 
     try {
-        const docId = `${currentSection}_${currentSubject}_${date}`.replace(/ /g, '_');
+        const batch = window.db.batch();
         
-        await window.db.collection('attendance_records').doc(docId).set({
-            date: date,
-            section: currentSection,
-            subject: currentSubject,
-            teacherName: document.getElementById('header-user-name').innerText,
-            students: loadedStudents, // Saves the array of objects {id, name, status, remarks}
-            updatedAt: new Date()
+        // Loop through all students and prepare a document for each
+        loadedStudents.forEach(s => {
+            // Create a unique ID for the document: StudentID_Subject_Date
+            // This ensures we update the existing record if it exists, rather than creating duplicates
+            const docId = `${s.studentId}_${currentSubject}_${dateStr}`.replace(/ /g, '_');
+            const docRef = window.db.collection('attendance').doc(docId);
+
+            // The Fields you requested
+            const record = {
+                attendanceTime: dateStr, // Using the date string selected
+                firstName: s.firstName,
+                lastName: s.lastName,
+                section: currentSection,
+                status: s.status,
+                subject: currentSubject,
+                teacherId: currentTeacherId,
+                studentId: s.studentId
+            };
+
+            batch.set(docRef, record);
         });
+
+        // Commit all writes at once
+        await batch.commit();
 
         alert("Attendance Saved Successfully!");
 

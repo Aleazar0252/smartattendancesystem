@@ -4,8 +4,10 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Admin Dashboard - ZSNHS</title>
+    <link rel="icon" type="image/x-icon" href="../img/a2.png">
 
     <link rel="stylesheet" href="admin-css/styles.css" />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
     <link
       rel="stylesheet"
@@ -153,19 +155,104 @@
 
         
         <div class="content-section">
-             <h2 style="margin-bottom:20px; color:var(--primary-color);">Quick Actions</h2>
-             <div style="display: flex; gap: 15px; flex-wrap: wrap;">
-                 <button class="btn btn-primary" onclick="window.location.href='teacher.html'">
-                    <i class="fas fa-plus"></i> Add Teacher
-                 </button>
-                 <button class="btn" onclick="window.location.href='students.html'">
-                    <i class="fas fa-eye"></i> View Students
-                 </button>
-                 <button class="btn" onclick="window.location.href='schedules.html'">
-                    <i class="fas fa-calendar-alt"></i> Manage Schedules
-                 </button>
-             </div>
+            <h2 class="section-title">Quick Actions</h2>
+        
+            <div class="quick-actions">
+                
+                <div class="action-card" onclick="window.location.href='teachers.html'">
+                    <i class="fas fa-user-plus action-icon"></i>
+                    <span>Add Teacher</span>
+                </div>
+                <div class="action-card" onclick="window.location.href='guidance.html'">
+                    <i class="fas fa-people-group action-icon"></i>
+                    <span>Guidance Staff</span>
+                </div>
+                <div class="action-card" onclick="window.location.href='parent.html'">
+                    <i class="fas fa-people-roof action-icon"></i>
+                    <span>Parents</span>
+                </div>
+        
+                <div class="action-card" onclick="window.location.href='students.html'">
+                    <i class="fas fa-users action-icon"></i>
+                    <span>View Students</span>
+                </div>
+        
+                <div class="action-card" onclick="window.location.href='schedules.html'">
+                    <i class="fas fa-calendar-alt action-icon"></i>
+                    <span>Manage Schedules</span>
+                </div>
+        
+                <div class="action-card" onclick="window.location.href='AdminLandingPage.html'">
+                    <i class="fas fa-calendar-check action-icon"></i>
+                    <span>Manage Event</span>
+                </div>
+        
+            </div>
         </div>
+        
+         <div
+          class="content-section"
+          style="background: transparent; box-shadow: none; padding: 0"
+        >
+          <div class="reports-grid">
+        
+            <div class="report-card">
+              <div class="report-info">
+                <h3>Total Sections</h3>
+                <div class="number" id="count-sections">...</div>
+              </div>
+              <div class="report-icon"><i class="fas fa-cubes"></i></div>
+            </div>
+            <div class="report-card">
+              <div class="report-info">
+                <h3>Total Subjects</h3>
+                <div class="number" id="count-subjects">...</div>
+              </div>
+              <div class="report-icon"><i class="fas fa-book"></i></div>
+            </div>
+          </div>
+
+          <div class="charts-container">
+            <div class="chart-box">
+              <h3 style="margin-bottom: 15px; color: #a52a2a">
+                Sections by Grade Level
+              </h3>
+              <canvas id="gradeLevelChart"></canvas>
+            </div>
+
+            <div class="chart-box">
+              <h3 style="margin-bottom: 15px; color: #a52a2a">
+                Staff Distribution
+              </h3>
+              <div
+                style="height: 250px; display: flex; justify-content: center"
+              >
+                <canvas id="staffChart"></canvas>
+              </div>
+            </div>
+          </div>
+
+          <div class="content-section" style="background: white">
+            <h3 style="margin-bottom: 15px; color: #a52a2a">
+              Recent Sections Added
+            </h3>
+            <table class="teachers-table">
+              <thead>
+                <tr>
+                  <th>Grade Level</th>
+                  <th>Section Name</th>
+                  <th>Date Added</th>
+                </tr>
+              </thead>
+              <tbody id="recent-activity-body">
+                <tr>
+                  <td colspan="3" class="loading-cell">Loading...</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
 
       </div>
     </div>
@@ -177,6 +264,7 @@
     <script src="admin-js/admin-config.js"></script>
     <script src="admin-js/ui.js"></script>
     <script src="admin-js/admin.js"></script> 
+    <script src="admin-js/reports.js"></script> 
 <script>
   function updateTime() {
     const now = new Date();
@@ -201,5 +289,59 @@
   setInterval(updateTime, 1000);
   updateTime(); // Initial call
 </script>
+<style>
+    .section-title {
+    margin-bottom: 20px;
+    color: var(--primary-color);
+    font-size: 24px;
+    font-weight: 600;
+}
+
+.quick-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+}
+
+.action-card {
+    background: #ffffff;
+    border: 1px solid #e3e3e3;
+    padding: 20px 25px;
+    width: 200px;
+    height: 120px;
+    border-radius: 12px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+}
+
+.action-card:hover {
+    background: var(--primary-color);
+    color: white;
+    transform: translateY(-5px);
+    box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+}
+
+.action-card:hover .action-icon {
+    color: white;
+}
+
+.action-icon {
+    font-size: 32px;
+    color: var(--primary-color);
+    transition: 0.25s;
+}
+
+.action-card span {
+    font-size: 16px;
+    font-weight: 500;
+}
+
+</style>
   </body>
 </html>
