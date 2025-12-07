@@ -243,7 +243,7 @@ const newStaff = {
         middleName: middleName,
         lastName: lastName,
         email: email,
-        phone: phone,
+        phone: phone, 
         status: 'Active',
         role: 'guidance', // IMPORTANT: Role identifier
         createdAt: new Date()
