@@ -1,8 +1,7 @@
 /**
- * students.js (Teacher) - FINAL CORRECTION
- * Features:
- * 1. Stores custom 'userId' (e.g. 2024-0001) in 'classStudents' array.
- * 2. Fetches student details by querying 'userId'.
+ * students.js (Teacher) - ROBUST FIX
+ * Feature: Implements dual-query logic.
+ * Attempts to find students by checking BOTH 'studentId' AND 'userId' fields.
  */
 
 let currentActiveSection = null; 
@@ -117,17 +116,15 @@ function backToGrid() {
 }
 
 // ==========================================
-// 3. LOAD STUDENTS (QUERY BY userId)
+// 3. LOAD STUDENTS (ROBUST DUAL-CHECK FIX)
 // ==========================================
 async function loadStudentsInClass() {
     const tbody = document.getElementById('class-students-body');
-    tbody.innerHTML = '<tr><td colspan="4" class="loading-cell">Loading students...</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="7" class="loading-cell">Loading students...</td></tr>';
 
     if (!currentClassId) return;
 
     try {
-        // 1. Get the list of Custom UserIDs from the class document
-        // We strictly look at the 'classStudents' field
         const classDoc = await window.db.collection('classSessions').doc(currentClassId).get();
         if (!classDoc.exists) return;
 
@@ -135,50 +132,76 @@ async function loadStudentsInClass() {
         const storedUserIds = data.classStudents || []; 
 
         if (!storedUserIds || storedUserIds.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;">No students added to this class yet.</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;">No students added to this class yet.</td></tr>';
             return;
         }
 
-        // 2. Fetch details by Querying for each userId string
-        const studentPromises = storedUserIds.map(customId => 
-            window.db.collection('users')
-                .where('userId', '==', customId) // Query using the custom ID (e.g., "2024-001")
-                .where('role', '==', 'student')
-                .limit(1)
-                .get()
-        );
+        console.log(`Searching for ${storedUserIds.length} students...`);
+
+        // *** ROBUST FIX START ***
+        // For each ID, we try to match it against 'studentId' OR 'userId'
+        const studentPromises = storedUserIds.map(async (customId) => {
+            // Run both queries in parallel for speed
+            const [snapStudentId, snapUserId] = await Promise.all([
+                window.db.collection('users').where('studentId', '==', customId).where('role', '==', 'student').limit(1).get(),
+                window.db.collection('users').where('userId', '==', customId).where('role', '==', 'student').limit(1).get()
+            ]);
+
+            // Return whichever snapshot is not empty
+            if (!snapStudentId.empty) return snapStudentId;
+            if (!snapUserId.empty) return snapUserId;
+            return snapStudentId; // Return empty if neither found
+        });
+        // *** ROBUST FIX END ***
 
         const querySnapshots = await Promise.all(studentPromises);
         
         let enrolledStudents = [];
-        querySnapshots.forEach(snap => {
+        let missingCount = 0;
+
+        querySnapshots.forEach((snap, index) => {
             if (!snap.empty) {
                 const doc = snap.docs[0];
                 const sData = doc.data();
                 enrolledStudents.push({
-                    // Capture the data to display
-                    userId: sData.userId || 'N/A', 
+                    // Robustly capture the ID, preferring studentId, falling back to userId
+                    userId: sData.studentId || sData.userId || 'N/A', 
                     lrn: sData.lrn || 'N/A',
                     fullName: `${sData.firstName} ${sData.lastName}`,
-                    gender: sData.gender || sData.userId, // Fallback to userId if gender is missing
+                    gender: sData.gender || 'N/A',
+                    email: sData.email || 'N/A',
+                    phone: sData.phone || 'N/A',
+                    parentContact: sData.parentContact || 'N/A',
                     lastName: sData.lastName || ''
                 });
+            } else {
+                console.warn(`Student ID not found (checked both fields): ${storedUserIds[index]}`);
+                missingCount++;
             }
         });
 
-        // 3. Render
+        // Render Table
         tbody.innerHTML = '';
         
-        // Sort alphabetically by last name
+        if (enrolledStudents.length === 0) {
+             tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:red;">
+                ${missingCount} IDs stored, but no matching student profiles found in database.
+             </td></tr>`;
+             return;
+        }
+        
         enrolledStudents.sort((a,b) => a.lastName.localeCompare(b.lastName));
 
         enrolledStudents.forEach(s => {
-            // Mapping to HTML Headers: | LRN | Name | User ID (Gender col) | Action |
             tbody.innerHTML += `
                 <tr>
                     <td>${s.lrn}</td>
                     <td><strong>${s.fullName}</strong></td>
-                    <td>${s.userId}</td> <td>
+                    <td>${s.gender}</td>
+                    <td>${s.email}</td>
+                    <td>${s.phone}</td>
+                    <td>${s.parentContact}</td>
+                    <td style="text-align:center;">
                         <button class="btn-icon" style="color:#dc3545" title="Remove" 
                             onclick="removeStudent('${s.userId}')">
                             <i class="fas fa-times"></i>
@@ -190,7 +213,7 @@ async function loadStudentsInClass() {
 
     } catch(e) {
         console.error("Error loading students:", e);
-        tbody.innerHTML = `<tr><td colspan="4" style="color:red">Error: ${e.message}</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="7" style="color:red">Error: ${e.message}</td></tr>`;
     }
 }
 
@@ -224,8 +247,8 @@ async function cacheAllStudents() {
     snap.forEach(doc => {
         const d = doc.data();
         allDbStudents.push({
-            // We need to capture the custom userId here
-            userId: d.userId || d.studentId || 'N/A', 
+            // Fallback here too ensures we grab the ID regardless of field name
+            userId: d.studentId || d.userId || 'N/A', 
             fullName: `${d.firstName} ${d.lastName}`,
             lrn: d.lrn || 'N/A'
         });
@@ -233,7 +256,6 @@ async function cacheAllStudents() {
 
     allDbStudents.forEach(s => {
         const opt = document.createElement('option');
-        // Display Name + Custom User ID in the dropdown
         opt.value = `${s.fullName} (${s.userId})`;
         datalist.appendChild(opt);
     });
@@ -241,11 +263,9 @@ async function cacheAllStudents() {
 
 function addToBatch() {
     const val = document.getElementById('search-db-input').value;
-    // Match the format "Name (userId)"
     const student = allDbStudents.find(s => `${s.fullName} (${s.userId})` === val);
 
     if(!student) { alert("Please select a valid student from the list."); return; }
-    // Check duplication based on userId
     if(batchList.find(b => b.userId === student.userId)) { alert("Already in list."); return; }
 
     batchList.push(student);
@@ -282,7 +302,7 @@ function removeFromBatch(idx) {
 }
 
 // ==========================================
-// 5. SAVE BATCH (STRICTLY userId)
+// 5. SAVE BATCH
 // ==========================================
 async function saveBatchStudents() {
     const btn = document.getElementById('btn-save-batch');
@@ -293,12 +313,8 @@ async function saveBatchStudents() {
         if (!currentClassId) throw new Error("No Class Session ID found.");
 
         const classRef = window.db.collection('classSessions').doc(currentClassId);
-
-        // 1. EXTRACT ONLY Custom 'userId's
-        // This is the change you requested: storing the userId field, not the docId
         const userIdsToAdd = batchList.map(s => s.userId);
 
-        // 2. SAVE TO 'classStudents' FIELD
         await classRef.update({
             classStudents: firebase.firestore.FieldValue.arrayUnion(...userIdsToAdd)
         });
@@ -317,7 +333,7 @@ async function saveBatchStudents() {
 }
 
 // ==========================================
-// 6. REMOVE STUDENT (STRICTLY userId)
+// 6. REMOVE STUDENT
 // ==========================================
 function removeStudent(targetUserId) {
     if(confirm(`Remove this student from the class?`)) {
@@ -325,7 +341,6 @@ function removeStudent(targetUserId) {
 
         const classRef = window.db.collection('classSessions').doc(currentClassId);
 
-        // Remove the exact userId string from the array
         classRef.update({
             classStudents: firebase.firestore.FieldValue.arrayRemove(targetUserId)
         })

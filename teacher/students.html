@@ -65,19 +65,24 @@
                     <input type="text" id="search-student-table" onkeyup="filterStudentTable()" class="form-control" placeholder="Search student in this class..." style="max-width:300px;">
                 </div>
                 
-                <table class="teachers-table">
-                    <thead>
-                        <tr>
-                            <th>LRN</th>
-                            <th>Name</th>
-                            <th>Gender</th>
-                            <th>Action</th>
-                        </tr>
-                    </thead>
-                    <tbody id="class-students-body">
-                        <tr><td colspan="4" class="loading-cell">Loading students...</td></tr>
-                    </tbody>
-                </table>
+                <div class="table-responsive">
+                    <table class="teachers-table">
+                        <thead>
+                            <tr>
+                                <th>LRN</th>
+                                <th>Name</th>
+                                <th>Gender</th>
+                                <th>Email</th>
+                                <th>Phone No.</th>
+                                <th>Parent Contact</th>
+                                <th style="text-align:center;">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="class-students-body">
+                            <tr><td colspan="7" class="loading-cell">Loading students...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
     </div>
