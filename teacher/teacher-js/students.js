@@ -1,7 +1,8 @@
 /**
- * students.js (Teacher) - ROBUST FIX
- * Feature: Implements dual-query logic.
- * Attempts to find students by checking BOTH 'studentId' AND 'userId' fields.
+ * students.js (Teacher) - FIXED VERSION
+ * Logic: References students by their Firestore Document ID.
+ * 1. 'cacheAllStudents' saves doc.id as the userId.
+ * 2. 'loadStudentsInClass' fetches details using .doc(id).get().
  */
 
 let currentActiveSection = null; 
@@ -16,6 +17,7 @@ document.addEventListener('DOMContentLoaded', () => {
         loadTeacherClasses(user.name);
     }
     
+    // Close modal when clicking outside
     window.onclick = function(event) {
         const modal = document.getElementById('add-student-modal');
         if (event.target === modal) modal.style.display = "none";
@@ -29,6 +31,7 @@ async function loadTeacherClasses(teacherName) {
     const container = document.getElementById('classes-container');
     
     try {
+        // Support both "teacherName" and "teacher" fields for compatibility
         const [snap1, snap2] = await Promise.all([
             window.db.collection('classSessions').where('teacherName', '==', teacherName).get(),
             window.db.collection('classSessions').where('teacher', '==', teacherName).get()
@@ -111,12 +114,13 @@ function backToGrid() {
     currentActiveSection = null;
     currentClassId = null;
     
+    // Refresh to update student counts
     const user = window.sessionManager.getSession();
     loadTeacherClasses(user.name);
 }
 
 // ==========================================
-// 3. LOAD STUDENTS (ROBUST DUAL-CHECK FIX)
+// 3. LOAD STUDENTS (DIRECT REFERENCE FETCH)
 // ==========================================
 async function loadStudentsInClass() {
     const tbody = document.getElementById('class-students-body');
@@ -125,6 +129,7 @@ async function loadStudentsInClass() {
     if (!currentClassId) return;
 
     try {
+        // 1. Get the Class Document to find the list of IDs
         const classDoc = await window.db.collection('classSessions').doc(currentClassId).get();
         if (!classDoc.exists) return;
 
@@ -136,36 +141,22 @@ async function loadStudentsInClass() {
             return;
         }
 
-        console.log(`Searching for ${storedUserIds.length} students...`);
+        console.log(`Fetching details for ${storedUserIds.length} students...`);
 
-        // *** ROBUST FIX START ***
-        // For each ID, we try to match it against 'studentId' OR 'userId'
-        const studentPromises = storedUserIds.map(async (customId) => {
-            // Run both queries in parallel for speed
-            const [snapStudentId, snapUserId] = await Promise.all([
-                window.db.collection('users').where('studentId', '==', customId).where('role', '==', 'student').limit(1).get(),
-                window.db.collection('users').where('userId', '==', customId).where('role', '==', 'student').limit(1).get()
-            ]);
+        // 2. Fetch all student documents directly using their Document ID
+        const studentPromises = storedUserIds.map(id => 
+            window.db.collection('users').doc(id).get()
+        );
 
-            // Return whichever snapshot is not empty
-            if (!snapStudentId.empty) return snapStudentId;
-            if (!snapUserId.empty) return snapUserId;
-            return snapStudentId; // Return empty if neither found
-        });
-        // *** ROBUST FIX END ***
-
-        const querySnapshots = await Promise.all(studentPromises);
+        const studentDocs = await Promise.all(studentPromises);
         
         let enrolledStudents = [];
-        let missingCount = 0;
 
-        querySnapshots.forEach((snap, index) => {
-            if (!snap.empty) {
-                const doc = snap.docs[0];
+        studentDocs.forEach((doc, index) => {
+            if (doc.exists) {
                 const sData = doc.data();
                 enrolledStudents.push({
-                    // Robustly capture the ID, preferring studentId, falling back to userId
-                    userId: sData.studentId || sData.userId || 'N/A', 
+                    userId: doc.id, // The actual Document ID
                     lrn: sData.lrn || 'N/A',
                     fullName: `${sData.firstName} ${sData.lastName}`,
                     gender: sData.gender || 'N/A',
@@ -175,21 +166,21 @@ async function loadStudentsInClass() {
                     lastName: sData.lastName || ''
                 });
             } else {
-                console.warn(`Student ID not found (checked both fields): ${storedUserIds[index]}`);
-                missingCount++;
+                console.warn(`Student ID stored in class but missing in Users DB: ${storedUserIds[index]}`);
             }
         });
 
-        // Render Table
+        // 3. Render Table
         tbody.innerHTML = '';
         
         if (enrolledStudents.length === 0) {
              tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:red;">
-                ${missingCount} IDs stored, but no matching student profiles found in database.
+                Students are enrolled, but their user profiles were not found in the database.
              </td></tr>`;
              return;
         }
         
+        // Sort alphabetically by last name
         enrolledStudents.sort((a,b) => a.lastName.localeCompare(b.lastName));
 
         enrolledStudents.forEach(s => {
@@ -226,7 +217,7 @@ function filterStudentTable() {
 }
 
 // ==========================================
-// 4. BATCH ADD MODAL
+// 4. BATCH ADD MODAL (Use Doc ID)
 // ==========================================
 async function showAddStudentModal() {
     document.getElementById('modal-section-name').innerText = currentActiveSection;
@@ -239,6 +230,8 @@ async function showAddStudentModal() {
 
 async function cacheAllStudents() {
     const datalist = document.getElementById('db-students-list');
+    
+    // Only fetch if empty to save reads
     if(allDbStudents.length > 0) return; 
 
     datalist.innerHTML = '';
@@ -247,8 +240,8 @@ async function cacheAllStudents() {
     snap.forEach(doc => {
         const d = doc.data();
         allDbStudents.push({
-            // Fallback here too ensures we grab the ID regardless of field name
-            userId: d.studentId || d.userId || 'N/A', 
+            // CRITICAL: Save the Document ID as the userId
+            userId: doc.id, 
             fullName: `${d.firstName} ${d.lastName}`,
             lrn: d.lrn || 'N/A'
         });
@@ -256,6 +249,7 @@ async function cacheAllStudents() {
 
     allDbStudents.forEach(s => {
         const opt = document.createElement('option');
+        // The value contains the name + ID so we can look it up later
         opt.value = `${s.fullName} (${s.userId})`;
         datalist.appendChild(opt);
     });
@@ -313,6 +307,8 @@ async function saveBatchStudents() {
         if (!currentClassId) throw new Error("No Class Session ID found.");
 
         const classRef = window.db.collection('classSessions').doc(currentClassId);
+        
+        // Extract just the IDs to save to the array
         const userIdsToAdd = batchList.map(s => s.userId);
 
         await classRef.update({
@@ -321,7 +317,7 @@ async function saveBatchStudents() {
         
         alert("Students successfully enrolled!");
         closeModal('add-student-modal');
-        loadStudentsInClass();
+        loadStudentsInClass(); // Reload table
 
     } catch(e) {
         console.error(e);

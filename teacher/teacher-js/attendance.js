@@ -1,207 +1,335 @@
 /**
- * attendance.js (Student) - ROBUST DUAL-QUERY FIX
- * Fix: Queries for attendance records using BOTH 'studentId' and 'userId' 
- * from the session to ensure all records are found.
+ * attendance.js (Teacher) - FIXED VERSION
+ * Logic: Fetches students directly by Reference ID (matching students.js fix).
+ * Uses Firestore Doc ID as the primary key for reliable saving.
  */
 
-let allAttendanceRecords = [];
+let currentSection = "";
+let currentSubject = "";
+let currentClassId = ""; // Firestore Doc ID of the Class Session
+let currentTeacherId = ""; // To store teacherId
+let loadedStudents = []; // Stores merged data (Student Info + Attendance Status)
 
 document.addEventListener('DOMContentLoaded', () => {
     if (window.sessionManager && window.sessionManager.isLoggedIn()) {
         const user = window.sessionManager.getSession();
         document.getElementById('header-user-name').innerText = user.name;
         
-        // Retrieve both possible IDs from the session
-        const id1 = user.studentId;
-        const id2 = user.userId;
-        
-        if (!id1 && !id2) {
-            alert("Error: Could not find your Student ID in the session. Please logout and login again.");
-            return;
-        }
+        currentTeacherId = user.uid || user.id; 
 
-        console.log(`Searching attendance for IDs: ${id1} / ${id2}`);
-        loadStudentAttendance(id1, id2);
-    } else {
-        window.location.href = '../index.html';
+        loadTeacherClasses(user.name);
+        
+        // Set Date to Today
+        document.getElementById('attendance-date').valueAsDate = new Date();
     }
 });
 
-async function loadStudentAttendance(id1, id2) {
-    const tbody = document.getElementById('attendance-list-body');
-    tbody.innerHTML = '<tr><td colspan="4" class="loading-cell">Checking records...</td></tr>';
+// --- 1. LOAD CLASS CARDS ---
+async function loadTeacherClasses(teacherName) {
+    const container = document.getElementById('classes-container');
     
     try {
-        const promises = [];
+        const [snap1, snap2] = await Promise.all([
+            window.db.collection('classSessions').where('teacherName', '==', teacherName).get(),
+            window.db.collection('classSessions').where('teacher', '==', teacherName).get()
+        ]);
 
-        // Query 1: Check for matches against id1 (e.g., studentId)
-        if (id1) {
-            promises.push(
-                window.db.collection('attendance')
-                    .where('studentId', '==', id1)
-                    .orderBy('attendanceTime', 'desc')
-                    .get()
-            );
-        }
+        const classMap = new Map();
+        const process = (doc) => {
+            const d = doc.data();
+            if(!classMap.has(doc.id)) {
+                classMap.set(doc.id, { docId: doc.id, ...d });
+            }
+        };
 
-        // Query 2: Check for matches against id2 (e.g., userId), only if it's different
-        if (id2 && id2 !== id1) {
-            promises.push(
-                window.db.collection('attendance')
-                    .where('studentId', '==', id2)
-                    .orderBy('attendanceTime', 'desc')
-                    .get()
-            );
-        }
+        snap1.forEach(process);
+        snap2.forEach(process);
 
-        // Run queries in parallel
-        const snapshots = await Promise.all(promises);
-
-        // Merge results using a Map to prevent duplicates (by doc ID)
-        const recordsMap = new Map();
-
-        snapshots.forEach(snap => {
-            snap.forEach(doc => {
-                if (!recordsMap.has(doc.id)) {
-                    recordsMap.set(doc.id, {
-                        docId: doc.id,
-                        ...doc.data(),
-                        // Normalize date for sorting
-                        date: doc.data().attendanceTime 
-                    });
-                }
-            });
-        });
-
-        // Convert back to array
-        allAttendanceRecords = Array.from(recordsMap.values());
-
-        // Sort by date (descending)
-        allAttendanceRecords.sort((a, b) => new Date(b.date) - new Date(a.date));
-
-        if (allAttendanceRecords.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="4" style="text-align:center;">
-                No attendance records found for ID(s): ${id1 || ''} ${id2 && id2 !== id1 ? '/ ' + id2 : ''}
-            </td></tr>`;
-            updateStats([]);
+        if (classMap.size === 0) {
+            container.innerHTML = '<p>No classes assigned.</p>';
             return;
         }
 
-        renderAttendanceTable(allAttendanceRecords);
-
-    } catch (e) {
-        console.error("Error loading attendance:", e);
-        // Sometimes indexes are required for orderBy. If so, try without sorting in query.
-        if (e.message.includes("index")) {
-            console.warn("Index missing. Retrying without initial sort...");
-            loadStudentAttendanceFallback(id1, id2);
-        } else {
-            tbody.innerHTML = `<tr><td colspan="4" style="color:red; text-align:center;">Error: ${e.message}</td></tr>`;
-        }
-    }
-}
-
-// Fallback if composite index is missing (client-side sort)
-async function loadStudentAttendanceFallback(id1, id2) {
-    const tbody = document.getElementById('attendance-list-body');
-    try {
-        const promises = [];
-        if (id1) promises.push(window.db.collection('attendance').where('studentId', '==', id1).get());
-        if (id2 && id2 !== id1) promises.push(window.db.collection('attendance').where('studentId', '==', id2).get());
-
-        const snapshots = await Promise.all(promises);
-        const recordsMap = new Map();
-
-        snapshots.forEach(snap => {
-            snap.forEach(doc => {
-                if (!recordsMap.has(doc.id)) {
-                    recordsMap.set(doc.id, { docId: doc.id, ...doc.data(), date: doc.data().attendanceTime });
-                }
-            });
+        container.innerHTML = '';
+        classMap.forEach(c => {
+            const count = c.classStudents ? c.classStudents.length : 0;
+            const card = document.createElement('div');
+            card.className = 'class-card';
+            card.onclick = () => openClassAttendance(c);
+            
+            card.innerHTML = `
+                <div class="card-header-strip"></div>
+                <div class="card-body">
+                    <div class="card-subject">${c.subject}</div>
+                    <div class="card-section">${c.section}</div>
+                    <div class="card-meta"><i class="fas fa-clock"></i> ${formatTime(c.startTime)} - ${formatTime(c.endTime)}</div>
+                    <div class="card-meta"><i class="fas fa-calendar-alt"></i> ${c.days || 'Daily'}</div>
+                    <div class="card-meta" style="font-size: 0.8rem; color: #888; margin-top:5px;">
+                        <i class="fas fa-users"></i> ${count} Students
+                    </div>
+                </div>
+            `;
+            container.appendChild(card);
         });
 
-        allAttendanceRecords = Array.from(recordsMap.values());
-        allAttendanceRecords.sort((a, b) => new Date(b.date) - new Date(a.date));
-
-        renderAttendanceTable(allAttendanceRecords);
-
     } catch (e) {
-        tbody.innerHTML = `<tr><td colspan="4" style="color:red; text-align:center;">Error: ${e.message}</td></tr>`;
+        console.error(e);
+        container.innerHTML = '<p style="color:red">Error loading classes</p>';
     }
 }
 
-function renderAttendanceTable(data) {
-    const tbody = document.getElementById('attendance-list-body');
+// --- 2. OPEN ATTENDANCE SHEET ---
+function openClassAttendance(c) {
+    currentClassId = c.docId;
+    currentSubject = c.subject;
+    currentSection = c.section;
+
+    document.getElementById('view-classes-grid').style.display = 'none';
+    document.getElementById('view-attendance-sheet').style.display = 'block';
+    
+    document.getElementById('sheet-subject').innerText = c.subject;
+    document.getElementById('sheet-section').innerText = c.section;
+    document.getElementById('page-title').innerText = "Take Attendance";
+
+    loadStudentsForAttendance();
+}
+
+function backToGrid() {
+    document.getElementById('view-classes-grid').style.display = 'block';
+    document.getElementById('view-attendance-sheet').style.display = 'none';
+    document.getElementById('page-title').innerText = "Attendance";
+    currentClassId = null;
+    loadedStudents = [];
+}
+
+// --- 3. LOAD STUDENTS (DIRECT FETCH FIX) ---
+async function loadStudentsForAttendance() {
+    const tbody = document.getElementById('attendance-table-body');
+    tbody.innerHTML = '<tr><td colspan="3" class="loading-cell">Loading student list...</td></tr>';
+    
+    if (!currentClassId) return;
+
+    try {
+        // A. Get Class List (IDs)
+        const classDoc = await window.db.collection('classSessions').doc(currentClassId).get();
+        if (!classDoc.exists) return;
+        
+        const storedUserIds = classDoc.data().classStudents || [];
+        
+        if (storedUserIds.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="3" style="text-align:center;">No students enrolled in this class.</td></tr>';
+            updateCounts();
+            return;
+        }
+
+        console.log(`Fetching ${storedUserIds.length} students directly...`);
+
+        // B. Fetch Student Details Directy (Using Doc ID)
+        const studentPromises = storedUserIds.map(id => 
+            window.db.collection('users').doc(id).get()
+        );
+
+        const studentDocs = await Promise.all(studentPromises);
+        
+        // C. Build Student List
+        loadedStudents = [];
+        studentDocs.forEach((doc, index) => {
+            if (doc.exists) {
+                const d = doc.data();
+                loadedStudents.push({
+                    // CRITICAL: We track both the Firestore ID (userId) and the School ID (studentId/LRN)
+                    userId: doc.id, 
+                    studentIdDisplay: d.studentId || d.lrn || 'N/A', // For display only
+                    firstName: d.firstName,
+                    lastName: d.lastName,
+                    fullName: `${d.firstName} ${d.lastName}`,
+                    status: 'P', // Default
+                    remarks: ''
+                });
+            } else {
+                console.warn(`Student ID ${storedUserIds[index]} not found in users collection.`);
+            }
+        });
+
+        // Sort alphabetically
+        loadedStudents.sort((a,b) => a.lastName.localeCompare(b.lastName));
+
+        // D. Check for Existing Attendance Record
+        await checkExistingAttendance();
+
+        // E. Render Table
+        renderAttendanceTable();
+
+    } catch(e) {
+        console.error("Error loading students:", e);
+        tbody.innerHTML = `<tr><td colspan="3" style="color:red">Error: ${e.message}</td></tr>`;
+    }
+}
+
+// --- 4. CHECK EXISTING & MERGE ---
+async function checkExistingAttendance() {
+    const dateVal = document.getElementById('attendance-date').value;
+    if (!dateVal || loadedStudents.length === 0) return;
+
+    try {
+        // We fetch attendance for this specific Subject + Section + Date
+        const snap = await window.db.collection('attendance')
+            .where('subject', '==', currentSubject)
+            .where('section', '==', currentSection)
+            .where('attendanceTime', '==', dateVal)
+            .get();
+
+        if (!snap.empty) {
+            // Create a lookup map. Key = userId (Firestore Doc ID)
+            const existingRecords = {};
+            snap.forEach(doc => {
+                const d = doc.data();
+                // We use the userId (Doc ID) as the reliable key
+                if(d.userId) existingRecords[d.userId] = d;
+            });
+
+            // Update loadedStudents with existing status
+            loadedStudents.forEach(s => {
+                if (existingRecords[s.userId]) {
+                    s.status = existingRecords[s.userId].status;
+                    s.remarks = existingRecords[s.userId].remarks || "";
+                }
+            });
+        } 
+    } catch (e) {
+        console.error("Error checking existing records", e);
+    }
+}
+
+// --- 5. RENDER TABLE ---
+function renderAttendanceTable() {
+    const tbody = document.getElementById('attendance-table-body');
     tbody.innerHTML = '';
 
-    if (data.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;">No records for this period.</td></tr>';
+    if (loadedStudents.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="3" style="text-align:center;">No student profiles found.</td></tr>';
         return;
     }
 
-    data.forEach(r => {
-        let badgeStyle = '';
-        // Normalize status checking
-        const status = r.status ? r.status.toUpperCase() : 'P';
-        let statusText = 'Present';
+    loadedStudents.forEach((s, index) => {
+        const row = document.createElement('tr');
+        
+        // Status Class
+        let statusClass = '';
+        if(s.status === 'P') statusClass = 'present';
+        else if(s.status === 'L') statusClass = 'late';
+        else if(s.status === 'A') statusClass = 'absent';
 
-        if (status === 'L' || status === 'LATE') {
-            badgeStyle = 'background:#fff3cd; color:#856404;'; 
-            statusText = 'Late';
-        } else if (status === 'A' || status === 'ABSENT') {
-            badgeStyle = 'background:#f8d7da; color:#721c24;'; 
-            statusText = 'Absent';
-        } else {
-            badgeStyle = 'background:#d4edda; color:#155724;'; 
-            statusText = 'Present';
-        }
-
-        const dateObj = new Date(r.date);
-        const dateDisplay = isNaN(dateObj) ? r.date : dateObj.toLocaleDateString('en-US', {
-            weekday: 'short', year: 'numeric', month: 'short', day: 'numeric'
-        });
-
-        const row = `
-            <tr>
-                <td>${dateDisplay}</td>
-                <td><strong>${r.subject}</strong></td>
-                <td><span class="badge-success" style="${badgeStyle} border:none; padding: 5px 10px; border-radius: 15px; font-size: 0.85rem;">${statusText}</span></td>
-                <td style="color:#666; font-size:0.9rem;">${r.remarks || '-'}</td>
-            </tr>
+        row.innerHTML = `
+            <td>
+                <strong>${s.lastName}, ${s.firstName}</strong><br>
+                <small style="color:#888">${s.studentIdDisplay}</small>
+            </td>
+            <td>
+                <select class="status-select ${statusClass}" onchange="updateStatus(${index}, this)">
+                    <option value="P" ${s.status === 'P' ? 'selected' : ''}>Present</option>
+                    <option value="L" ${s.status === 'L' ? 'selected' : ''}>Late</option>
+                    <option value="A" ${s.status === 'A' ? 'selected' : ''}>Absent</option>
+                </select>
+            </td>
+            <td>
+                <input type="text" class="form-control" placeholder="Optional..." 
+                    value="${s.remarks}" oninput="updateRemarks(${index}, this.value)">
+            </td>
         `;
-        tbody.innerHTML += row;
+        tbody.appendChild(row);
     });
 
-    updateStats(data);
+    updateCounts();
 }
 
-function updateStats(data) {
-    let p = 0, l = 0, a = 0;
-    data.forEach(r => {
-        const s = r.status ? r.status.toUpperCase() : 'P';
-        if (s === 'P' || s === 'PRESENT') p++;
-        else if (s === 'L' || s === 'LATE') l++;
-        else if (s === 'A' || s === 'ABSENT') a++;
-    });
-
-    document.getElementById('total-present').innerText = p;
-    document.getElementById('total-late').innerText = l;
-    document.getElementById('total-absent').innerText = a;
+// --- 6. UI UPDATES ---
+function updateStatus(index, selectEl) {
+    const val = selectEl.value;
+    loadedStudents[index].status = val;
+    
+    // Update color
+    selectEl.className = 'status-select ' + 
+        (val === 'P' ? 'present' : val === 'L' ? 'late' : 'absent');
+        
+    updateCounts();
 }
 
-window.filterAttendance = function() {
-    const filter = document.getElementById('month-filter').value;
-    if (filter === 'all') {
-        renderAttendanceTable(allAttendanceRecords);
-    } else if (filter === 'this_month') {
-        const now = new Date();
-        const thisMonth = now.getMonth();
-        const thisYear = now.getFullYear();
+function updateRemarks(index, val) {
+    loadedStudents[index].remarks = val;
+}
 
-        const filtered = allAttendanceRecords.filter(r => {
-            const d = new Date(r.date);
-            return d.getMonth() === thisMonth && d.getFullYear() === thisYear;
+function updateCounts() {
+    const p = loadedStudents.filter(s => s.status === 'P').length;
+    const l = loadedStudents.filter(s => s.status === 'L').length;
+    const a = loadedStudents.filter(s => s.status === 'A').length;
+
+    document.getElementById('count-p').innerText = p;
+    document.getElementById('count-l').innerText = l;
+    document.getElementById('count-a').innerText = a;
+}
+
+function markAllPresent() {
+    loadedStudents.forEach(s => s.status = 'P');
+    renderAttendanceTable();
+}
+
+// --- 7. SAVE TO DB ---
+async function saveAttendance() {
+    const dateStr = document.getElementById('attendance-date').value;
+    if (!dateStr) { alert("Please select a date."); return; }
+
+    const btn = document.getElementById('btn-save-attendance');
+    
+    if(loadedStudents.length === 0) return;
+
+    btn.innerText = "Saving...";
+    btn.disabled = true;
+
+    try {
+        const batch = window.db.batch();
+        
+        loadedStudents.forEach(s => {
+            // Unique Doc ID: UserID_Subject_Date
+            // We use s.userId (Firestore ID) which is guaranteed unique and safe
+            const docId = `${s.userId}_${currentSubject}_${dateStr}`.replace(/[\s\/]/g, '_');
+            const docRef = window.db.collection('attendance').doc(docId);
+
+            const record = {
+                attendanceTime: dateStr,
+                firstName: s.firstName,
+                lastName: s.lastName,
+                section: currentSection,
+                status: s.status,
+                remarks: s.remarks || "",
+                subject: currentSubject,
+                teacherId: currentTeacherId,
+                userId: s.userId, // Link to User Doc
+                studentId: s.studentIdDisplay, // Save Display ID for easy reading
+                timestamp: firebase.firestore.FieldValue.serverTimestamp()
+            };
+
+            batch.set(docRef, record, { merge: true });
         });
-        renderAttendanceTable(filtered);
+
+        await batch.commit();
+        alert("Attendance Saved Successfully!");
+
+    } catch (e) {
+        console.error(e);
+        alert("Error saving: " + e.message);
+    } finally {
+        btn.innerHTML = '<i class="fas fa-save"></i> Save Attendance';
+        btn.disabled = false;
     }
-};
+}
+
+// Helper
+function formatTime(timeStr) {
+    if (!timeStr) return "";
+    const [hour, minute] = timeStr.split(':');
+    const h = parseInt(hour);
+    const ampm = h >= 12 ? 'PM' : 'AM';
+    const h12 = h % 12 || 12;
+    return `${h12}:${minute} ${ampm}`;
+}
