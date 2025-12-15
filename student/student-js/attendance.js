@@ -1,40 +1,94 @@
 /**
- * attendance.js (Student) - FIXED
- * Logic: Fetches attendance records where 'userId' matches the student's Document ID.
- * Aligns with the Teacher Portal's new saving method.
+ * attendance.js (Student) - FINAL FIX
+ * Logic: Fetches 'Schedule' first to map Subjects -> Teachers.
+ * Then applies those Teacher names to the Attendance records based on Subject.
  */
 
 let allAttendanceRecords = [];
+let subjectTeacherMap = {}; // Maps "Math" -> "Mr. Smith"
 
 document.addEventListener('DOMContentLoaded', () => {
     if (window.sessionManager && window.sessionManager.isLoggedIn()) {
         const user = window.sessionManager.getSession();
         document.getElementById('header-user-name').innerText = user.name || "Student";
         
-        // CRITICAL: We use the unique Firestore Document ID (usually stored as 'uid' or 'id' or 'userId' in session)
-        // The Teacher Portal saves this specific ID into the 'userId' field of the attendance record.
         const targetUserId = user.userId || user.uid || user.id;
 
         if (!targetUserId) {
             console.error("No valid User ID found in session.");
-            document.getElementById('attendance-list-body').innerHTML = 
-                '<tr><td colspan="4" style="color:red; text-align:center;">Error: User Identity missing.</td></tr>';
             return;
         }
 
-        console.log(`Fetching attendance for User ID: ${targetUserId}`);
-        loadStudentAttendance(targetUserId);
+        // 1. First, load the Class List (Schedule) to get Teacher names
+        loadSubjectMap(user).then(() => {
+            // 2. Then load Attendance
+            loadStudentAttendance(targetUserId);
+        });
+
     } else {
         window.location.href = '../index.html';
     }
 });
 
+/**
+ * Step 1: Fetch Enrolled Classes (Logic copied from schedule.js)
+ * We build a map: { "Mathematics": "Mr. Teacher", "Science": "Mrs. Teacher" }
+ */
+async function loadSubjectMap(user) {
+    try {
+        const myDocId = user.userId || user.uid || user.id;
+        const queries = [];
+
+        // A. Direct Enrollment (Check 'classStudents' array)
+        if (myDocId) {
+            queries.push(
+                window.db.collection('classSessions')
+                    .where('classStudents', 'array-contains', myDocId)
+                    .get()
+            );
+        }
+
+        // B. Section Based (Legacy Support)
+        if (user.gradeLevel && user.section) {
+            const userSection = `${user.gradeLevel} - ${user.section}`;
+            queries.push(
+                window.db.collection('classSessions')
+                    .where('section', '==', userSection)
+                    .get()
+            );
+        }
+
+        const snapshots = await Promise.all(queries);
+
+        // Process Results
+        snapshots.forEach(snap => {
+            snap.forEach(doc => {
+                const data = doc.data();
+                const subject = data.subject;
+                // Get teacher name, or fallback
+                const teacher = data.teacherName || data.teacher || "Unknown";
+                
+                if (subject) {
+                    subjectTeacherMap[subject] = teacher;
+                }
+            });
+        });
+        
+        console.log("Subject-Teacher Map built:", subjectTeacherMap);
+
+    } catch (e) {
+        console.error("Error building subject map:", e);
+    }
+}
+
+/**
+ * Step 2: Load Attendance and Match Teachers
+ */
 async function loadStudentAttendance(userId) {
     const tbody = document.getElementById('attendance-list-body');
     tbody.innerHTML = '<tr><td colspan="4" class="loading-cell">Loading your records...</td></tr>';
     
     try {
-        // Query: Find all attendance docs where userId matches this student
         const snap = await window.db.collection('attendance')
             .where('userId', '==', userId)
             .get();
@@ -48,13 +102,25 @@ async function loadStudentAttendance(userId) {
         }
 
         allAttendanceRecords = [];
+        
         snap.forEach(doc => {
             const d = doc.data();
+            
+            // SMART MATCH: Look up teacher using the Subject Name
+            // If the map has the teacher, use it. Otherwise fallback to record data or "Unknown"
+            let finalTeacher = "Faculty";
+            
+            if (subjectTeacherMap[d.subject]) {
+                finalTeacher = subjectTeacherMap[d.subject];
+            } else if (d.teacherName) {
+                finalTeacher = d.teacherName;
+            }
+
             allAttendanceRecords.push({
                 docId: doc.id,
                 ...d,
-                // Ensure we have a valid date string for sorting
-                date: d.attendanceTime || '1970-01-01' 
+                date: d.attendanceTime || '1970-01-01',
+                displayTeacher: finalTeacher // Store the found teacher here
             });
         });
 
@@ -75,13 +141,11 @@ function renderAttendanceTable(data) {
 
     if (data.length === 0) {
         tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; color:#999;">No records for this period.</td></tr>';
-        // Even if table is empty, we update stats (to show 0)
         if(data === allAttendanceRecords) updateStats(data);
         return;
     }
 
     data.forEach(r => {
-        // Styling based on status
         let badgeStyle = '';
         let statusText = 'Present';
         const status = r.status ? r.status.toUpperCase() : 'P';
@@ -97,7 +161,7 @@ function renderAttendanceTable(data) {
             statusText = 'Present';
         }
 
-        // Format Date
+        // Date Format
         const dateObj = new Date(r.date);
         const dateDisplay = isNaN(dateObj.getTime()) ? r.date : dateObj.toLocaleDateString('en-US', {
             weekday: 'short', year: 'numeric', month: 'short', day: 'numeric'
@@ -107,16 +171,12 @@ function renderAttendanceTable(data) {
             <tr>
                 <td>${dateDisplay}</td>
                 <td><strong>${r.subject}</strong></td>
-                <td><span style="${badgeStyle} padding: 5px 10px; border-radius: 15px; font-size: 0.8rem; font-weight:600;">${statusText}</span></td>
-                <td style="color:#666; font-size:0.9rem;">${r.remarks || '-'}</td>
+                <td>${r.displayTeacher}</td> <td><span style="${badgeStyle} padding: 5px 10px; border-radius: 15px; font-size: 0.8rem; font-weight:600;">${statusText}</span></td>
             </tr>
         `;
         tbody.innerHTML += row;
     });
 
-    // Only update stats if we are showing ALL records (not just a filtered view)
-    // Or you can choose to update stats based on the current view. 
-    // Usually dashboard stats show "Total", so we pass the full list if available.
     if(data.length === allAttendanceRecords.length) {
         updateStats(data);
     }
@@ -132,12 +192,10 @@ function updateStats(data) {
         else if (['A', 'ABSENT'].includes(s)) a++;
     });
 
-    // Update HTML elements (Matching IDs from your attendance.html)
     document.getElementById('stat-present').innerText = p;
     document.getElementById('stat-late').innerText = l;
     document.getElementById('stat-absent').innerText = a;
 
-    // Calculate Rate: (Present + Late) / Total
     const total = p + l + a;
     let rate = 0;
     if (total > 0) {
@@ -153,12 +211,11 @@ window.filterAttendance = function() {
         renderAttendanceTable(allAttendanceRecords);
     } else if (filter === 'this_month') {
         const now = new Date();
-        const thisMonth = now.getMonth(); // 0-11
+        const thisMonth = now.getMonth();
         const thisYear = now.getFullYear();
 
         const filtered = allAttendanceRecords.filter(r => {
             const d = new Date(r.date);
-            // Check if date is valid and matches month/year
             return !isNaN(d.getTime()) && d.getMonth() === thisMonth && d.getFullYear() === thisYear;
         });
         renderAttendanceTable(filtered);
