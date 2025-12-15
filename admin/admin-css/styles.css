@@ -420,18 +420,14 @@ h4 {
   margin-bottom: 30px;
 }
 .stat-card {
-  background: rgba(255, 255, 255, 0.15); /* semi-transparent */
+  background: white;
   padding: 25px;
   border-radius: 10px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2); /* softer shadow */
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); /* lighter, more subtle shadow */
   transition: var(--transition);
   position: relative;
   overflow: hidden;
-
-  /* Glass effect */
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.3);
+  border: 1px solid #eaeaea; /* solid border instead of transparent */
 }
 
 .stat-card:hover {
@@ -1023,3 +1019,116 @@ input:checked + .slider:before {
   font-size: 1rem;
   padding: 5px;
 }
+
+/* =========================================
+   10. CUSTOM SEARCHABLE DROPDOWN STYLES
+   ========================================= */
+/* =========================================
+   10. CUSTOM SEARCHABLE DROPDOWN STYLES
+   ========================================= */
+.dropdown-wrapper {
+  position: relative;
+  width: 100%;
+  margin-bottom: 15px;
+}
+
+.dropdown-input {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  background-color: #fff;
+  font-family: inherit;
+}
+
+/* The list container */
+.dropdown-options {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: white;
+  border: 1px solid #ddd;
+  border-top: none;
+  border-radius: 0 0 5px 5px;
+  max-height: 200px;
+  overflow-y: auto;
+  z-index: 3000; /* Higher than modal z-index */
+  display: none;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+
+.dropdown-options.show {
+  display: block;
+}
+
+.dropdown-option {
+  padding: 10px;
+  cursor: pointer;
+  border-bottom: 1px solid #f0f0f0;
+  transition: background 0.2s;
+  font-size: 0.9rem;
+}
+
+.dropdown-option:hover {
+  background-color: #f0f0f0;
+  color: var(--primary-color);
+}
+
+.dropdown-option:last-child {
+  border-bottom: none;
+}
+
+.no-results {
+  padding: 10px;
+  color: #888;
+  font-style: italic;
+  text-align: center;
+  font-size: 0.9rem;
+}
+
+/* =========================================
+   11. RESPONSIVE UTILITIES & FIXES
+   ========================================= */
+
+/* Flex row helper for Time Inputs */
+.form-row {
+    display: flex;
+    gap: 15px;
+}
+
+/* Allow table to scroll horizontally on small screens */
+.table-responsive {
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch; /* Smooth scroll on iOS */
+    margin-top: 15px;
+}
+
+/* Ensure table has a minimum width so it doesn't squish */
+.teachers-table {
+    min-width: 650px; 
+}
+
+/* Mobile specific overrides */
+@media (max-width: 768px) {
+  /* Fix Modal Width on Mobile */
+  .modal-content {
+      width: 95%;
+      margin: 10px auto;
+      max-height: 85vh; /* Account for browser address bars */
+  }
+  
+  /* Stack Time Inputs Vertically on Mobile */
+  .form-row {
+      flex-direction: column;
+      gap: 10px;
+  }
+  
+  /* Adjust content padding */
+  .content-section {
+      padding: 15px;
+  }
+}
+
+

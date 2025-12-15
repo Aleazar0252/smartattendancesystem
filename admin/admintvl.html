@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin - TVL Track Editor</title>
+    <link rel="icon" type="image/x-icon" href="../img/a2.png">
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800&display=swap" rel="stylesheet">
+    
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <style>
+        /* =========================================
+           1. SHARED VARIABLES
+           ========================================= */
+        :root {
+            --primary: #a40028;
+            --secondary: #8B0000;
+            --accent: #FFD700;
+            --light: #F8F9FA;
+            --dark: #212529;
+            --tvl-color: #3498db;
+            --delete-btn: #e74c3c;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Montserrat', sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            color: #333;
+            line-height: 1.6;
+            overflow-x: hidden;
+            min-height: 100vh;
+            padding-bottom: 100px;
+        }
+
+        /* =========================================
+           2. HEADER STYLES (FROM YOUR REQUEST)
+           ========================================= */
+        
+        /* Top Bar */
+        .top-bar { background: var(--primary); color: white; padding: 12px 20px; font-size: 0.9em; display: flex; justify-content: center; align-items: center; box-shadow: 0 2px 10px rgba(0,0,0,0.1); flex-wrap: wrap; gap: 15px; }
+        .top-bar i { margin-right: 6px; color: var(--accent); }
+
+        /* Header */
+        .logo-bar { display: flex; justify-content: space-between; align-items: stretch; background-color: white; padding: 20px; min-height: 150px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); position: relative; flex-wrap: wrap; }
+        .logo-bar::before { content: ''; position: absolute; bottom: 0; left: 0; width: 100%; height: 4px; background: linear-gradient(90deg, var(--primary), var(--secondary), var(--accent)); }
+        
+        .logo-container { display: flex; align-items: center; width: 25%; min-width: 120px; }
+        .left-logo { justify-content: flex-end; padding-right: 20px; }
+        .right-logo { justify-content: flex-start; padding-left: 20px; }
+        .zsnhs-logo, .deped-logo { height: 120px; width: auto; object-fit: contain; max-width: 180px; }
+        
+        .title-container { display: flex; align-items: center; justify-content: center; flex: 1; padding: 0 15px; min-width: 300px; }
+        .school-name { text-align: center; }
+        .school-name h1 { color: var(--primary); font-size: 2.2em; margin: 0; font-weight: 800; line-height: 1.2; text-transform: uppercase; }
+        .school-name p { color: var(--secondary); font-size: 1em; font-weight: 600; font-style: italic; margin-top: 6px; }
+
+        /* Navigation */
+        nav { background: linear-gradient(135deg, var(--primary), #002244); position: sticky; top: 0; z-index: 1000; box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
+        .nav-links { display: flex; list-style: none; justify-content: center; padding: 0 20px; flex-wrap: wrap; margin: 0; }
+        .nav-links > li { position: relative; }
+        .nav-links a { color: white; text-decoration: none; font-weight: 600; text-transform: uppercase; font-size: 0.85em; letter-spacing: 1px; padding: 16px 18px; display: block; transition: all 0.2s ease; }
+        .nav-links a:hover { background-color: rgba(255,255,255,0.1); color: var(--accent); }
+
+        /* Dropdown Styles */
+        .dropdown-menu { display: none; position: absolute; top: 100%; left: 0; background-color: white; min-width: 220px; box-shadow: 0 8px 16px rgba(0,0,0,0.2); z-index: 9999; border-top: 4px solid var(--accent); list-style: none; padding: 0; }
+        .dropdown-menu li { border-bottom: 1px solid #f0f0f0; width: 100%; }
+        .dropdown-menu li:last-child { border-bottom: none; }
+        .dropdown-menu a { color: var(--dark); padding: 12px 20px; text-transform: none; font-size: 0.9em; display: block; }
+        .dropdown-menu a:hover { background-color: var(--light); color: var(--primary); padding-left: 25px; }
+        .nav-links > li:hover .dropdown-menu { display: block; }
+
+        /* =========================================
+           3. VISUAL EDITOR BODY STYLES
+           ========================================= */
+        
+        .container { max-width: 1200px; margin: 30px auto; padding: 0 20px; }
+
+        /* Input Styling to blend with design */
+        input.admin-input, textarea.admin-input {
+            width: 100%;
+            border: 1px dashed #ccc;
+            background: rgba(255, 255, 200, 0.2);
+            padding: 5px;
+            font-family: inherit;
+            color: inherit;
+            border-radius: 4px;
+            transition: all 0.3s;
+        }
+        input.admin-input:focus, textarea.admin-input:focus {
+            background: white;
+            border: 1px solid var(--tvl-color);
+            outline: none;
+            box-shadow: 0 0 5px rgba(52, 152, 219, 0.3);
+        }
+
+        /* Title Inputs */
+        input.admin-h1 { font-size: 2.5rem; font-weight: 800; text-align: center; color: var(--primary); text-transform: uppercase; margin-bottom: 10px; }
+        input.admin-h2 { font-size: 2rem; font-weight: 800; color: var(--primary); }
+        input.admin-h3 { font-size: 1.3rem; font-weight: 700; color: var(--primary); margin-bottom: 10px; }
+        
+        /* Track Content Box */
+        .page-header { text-align: center; margin-bottom: 40px; }
+        .track-content { background: white; border-radius: 15px; padding: 30px; box-shadow: 0 15px 35px rgba(0,0,0,0.1); margin-bottom: 40px; position: relative; overflow: hidden; }
+        .track-content::before { content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 5px; background: linear-gradient(90deg, var(--primary), var(--secondary), var(--accent)); }
+        .track-header { display: flex; align-items: center; margin-bottom: 30px; flex-wrap: wrap; }
+        .track-icon { font-size: 3rem; margin-right: 20px; color: var(--primary); }
+        
+        textarea.admin-p { width: 100%; min-height: 80px; font-size: 1.1rem; color: #555; text-align: center; resize: vertical; }
+        textarea.admin-desc { min-height: 100px; text-align: left; }
+
+        /* Delete Button */
+        .btn-delete-element {
+            position: absolute; top: 0; left: 0; background: var(--delete-btn); color: white; border: none; width: 40px; height: 40px; border-bottom-right-radius: 10px; cursor: pointer; z-index: 100; display: flex; align-items: center; justify-content: center; box-shadow: 2px 2px 5px rgba(0,0,0,0.2); transition: 0.2s;
+        }
+        .btn-delete-element:hover { background: #c0392b; width: 45px; height: 45px; }
+
+        /* Strands */
+        .strands-container { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 25px; margin: 30px 0; }
+        .strand-card { background: white; border-radius: 15px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.1); position: relative; border: 2px dashed transparent; }
+        .strand-card:hover { border-color: var(--tvl-color); }
+
+        .strand-image { height: 180px; position: relative; background: #eee; }
+        .strand-image img { width: 100%; height: 100%; object-fit: cover; }
+        
+        .admin-img-upload { position: absolute; bottom: 10px; right: 10px; background: rgba(0,0,0,0.7); color: white; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-size: 0.8rem; z-index: 10; }
+        .admin-img-upload:hover { background: var(--tvl-color); }
+        .strand-content { padding: 20px; padding-top: 40px; }
+        textarea.features-input { width: 100%; height: 100px; background: #f0f7fb; font-size: 0.9em; border: 1px solid #d0e1f0; margin-top: 10px; }
+
+        /* Stats */
+        .stats-section { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin: 40px 0; }
+        .stat-card { background: white; padding: 25px; border-radius: 15px; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.08); position: relative; overflow: hidden; padding-top: 40px; }
+        .stat-card::before { content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 5px; background: linear-gradient(90deg, var(--primary), var(--secondary)); }
+        
+        /* Careers */
+        .career-opportunities { background: linear-gradient(135deg, rgba(164, 0, 40, 0.1), rgba(0, 34, 68, 0.1)); padding: 25px; border-radius: 15px; margin-top: 30px; position: relative; }
+        .career-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-top: 15px; }
+        .career-item { background: white; padding: 15px; border-radius: 10px; box-shadow: 0 5px 15px rgba(0,0,0,0.05); text-align: center; position: relative; padding-top: 35px; }
+
+        /* Add Buttons */
+        .btn-add-section { width: 100%; border: 2px dashed #ccc; background: transparent; padding: 15px; color: #777; font-weight: 700; text-transform: uppercase; cursor: pointer; margin-top: 10px; border-radius: 10px; transition: 0.3s; }
+        .btn-add-section:hover { background: #eef; border-color: var(--tvl-color); color: var(--tvl-color); }
+
+        /* Save Bar */
+        .save-bar { position: fixed; bottom: 0; left: 0; width: 100%; background: white; border-top: 5px solid var(--accent); padding: 15px 20px; z-index: 2000; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 -5px 20px rgba(0,0,0,0.1); }
+        .btn-save { background: var(--primary); color: white; padding: 12px 40px; font-size: 1.1rem; border-radius: 50px; border: none; font-weight: 700; cursor: pointer; box-shadow: 0 5px 15px rgba(164, 0, 40, 0.3); }
+        .btn-save:hover { background: var(--secondary); transform: translateY(-3px); }
+
+        @media (max-width: 768px) {
+            .logo-bar { flex-direction: column; text-align: center; }
+            .nav-links { flex-direction: column; width: 100%; }
+            .nav-links > li { width: 100%; }
+            .nav-links a { text-align: center; border-bottom: 1px solid rgba(255,255,255,0.1); }
+            .dropdown-menu { position: static; width: 100%; box-shadow: none; border: none; background: #f0f0f0; }
+            .btn-delete-element { width: 35px; height: 35px; }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="top-bar">
+            <div><i class="fas fa-tools"></i> ADMIN DASHBOARD</div>
+        </div>
+        <div class="logo-bar">
+            <div class="logo-container left-logo"><img src="../img/zsnhs logo.jpg" alt="Logo" class="zsnhs-logo"></div>
+            <div class="title-container">
+                <div class="school-name">
+                    <h1>ZAMBOANGA SIBUGAY NATIONAL HIGH SCHOOL</h1>
+                    <p>Tvl Page Administrator</p>
+                </div>
+            </div>
+            <div class="logo-container right-logo"><img src="../img/Dep.jfif" alt="Logo" class="deped-logo"></div>
+        </div>
+        
+        <nav>
+            <ul class="nav-links">
+                <li><a href="admin.html"><i class="fas fa-home"></i> Dashboard</a></li>
+                <li>
+                    <a href="#"><i class="fas fa-info-circle"></i> About Us <i class="fas fa-caret-down"></i></a>
+                    <ul class="dropdown-menu">
+                        <li><a href="adminvision.html"><i class="fas fa-bullseye"></i> Mission & Vision</a></li>
+                        <li><a href="adminhistory.html"><i class="fas fa-landmark"></i> History</a></li>
+                    </ul>
+                </li>
+                <li>
+                    <a href="#"><i class="fas fa-book"></i> Tracks <i class="fas fa-caret-down"></i></a>
+                    <ul class="dropdown-menu">
+                        <li><a href="admintvl.html"><i class="fas fa-tools"></i> TVL Tracks</a></li>
+                        <li><a href="adminacademic.html"><i class="fas fa-graduation-cap"></i> Academic Tracks</a></li>
+                    </ul>
+                </li>
+                    <li><a href="admincontact.html"><i class="fas fa-graduation-cap"></i> Contact</a></li>
+                 
+                <li><a href="AdminLandingPage.html" target="_blank"><i class="fas fa-eye"></i> Events</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <div class="container">
+
+        <div class="page-header">
+            <input type="text" class="admin-input admin-h1" id="track-title" placeholder="Main Title" oninput="updateObject('trackInfo', 'title', this.value)">
+            <textarea class="admin-input admin-p" id="track-subtitle" placeholder="Subtitle" oninput="updateObject('trackInfo', 'subtitle', this.value)"></textarea>
+        </div>
+
+        <div class="track-content">
+            <div class="track-header">
+                <div class="track-icon">
+                    <i class="fas fa-tools"></i>
+                </div>
+                <div style="flex:1;">
+                    <input type="text" class="admin-input admin-h2" value="TVL Track Overview" disabled style="background:none; border:none; padding-left:0;">
+                </div>
+            </div>
+            
+            <textarea class="admin-input admin-desc" id="track-desc" placeholder="Main Description Paragraph" oninput="updateObject('trackInfo', 'description', this.value)"></textarea>
+
+            <h3 style="margin-top:30px; color:var(--primary); font-weight:700;">Available Strands:</h3>
+            <div id="strands-list" class="strands-container"></div>
+            <button class="btn-add-section" onclick="addItem('strands')"><i class="fas fa-plus-circle"></i> Add New Strand Card</button>
+
+            <div id="stats-list" class="stats-section"></div>
+            <button class="btn-add-section" onclick="addItem('stats')"><i class="fas fa-plus-circle"></i> Add Statistic</button>
+
+            <div class="career-opportunities">
+                <h3>Career Opportunities:</h3>
+                <div id="careers-list" class="career-grid"></div>
+                <button class="btn-add-section" onclick="addItem('careers')"><i class="fas fa-plus-circle"></i> Add Career Option</button>
+            </div>
+
+        </div>
+
+    </div>
+
+    <div class="save-bar">
+        <div id="status-msg" style="font-weight: 700; color: #555;">Loading data...</div>
+        <button class="btn-save" onclick="saveToFirebase()"><i class="fas fa-save"></i> SAVE CHANGES</button>
+    </div>
+
+    <script>
+        // --- 1. CONFIGURATION ---
+        const firebaseConfig = {
+            apiKey: "AIzaSyDlClfbOSKAhalafAQ4ptMRCHkaG-DxDd8",
+            authDomain: "zsnhs-24e44.firebaseapp.com",
+            databaseURL: "https://zsnhs-24e44-default-rtdb.firebaseio.com",
+            projectId: "zsnhs-24e44",
+            storageBucket: "zsnhs-24e44.firebasestorage.app",
+            messagingSenderId: "39166648924",
+            appId: "1:39166648924:web:d65f2e83e6143a5aff7c99",
+            measurementId: "G-C9JMD4C5WB"
+        };
+        
+        const supabaseUrl = "https://lydfpvyzlkiemdkfevld.supabase.co";
+        const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx5ZGZwdnl6bGtpZW1ka2ZldmxkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQzODA5ODQsImV4cCI6MjA3OTk1Njk4NH0.cya0vN2jUzylNzNNHUr0rbb1ONd_X5IQFAvb3WUNj9M"; 
+
+        if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+        const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+
+        let globalData = { trackInfo: {}, strands: [], stats: [], careers: [] };
+
+        // --- 2. INITIALIZATION ---
+        document.addEventListener('DOMContentLoaded', async () => {
+            await fetchData();
+        });
+
+        async function fetchData() {
+            try {
+                const doc = await db.collection('tvl').doc('pageContent').get();
+                if (doc.exists) {
+                    globalData = { ...globalData, ...doc.data() };
+                    renderAll();
+                    setStatus("Ready to edit.");
+                } else {
+                    alert("No data found. Please ensure the database is seeded.");
+                }
+            } catch (error) {
+                console.error(error);
+                alert("Error connecting to database.");
+            }
+        }
+
+        function renderAll() {
+            // General Info
+            document.getElementById('track-title').value = globalData.trackInfo.title || '';
+            document.getElementById('track-subtitle').value = globalData.trackInfo.subtitle || '';
+            document.getElementById('track-desc').value = globalData.trackInfo.description || '';
+
+            renderStrands();
+            renderCareers();
+            renderStats();
+        }
+
+        // --- 3. RENDERERS ---
+
+        function renderStrands() {
+            const list = document.getElementById('strands-list');
+            list.innerHTML = '';
+            globalData.strands.sort((a, b) => a.order - b.order);
+
+            globalData.strands.forEach((item, index) => {
+                const featuresText = item.features ? item.features.join('\n') : '';
+                
+                const html = `
+                    <div class="strand-card">
+                        <button class="btn-delete-element" onclick="removeItem('strands', ${index})" title="Delete Strand">
+                            <i class="fas fa-trash"></i>
+                        </button>
+
+                        <div class="strand-image">
+                            <img src="${item.image}" id="preview-strands-${index}" onerror="this.src='https://placehold.co/600x400/eee/999?text=No+Image'">
+                            
+                            <label class="admin-img-upload">
+                                <i class="fas fa-camera"></i> Change Image
+                                <input type="file" style="display:none;" onchange="uploadImage(this, 'strands', ${index})">
+                            </label>
+                            
+                            <div style="position:absolute; bottom:10px; left:10px; right:10px; z-index:5;">
+                                <input type="text" class="admin-input" style="background:rgba(0,0,0,0.6); color:white; border:none; font-weight:700;" 
+                                    value="${item.shortName}" placeholder="Short Name" oninput="updateArray('strands', ${index}, 'shortName', this.value)">
+                            </div>
+                        </div>
+
+                        <div class="strand-content">
+                            <label style="font-size:0.8em; color:#999;">Strand Title:</label>
+                            <input type="text" class="admin-input admin-h3" value="${item.name}" oninput="updateArray('strands', ${index}, 'name', this.value)">
+                            
+                            <label style="font-size:0.8em; color:#999;">Description:</label>
+                            <textarea class="admin-input" style="min-height:80px;" oninput="updateArray('strands', ${index}, 'description', this.value)">${item.description}</textarea>
+                            
+                            <label style="font-size:0.8em; color:#999; margin-top:10px; display:block;">Features (One per line):</label>
+                            <textarea class="admin-input features-input" onchange="updateFeatures(${index}, this.value)">${featuresText}</textarea>
+                        </div>
+                    </div>
+                `;
+                list.insertAdjacentHTML('beforeend', html);
+            });
+        }
+
+        function renderStats() {
+            const list = document.getElementById('stats-list');
+            list.innerHTML = '';
+            globalData.stats.sort((a, b) => a.order - b.order);
+
+            globalData.stats.forEach((item, index) => {
+                const html = `
+                    <div class="stat-card">
+                        <button class="btn-delete-element" onclick="removeItem('stats', ${index})"><i class="fas fa-trash"></i></button>
+
+                        <div style="font-size: 2.5rem; color: var(--primary); margin-bottom: 10px;">
+                            <i class="${item.icon}"></i> 
+                        </div>
+                        <input type="text" class="admin-input" style="font-size:2rem; font-weight:800; text-align:center; color:var(--primary);" 
+                            value="${item.value}" placeholder="95%" oninput="updateArray('stats', ${index}, 'value', this.value)">
+                        
+                        <input type="text" class="admin-input" style="text-align:center; margin-top:5px;" 
+                            value="${item.description}" placeholder="Label" oninput="updateArray('stats', ${index}, 'description', this.value)">
+                    </div>
+                `;
+                list.insertAdjacentHTML('beforeend', html);
+            });
+        }
+
+        function renderCareers() {
+            const list = document.getElementById('careers-list');
+            list.innerHTML = '';
+            globalData.careers.sort((a, b) => a.order - b.order);
+
+            globalData.careers.forEach((item, index) => {
+                const html = `
+                    <div class="career-item">
+                        <button class="btn-delete-element" onclick="removeItem('careers', ${index})"><i class="fas fa-trash"></i></button>
+
+                        <div style="font-size: 1.8rem; color: var(--primary); margin-bottom: 10px;">
+                            <i class="${item.icon}"></i>
+                        </div>
+                        
+                        <input type="text" class="admin-input admin-h3" style="text-align:center;" 
+                            value="${item.title}" placeholder="Job Title" oninput="updateArray('careers', ${index}, 'title', this.value)">
+                        
+                        <textarea class="admin-input" style="text-align:center; height:60px;" 
+                            oninput="updateArray('careers', ${index}, 'description', this.value)">${item.description}</textarea>
+                    </div>
+                `;
+                list.insertAdjacentHTML('beforeend', html);
+            });
+        }
+
+        // --- 4. LOGIC (Same as previous) ---
+
+        window.updateObject = function(objName, field, value) {
+            globalData[objName][field] = value;
+            setStatus("Unsaved changes...");
+        }
+
+        window.updateArray = function(arrName, index, field, value) {
+            globalData[arrName][index][field] = value;
+            setStatus("Unsaved changes...");
+        }
+
+        window.updateFeatures = function(index, textValue) {
+            const featuresArray = textValue.split('\n').filter(line => line.trim() !== '');
+            globalData.strands[index].features = featuresArray;
+            setStatus("Unsaved changes...");
+        }
+
+        window.addItem = function(type) {
+            let newItem = {};
+            if(type === 'strands') {
+                newItem = { name: "New Strand", shortName: "NEW", description: "Strand description here", image: "", features: ["Feature 1"], order: globalData.strands.length + 1 };
+            } else if(type === 'careers') {
+                newItem = { title: "New Job", description: "Job description", icon: "fas fa-briefcase", order: globalData.careers.length + 1 };
+            } else if(type === 'stats') {
+                newItem = { value: "0", description: "Label", icon: "fas fa-chart-bar", order: globalData.stats.length + 1 };
+            }
+            globalData[type].push(newItem);
+            
+            if(type === 'strands') renderStrands();
+            if(type === 'careers') renderCareers();
+            if(type === 'stats') renderStats();
+            
+            setStatus("Item added. Click Save.");
+        }
+
+        window.removeItem = function(type, index) {
+            if(confirm("Are you sure you want to delete this element?")) {
+                globalData[type].splice(index, 1);
+                if(type === 'strands') renderStrands();
+                if(type === 'careers') renderCareers();
+                if(type === 'stats') renderStats();
+                setStatus("Item deleted. Click Save.");
+            }
+        }
+
+        // --- 5. IMAGE UPLOAD ---
+        window.uploadImage = async function(input, context, index) {
+            const file = input.files[0];
+            if (!file) return;
+
+            setStatus('Uploading image... please wait.');
+            try {
+                const fileName = `${Date.now()}_${Math.random().toString(36).substr(2, 5)}.${file.name.split('.').pop()}`;
+                const filePath = `tvl/${fileName}`;
+
+                const { error: uploadError } = await supabase.storage.from('zsnhs').upload(filePath, file);
+                if (uploadError) throw uploadError;
+
+                const { data } = supabase.storage.from('zsnhs').getPublicUrl(filePath);
+                const publicUrl = data.publicUrl;
+
+                globalData[context][index].image = publicUrl;
+                document.getElementById(`preview-${context}-${index}`).src = publicUrl;
+                
+                setStatus('Image uploaded! Click Save to apply.');
+            } catch (err) {
+                alert("Upload failed: " + err.message);
+                setStatus('Upload error.');
+            }
+        }
+
+        // --- 6. SAVE ---
+        window.saveToFirebase = async function() {
+            const btn = document.querySelector('.btn-save');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+            btn.disabled = true;
+
+            try {
+                // Re-index orders just in case
+                globalData.strands.forEach((item, i) => item.order = i + 1);
+                globalData.careers.forEach((item, i) => item.order = i + 1);
+                globalData.stats.forEach((item, i) => item.order = i + 1);
+
+                await db.collection('tvl').doc('pageContent').set(globalData);
+                setStatus('Changes saved successfully!');
+                alert("Success! The website has been updated.");
+            } catch (error) {
+                console.error(error);
+                alert("Error saving data: " + error.message);
+                setStatus("Error saving.");
+            } finally {
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+            }
+        }
+
+        function setStatus(msg) {
+            document.getElementById('status-msg').innerText = msg;
+        }
+    </script>
+</body>
+</html>

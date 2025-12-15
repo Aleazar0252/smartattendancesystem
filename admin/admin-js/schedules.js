@@ -1,19 +1,18 @@
 /**
  * schedules.js
  * Manages Class Schedules
- * Fix: Prevents duplicate dropdown items by clearing lists after fetching data.
+ * Logic: Days fixed to Daily, Room Removed, Grade Filtering Added, teacherId + teacherName stored.
  */
 
 let allSchedules = [];
-window.teacherNameToIdMap = {}; 
+window.teacherMap = {}; // teacherId → teacherName
 
 document.addEventListener('DOMContentLoaded', () => {
     setTimeout(() => {
         if (window.db) {
             console.log("Database connected.");
             loadSchedulesFromDB();
-            // We only load dropdowns here. We won't reload them in openModal to prevent lag/dupes
-            populateDropdowns(); 
+            populateDropdowns();
         } else {
             console.error("Firebase DB not initialized.");
         }
@@ -32,6 +31,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 
+// --- HELPER: Format Time ---
 function formatTime(timeStr) {
     if (!timeStr) return "";
     const [hour, minute] = timeStr.split(':');
@@ -41,51 +41,44 @@ function formatTime(timeStr) {
     return `${h12}:${minute} ${ampm}`;
 }
 
-// --- 1. POPULATE DROPDOWNS (FIXED) ---
+// --- 1. POPULATE DROPDOWNS ---
 async function populateDropdowns() {
-    const listSection = document.getElementById('list-section');
-    const listSubject = document.getElementById('list-subject');
-    const listTeacher = document.getElementById('list-teacher');
+    const sectionSelect = document.getElementById('sel-section');
+    const subjectSelect = document.getElementById('sel-subject');
+    const teacherSelect = document.getElementById('sel-teacher');
 
     try {
-        // Fetch all data FIRST
-        const [secSnap, subSnap, teachSnap] = await Promise.all([
-            window.db.collection('sections').orderBy('gradeLevel').get(),
-            window.db.collection('subjects').orderBy('subjectName').get(),
-            window.db.collection('users').where('role', '==', 'teacher').get()
-        ]);
-
-        // Clear Lists NOW (Just before adding new ones to prevent duplication)
-        listSection.innerHTML = '';
-        listSubject.innerHTML = '';
-        listTeacher.innerHTML = '';
-
-        // A. SECTIONS
+        // Sections
+        const secSnap = await window.db.collection('sections').orderBy('gradeLevel').get();
+        sectionSelect.innerHTML = '<option value="">Select Section</option>';
         secSnap.forEach(doc => {
             const s = doc.data();
-            const option = document.createElement('option');
-            option.value = `${s.gradeLevel} - ${s.sectionName}`;
-            listSection.appendChild(option);
+            sectionSelect.innerHTML += `<option value="${s.gradeLevel} - ${s.sectionName}">${s.gradeLevel} - ${s.sectionName}</option>`;
         });
 
-        // B. SUBJECTS
+        // Subjects
+        const subSnap = await window.db.collection('subjects').orderBy('subjectName').get();
+        subjectSelect.innerHTML = '<option value="">Select Subject</option>';
         subSnap.forEach(doc => {
             const s = doc.data();
-            const option = document.createElement('option');
-            option.value = s.subjectName;
-            listSubject.appendChild(option);
+            subjectSelect.innerHTML += `<option value="${s.subjectName}">${s.subjectName}</option>`;
         });
 
-        // C. TEACHERS
-        window.teacherNameToIdMap = {}; 
+        // Teachers (load teacherId + full name)
+        const teachSnap = await window.db.collection('users').where('role', '==', 'teacher').get();
+        teacherSelect.innerHTML = '<option value="">Select Teacher</option>';
+
+        window.teacherMap = {}; // Reset teacher map
+
         teachSnap.forEach(doc => {
             const t = doc.data();
             const fullName = `${t.firstName} ${t.lastName}`;
-            window.teacherNameToIdMap[fullName] = t.userId;
 
-            const option = document.createElement('option');
-            option.value = fullName;
-            listTeacher.appendChild(option);
+            // Map teacherId → teacherName
+            window.teacherMap[t.userId] = fullName;
+
+            // Dropdown option stores teacherId
+            teacherSelect.innerHTML += `<option value="${t.userId}">${fullName}</option>`;
         });
 
     } catch (error) {
@@ -160,7 +153,7 @@ function renderTable(data) {
     });
 }
 
-// --- 3. FILTER FUNCTION ---
+// --- 3. DUAL FILTER FUNCTION (Grade + Search Text) ---
 function filterSchedules() {
     const gradeFilter = document.getElementById('filter-grade').value;
     const searchInput = document.getElementById('search-input').value.toLowerCase();
@@ -168,6 +161,7 @@ function filterSchedules() {
     const filtered = allSchedules.filter(s => {
         const sectionName = s.section || "";
         const matchesGrade = (gradeFilter === 'All') || sectionName.startsWith(gradeFilter);
+
         const teacherName = (s.teacherName || "").toLowerCase();
 
         const matchesSearch =
@@ -182,75 +176,48 @@ function filterSchedules() {
 }
 
 // --- 4. SAVE SCHEDULE ---
-async function saveSchedule() {
+function saveSchedule() {
     const section = document.getElementById('sel-section').value;
     const subject = document.getElementById('sel-subject').value;
-    const teacherName = document.getElementById('sel-teacher').value;
+    const teacherId = document.getElementById('sel-teacher').value;
     const start = document.getElementById('sched-start').value;
     const end = document.getElementById('sched-end').value;
 
-    if (!section || !subject || !teacherName || !start || !end) {
-        alert("Please fill in all fields.");
+    if (!section || !subject || !teacherId || !start || !end) {
+        alert("Please select Section, Subject, Teacher, and Time.");
         return;
     }
 
-    const teacherId = window.teacherNameToIdMap[teacherName];
-    if (!teacherId) {
-        alert("Please select a valid teacher from the list.");
-        return;
-    }
+    const teacherName = window.teacherMap[teacherId]; // Get full name
 
     const btn = document.querySelector('#schedule-modal .btn-primary');
     const originalText = btn.innerText;
-    btn.innerText = "Checking...";
+    btn.innerText = "Saving...";
     btn.disabled = true;
 
-    try {
-        // DUPLICATE CHECK
-        const duplicateCheck = await window.db.collection('classSessions')
-            .where('section', '==', section)
-            .where('subject', '==', subject)
-            .where('startTime', '==', start)
-            .get();
+    const scheduleData = {
+        section,
+        subject,
+        teacherId,
+        teacherName,   // store readable name too
+        days: "Daily",
+        startTime: start,
+        endTime: end,
+        createdAt: new Date()
+    };
 
-        if (!duplicateCheck.empty) {
-            alert("Error: A schedule for this Subject and Section at this Time already exists!");
+    window.db.collection('classSessions').add(scheduleData)
+        .then(() => {
+            alert("Schedule Added!");
+            closeModal('schedule-modal');
+            document.getElementById('schedule-form').reset();
+            loadSchedulesFromDB();
+        })
+        .catch(err => alert("Error: " + err.message))
+        .finally(() => {
             btn.innerText = originalText;
             btn.disabled = false;
-            return;
-        }
-
-        // SAVE
-        btn.innerText = "Saving...";
-        
-        await window.db.collection('classSessions').add({
-            section,
-            subject,
-            teacherId,
-            teacherName,
-            days: "Daily",
-            startTime: start,
-            endTime: end,
-            createdAt: new Date()
         });
-        
-        alert("Schedule Added Successfully!");
-        closeModal('schedule-modal');
-        document.getElementById('schedule-form').reset();
-        
-        // Clear inputs manually
-        document.getElementById('sel-section').value = "";
-        document.getElementById('sel-subject').value = "";
-        document.getElementById('sel-teacher').value = "";
-        
-        loadSchedulesFromDB();
-
-    } catch (err) {
-        alert("Error: " + err.message);
-    } finally {
-        btn.innerText = originalText;
-        btn.disabled = false;
-    }
 }
 
 // --- 5. DELETE SCHEDULE ---
@@ -265,14 +232,8 @@ function deleteSchedule(docId) {
 // --- UI HELPERS ---
 function openScheduleModal() {
     document.getElementById('schedule-form').reset();
-    document.getElementById('sel-section').value = "";
-    document.getElementById('sel-subject').value = "";
-    document.getElementById('sel-teacher').value = "";
     document.getElementById('modal-title').innerText = "Add Class Schedule";
     document.getElementById('schedule-modal').style.display = 'block';
-    
-    // NOTE: Removed populateDropdowns() call here to prevent duplication.
-    // The list is loaded once on page load.
 }
 
 function toggleActionMenu(menuId) {
@@ -287,6 +248,7 @@ function closeModal(modalId) {
     document.getElementById(modalId).style.display = 'none';
 }
 
+// Exporting for global use
 window.filterSchedules = filterSchedules;
 window.openScheduleModal = openScheduleModal;
 window.saveSchedule = saveSchedule;

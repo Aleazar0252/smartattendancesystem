@@ -3,7 +3,7 @@
  * Logic for Subject Management (Only Subject Name + Timestamp)
  */
 
-let allSubjects = []; 
+let allSubjects = [];
 
 document.addEventListener('DOMContentLoaded', () => {
     setTimeout(() => {
@@ -33,8 +33,6 @@ document.addEventListener('DOMContentLoaded', () => {
 function loadSubjectsFromDB() {
     const tableBody = document.getElementById('subjects-list-body');
     
-    // Sort by timestamp descending (newest first)
-    // If you haven't created an index yet, remove .orderBy('timestamp', 'desc') temporarily
     window.db.collection('subjects').orderBy('timestamp', 'desc').get()
         .then((querySnapshot) => {
             allSubjects = [];
@@ -49,10 +47,8 @@ function loadSubjectsFromDB() {
                 const data = doc.data();
                 allSubjects.push({ docId: doc.id, ...data });
                 
-                // Format timestamp
                 let dateStr = "N/A";
                 if(data.timestamp) {
-                    // Check if it's a Firestore Timestamp or JS Date
                     const dateObj = data.timestamp.toDate ? data.timestamp.toDate() : new Date(data.timestamp);
                     dateStr = dateObj.toLocaleDateString() + ' ' + dateObj.toLocaleTimeString();
                 }
@@ -82,7 +78,6 @@ function loadSubjectsFromDB() {
         })
         .catch((error) => {
             console.error("Error:", error);
-            // If the error is about missing index, alert user or log it clearly
             if(error.message.includes('index')) {
                 console.warn("You might need to create a Firestore index for 'timestamp' descending.");
             }
@@ -90,13 +85,36 @@ function loadSubjectsFromDB() {
         });
 }
 
-// 2. SAVE (ADD or UPDATE)
+// 2. CHECK FOR DUPLICATE SUBJECT NAME
+function isSubjectDuplicate(subjectName, excludeDocId = null) {
+    // Convert both to lowercase and trim for case-insensitive comparison
+    const normalizedInput = subjectName.trim().toLowerCase();
+    
+    return allSubjects.some(subject => {
+        // Skip the current document when editing
+        if (excludeDocId && subject.docId === excludeDocId) {
+            return false;
+        }
+        
+        const normalizedExisting = subject.subjectName.trim().toLowerCase();
+        return normalizedExisting === normalizedInput;
+    });
+}
+
+// 3. SAVE (ADD or UPDATE)
 function saveSubject() {
     const docId = document.getElementById('edit-doc-id').value;
-    const name = document.getElementById('sub-name').value;
+    const name = document.getElementById('sub-name').value.trim();
 
-    if(!name) {
+    if (!name) {
         alert("Please enter the subject name");
+        return;
+    }
+
+    // Check for duplicates
+    if (isSubjectDuplicate(name, docId)) {
+        alert("Error: Subject name already exists. Please use a different name.");
+        document.getElementById('sub-name').focus();
         return;
     }
 
@@ -107,7 +125,7 @@ function saveSubject() {
 
     const subjectData = {
         subjectName: name,
-        timestamp: new Date() // Updates timestamp on edit too
+        timestamp: new Date()
     };
 
     let promise;
@@ -121,7 +139,7 @@ function saveSubject() {
     }
 
     promise.then(() => {
-        alert(docId ? "Subject updated!" : "Subject added!");
+        alert(docId ? "Subject updated successfully!" : "Subject added successfully!");
         closeModal('subject-modal');
         loadSubjectsFromDB();
     }).catch((err) => {
@@ -132,16 +150,19 @@ function saveSubject() {
     });
 }
 
-// 3. DELETE
+// 4. DELETE
 function deleteSubject(docId) {
     if(confirm("Are you sure you want to delete this subject?")) {
         window.db.collection('subjects').doc(docId).delete()
-            .then(() => loadSubjectsFromDB())
+            .then(() => {
+                loadSubjectsFromDB();
+                alert("Subject deleted successfully!");
+            })
             .catch(err => alert("Error: " + err.message));
     }
 }
 
-// 4. UI HELPERS
+// 5. UI HELPERS
 function openSubjectModal(docId = null) {
     const modal = document.getElementById('subject-modal');
     const title = document.getElementById('modal-title');

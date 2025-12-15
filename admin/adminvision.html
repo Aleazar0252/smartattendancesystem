@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ADMIN - Vision & Mission</title>
+    <link rel="icon" type="image/x-icon" href="../img/a2.png">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <style>
+        /* =========================================
+           STYLES
+           ========================================= */
+        :root {
+            --primary: #a40028; --secondary: #8B0000; --accent: #FFD700;
+            --light: #F8F9FA; --dark: #212529; --primary-color: #a40028;
+            --secondary-color: #FFD700; --accent-color: #0056b3;
+            --text-color: #333; --light-gray: #f8f9fa; --white: #ffffff; --dark-gray: #a40028;
+            --admin-edit: #2ecc71; --admin-delete: #e74c3c; --admin-add: #3498db;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Poppins', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { background-color: var(--light-gray); color: var(--text-color); line-height: 1.8; display: flex; flex-direction: column; min-height: 100vh; }
+
+        /* Header & Nav */
+        .top-bar { background: var(--primary); color: white; padding: 10px 30px; font-size: 0.9em; display: flex; justify-content: center; align-items: center; box-shadow: 0 2px 10px rgba(0,0,0,0.1); gap: 40px; }
+        .top-bar i { margin-right: 8px; color: var(--accent); }
+        .logo-bar { display: flex; justify-content: space-between; align-items: center; background-color: white; padding: 20px 30px; min-height: 200px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); position: relative; gap: 40px; }
+        .logo-bar::before { content: ''; position: absolute; bottom: 0; left: 0; width: 100%; height: 4px; background: linear-gradient(90deg, var(--primary), var(--secondary), var(--accent)); }
+        .logo-container { display: flex; align-items: center; width: 25%; gap: 20px; }
+        .left-logo { justify-content: flex-end; padding-right: 30px; }
+        .right-logo { justify-content: flex-start; padding-left: 30px; }
+        .zsnhs-logo, .deped-logo { height: 150px; width: auto; object-fit: contain; max-width: 220px; }
+        .title-container { display: flex; align-items: center; justify-content: center; flex: 1; padding: 0 20px; }
+        .school-name { text-align: center; }
+        .school-name h1 { color: var(--primary); font-size: 2.5em; margin: 0; font-weight: 800; line-height: 1.2; text-transform: uppercase; }
+        .school-name p { color: var(--secondary); font-size: 1.1em; font-weight: 600; font-style: italic; margin-top: 8px; }
+        
+        /* Navigation Fixed */
+        nav { background: linear-gradient(135deg, var(--primary), #002244); position: sticky; top: 0; z-index: 1000; box-shadow: 0 4px 12px rgba(0,0,0,0.15); padding: 0 20px; }
+        .nav-container { display: flex; justify-content: center; align-items: center; width: 100%; }
+        .nav-links { display: flex; list-style: none; justify-content: center; padding: 0; margin: 0; }
+        .nav-links > li { position: relative; }
+        .nav-links > li:hover .dropdown-menu { display: block; }
+        .nav-links a { color: white; text-decoration: none; font-weight: 600; text-transform: uppercase; font-size: 0.85em; letter-spacing: 1px; padding: 18px 22px; display: block; transition: all 0.3s ease; white-space: nowrap; }
+        .nav-links a:hover { color: var(--accent); }
+        .dropdown-menu { display: none; position: absolute; top: 100%; left: 0; background-color: white; min-width: 200px; box-shadow: 0 8px 16px rgba(0,0,0,0.1); z-index: 9999; border-radius: 0 0 4px 4px; overflow: hidden; }
+        .dropdown-menu li { border-bottom: 1px solid #f0f0f0; }
+        .dropdown-menu li:last-child { border-bottom: none; }
+        .dropdown-menu a { color: var(--dark); padding: 12px 20px; text-transform: none; display: block; }
+        .dropdown-menu a:hover { background-color: var(--primary); color: white; }
+        .mobile-menu-toggle { display: none; background: none; border: none; color: white; font-size: 1.5em; cursor: pointer; padding: 15px; position: absolute; right: 20px; top: 0; }
+
+        /* Main Content */
+        main { flex: 1; }
+        .container { max-width: 1100px; margin: 0 auto; padding: 0 20px; }
+        
+        /* Modified Hero Banner for Editability */
+        .hero-banner { 
+            background-color: #002244; 
+            /* Default background, will be overridden by JS */
+            background: linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.6)), url('img/banner.jpg'); 
+            background-size: cover; 
+            background-position: center; 
+            height: 60vh; 
+            min-height: 400px; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            text-align: center; 
+            color: var(--white); 
+            margin-bottom: 60px; 
+            position: relative; 
+        }
+        .hero-title { font-size: 3.2rem; font-weight: 700; margin-bottom: 20px; text-transform: uppercase; letter-spacing: 2px; }
+        .hero-subtitle { font-size: 1.4rem; margin-bottom: 30px; font-weight: 300; }
+        
+        .section { margin-bottom: 80px; background-color: var(--white); border-radius: 10px; padding: 50px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); position: relative; overflow: hidden; }
+        .section::before { content: ''; position: absolute; top: 0; left: 0; width: 5px; height: 100%; background: linear-gradient(to bottom, var(--primary-color), var(--secondary-color)); }
+        .section-title { color: var(--primary-color); font-size: 2.5rem; margin-bottom: 2rem; position: relative; padding-bottom: 15px; font-weight: 700; }
+        .section-title::after { content: ''; position: absolute; bottom: 0; left: 0; width: 80px; height: 4px; background-color: var(--secondary-color); border-radius: 2px; }
+        .section-text { font-size: 1.1rem; margin-bottom: 1.8rem; color: var(--dark-gray); }
+        .two-column { display: grid; grid-template-columns: 1fr 1fr; gap: 50px; align-items: center; }
+        
+        /* Updated Image Styles for Zoom */
+        .section-image { width: 100%; height: 350px; object-fit: cover; border-radius: 8px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); background-color: #ddd; cursor: zoom-in; transition: transform 0.3s ease; }
+        .section-image:hover { transform: scale(1.02); }
+        .value-image { width: 100%; height: 180px; object-fit: contain; border-radius: 6px; margin-bottom: 20px; cursor: zoom-in; }
+
+        .core-values { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 30px; margin-top: 40px; }
+        .value-item { background-color: var(--white); padding: 30px; border-radius: 8px; transition: all 0.4s ease; box-shadow: 0 5px 15px rgba(0,0,0,0.05); border-top: 4px solid var(--primary-color); position: relative; overflow: hidden; }
+        .value-item:hover { transform: translateY(-5px); }
+        .value-title { color: var(--primary-color); font-size: 1.4rem; margin-bottom: 15px; font-weight: 600; text-align: center; }
+        .value-text { color: var(--dark-gray); font-size: 1rem; text-align: center; }
+        .divider { border: 0; height: 1px; background: linear-gradient(to right, transparent, var(--primary-color), transparent); margin: 60px auto; max-width: 80%; }
+        
+        /* Footer */
+        footer { background: linear-gradient(135deg, var(--primary), #a40028); color: white; padding: 50px 30px 20px; }
+        .footer-container { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 30px; max-width: 1200px; margin: 0 auto; }
+        .footer-section h3 { color: var(--accent); font-size: 1.3em; margin-bottom: 20px; }
+        .copyright { text-align: center; margin-top: 50px; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.1); font-size: 0.9em; }
+
+        /* Responsive */
+        @media (max-width: 991px) { .zsnhs-logo, .deped-logo { height: 120px; } .logo-bar { min-height: 180px; } }
+        @media (max-width: 767px) {
+            .logo-bar { flex-direction: column; min-height: auto; gap: 20px; }
+            .logo-container { width: 100%; justify-content: center; padding: 0; }
+            .two-column { grid-template-columns: 1fr; }
+            .section-image { height: 280px; order: -1; }
+            .mobile-menu-toggle { display: block; }
+            .nav-container { justify-content: flex-start; }
+            .nav-links { display: none; flex-direction: column; width: 100%; position: absolute; top: 100%; left: 0; background: linear-gradient(135deg, var(--primary), #002244); box-shadow: 0 5px 15px rgba(0,0,0,0.2); }
+            .nav-links.active { display: flex; }
+            .nav-links > li { width: 100%; text-align: center; border-bottom: 1px solid rgba(255,255,255,0.1); }
+            .dropdown-menu { position: static; width: 100%; box-shadow: none; background-color: rgba(0,0,0,0.1); }
+            .nav-links > li:hover .dropdown-menu { display: none; } 
+            .nav-links > li.dropdown-active .dropdown-menu { display: block; }
+            .dropdown-menu a { color: white; padding-left: 40px; text-align: left; }
+        }
+
+        /* =========================================
+           ADMIN & UI OVERLAYS
+           ========================================= */
+        .admin-controls { position: absolute; top: 15px; right: 15px; z-index: 10; display: flex; gap: 5px; }
+        .btn-admin { border: none; padding: 8px 12px; border-radius: 4px; color: white; cursor: pointer; font-size: 0.85em; font-weight: 600; box-shadow: 0 2px 5px rgba(0,0,0,0.2); transition: 0.2s; display: flex; align-items: center; gap: 5px; }
+        .btn-edit { background-color: var(--admin-edit); } .btn-edit:hover { background-color: #27ae60; }
+        .btn-delete { background-color: var(--admin-delete); } .btn-delete:hover { background-color: #c0392b; }
+        .btn-add { background-color: var(--admin-add); margin: 20px auto; display: block; padding: 12px 25px; font-size: 1rem; } .btn-add:hover { background-color: #2980b9; }
+
+        /* Modal */
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); display: none; justify-content: center; align-items: center; z-index: 10000; }
+        .modal-content { background: white; padding: 30px; border-radius: 8px; width: 90%; max-width: 500px; box-shadow: 0 10px 25px rgba(0,0,0,0.3); max-height: 90vh; overflow-y: auto; }
+        .modal-header { border-bottom: 1px solid #eee; padding-bottom: 15px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; }
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; margin-bottom: 5px; font-weight: 600; font-size: 0.9em; }
+        .form-group input, .form-group textarea { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; }
+        .form-group textarea { height: 120px; resize: vertical; }
+        .form-group input[type="file"] { border: none; padding: 10px 0; }
+        .modal-footer { border-top: 1px solid #eee; padding-top: 20px; margin-top: 20px; display: flex; justify-content: flex-end; gap: 10px; }
+        
+        .admin-bar { background: #333; color: white; padding: 10px; text-align: center; position: fixed; bottom: 0; width: 100%; z-index: 9999; font-size: 0.9em; }
+        
+        /* Loading Overlay */
+        #loading-overlay { position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(255,255,255,0.8); z-index: 20000; display: none; flex-direction: column; justify-content: center; align-items: center; }
+        .spinner { border: 4px solid #f3f3f3; border-top: 4px solid var(--primary); border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        /* Lightbox (New) */
+        .lightbox { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); display: none; justify-content: center; align-items: center; z-index: 30000; cursor: zoom-out; animation: fadeIn 0.3s; }
+        .lightbox img { max-width: 90%; max-height: 90%; border-radius: 4px; box-shadow: 0 0 20px rgba(255,255,255,0.1); }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    </style>
+</head>
+
+<body>
+    <header>
+        <div class="top-bar"><div><i class="fas fa-map-marker-alt"></i> Ipil, Zamboanga Sibugay</div></div>
+        <div class="logo-bar">
+            <div class="logo-container left-logo"><img src="../img/zsnhs_logo.jpg" class="zsnhs-logo"></div>
+            <div class="title-container"><div class="school-name"><h1>ZAMBOANGA SIBUGAY NATIONAL HIGH SCHOOL</h1> <p>Mission And Vision Page Administrator</p></div></div>
+            <div class="logo-container right-logo"><img src="../img/deped_logo.jfif" class="deped-logo"></div>
+        </div>
+        
+        <nav>
+            <div class="nav-container">
+                <button class="mobile-menu-toggle">
+                    <i class="fas fa-bars"></i>
+                </button>
+                <ul class="nav-links">
+                    <li><a href="admin.html"><i class="fas fa-home"></i> Dashboard</a></li>
+                    <li class="dropdown-parent">
+                        <a href="javascript:void(0)"><i class="fas fa-info-circle"></i> About Us <i class="fas fa-caret-down"></i></a>
+                        <ul class="dropdown-menu">
+                            <li><a href="adminvision.html"><i class="fas fa-bullseye"></i> Mission & Vision</a></li>
+                            <li><a href="adminhistory.html"><i class="fas fa-landmark"></i> History</a></li>
+                        </ul>
+                    </li>
+                    <li class="dropdown-parent">
+                        <a href="javascript:void(0)"><i class="fas fa-info-circle"></i> Tracks <i class="fas fa-caret-down"></i></a>
+                        <ul class="dropdown-menu">
+                            <li><a href="admintvl.html"><i class="fas fa-bullseye"></i> TVL Tracks</a></li>
+                            <li><a href="adminacademic.html"><i class="fas fa-landmark"></i> Academic Tracks</a></li>
+                        </ul>
+                    </li>
+                    <li><a href="admincontact.html"><i class="fas fa-graduation-cap"></i> Contact</a></li>
+                    <li><a href="AdminLandingPage.html"><i class="fas fa-user-graduate"></i> Events</a></li>
+                </ul>
+            </div>
+        </nav>
+    </header>
+
+    <main>
+        <div class="hero-banner" id="main-hero-banner">
+            <div class="admin-controls" style="top: 20px; right: 20px;">
+                <button class="btn-admin btn-edit" onclick="openEditModal('hero_banner')">
+                    <i class="fas fa-camera"></i> Change Cover
+                </button>
+            </div>
+            <div class="hero-content">
+                <h1 class="hero-title">Vision & Mission</h1>
+              <p class="hero-subtitle">Guiding Principles for Excellence in Education</p>
+            </div>
+        </div>
+
+        <div class="container">
+            <section class="section" id="vision">
+                <div class="admin-controls">
+                    <button class="btn-admin btn-edit" onclick="openEditModal('vision')"><i class="fas fa-pen"></i> Edit Vision</button>
+                </div>
+                <h2 class="section-title">Our Vision</h2>
+                <div class="two-column">
+                    <div>
+                        <p class="section-text" id="vision-text">Loading...</p>
+                    </div>
+                    <img id="vision-img" src="" alt="Vision" class="section-image" 
+                         onclick="viewFullImage(this.src)" 
+                         onerror="this.src='https://placehold.co/600x400/a40028/FFD700?text=Vision'">
+                </div>
+            </section>
+
+            <div class="divider"></div>
+
+            <section class="section" id="mission">
+                <div class="admin-controls">
+                    <button class="btn-admin btn-edit" onclick="openEditModal('mission')"><i class="fas fa-pen"></i> Edit Mission</button>
+                </div>
+                <h2 class="section-title">Our Mission</h2>
+                <div class="two-column">
+                    <img id="mission-img" src="" alt="Mission" class="section-image" 
+                         onclick="viewFullImage(this.src)"
+                         onerror="this.src='https://placehold.co/600x400/a40028/FFD700?text=Mission'">
+                    <div>
+                        <p class="section-text" id="mission-text">Loading...</p>
+                    </div>
+                </div>
+            </section>
+
+            <div class="divider"></div>
+
+            <section class="section" id="core-values">
+                <h2 class="section-title" style="text-align: center;">Our Core Values</h2>
+                
+                <div style="position: relative;">
+                    <div class="admin-controls" style="top:-60px;">
+                        <button class="btn-admin btn-edit" onclick="openEditModal('core_banner')"><i class="fas fa-image"></i> Edit Banner</button>
+                    </div>
+                    <img id="core-img" src="" alt="Banner" class="section-image" 
+                         onclick="viewFullImage(this.src)"
+                         style="margin-bottom: 40px; width: 100%; height: 300px; object-fit: cover;" 
+                         onerror="this.src='https://placehold.co/1200x400/a40028/FFD700?text=Core+Values'">
+                </div>
+
+                <div class="core-values" id="core-values-container">
+                    </div>
+
+                <button class="btn-admin btn-add" onclick="openEditModal('add_core')"><i class="fas fa-plus-circle"></i> Add New Core Value</button>
+            </section>
+        </div>
+    </main>
+
+    
+
+    <div id="lightbox" class="lightbox" onclick="closeLightbox()">
+        <img id="lightbox-img" src="">
+    </div>
+
+    <div id="loading-overlay">
+        <div class="spinner"></div>
+        <p style="margin-top:10px; font-weight:bold;">Uploading & Saving...</p>
+    </div>
+
+    <div id="admin-modal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modal-title">Edit Content</h3>
+                <button class="btn-admin btn-delete" onclick="closeModal()" style="padding: 5px 10px;">X</button>
+            </div>
+            <div id="modal-body">
+                </div>
+            <div class="modal-footer">
+                <button class="btn-admin btn-delete" style="background:#95a5a6" onclick="closeModal()">Cancel</button>
+                <button class="btn-admin btn-edit" onclick="saveChanges()">Save Changes</button>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+       
+        <div class="copyright">
+            <p>&copy; 2025 Zamboanga Sibugay National High School. All Rights Reserved.</p>
+        </div>
+    </footer>
+
+    <script>
+        // --- 1. CONFIGURATION (Replace with your actual keys) ---
+        const firebaseConfig = {
+            apiKey: "AIzaSyDlClfbOSKAhalafAQ4ptMRCHkaG-DxDd8",
+            authDomain: "zsnhs-24e44.firebaseapp.com",
+            databaseURL: "https://zsnhs-24e44-default-rtdb.firebaseio.com",
+            projectId: "zsnhs-24e44",
+            storageBucket: "zsnhs-24e44.firebasestorage.app",
+            messagingSenderId: "39166648924",
+            appId: "1:39166648924:web:d65f2e83e6143a5aff7c99"
+        };
+
+        const supabaseUrl = "https://lydfpvyzlkiemdkfevld.supabase.co";
+        const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx5ZGZwdnl6bGtpZW1ka2ZldmxkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQzODA5ODQsImV4cCI6MjA3OTk1Njk4NH0.cya0vN2jUzylNzNNHUr0rbb1ONd_X5IQFAvb3WUNj9M"; 
+
+        // Initialize SDKs
+        const app = firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+        const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+
+        // Global State
+        let globalData = {};
+        let editContext = null; 
+        let editIndex = null;
+
+        // Default Data Structure
+        const defaultData = {
+            mission_vision: {
+                vision: "School Vision Statement...",
+                mission: "School Mission Statement...",
+                vision_image: "", 
+                mission_image: "", 
+                core_main_image: "",
+                hero_banner_image: "" // ADDED THIS FIELD
+            },
+            core_values: []
+        };
+
+        document.addEventListener('DOMContentLoaded', init);
+
+        async function init() {
+            setupMobileMenu(); // Setup navigation
+            await loadData();
+        }
+
+        // --- MOBILE MENU LOGIC ---
+        function setupMobileMenu() {
+            const toggleBtn = document.querySelector('.mobile-menu-toggle');
+            const navLinks = document.querySelector('.nav-links');
+            const dropdownParents = document.querySelectorAll('.dropdown-parent > a');
+
+            toggleBtn.addEventListener('click', function() {
+                navLinks.classList.toggle('active');
+                const icon = this.querySelector('i');
+                if(navLinks.classList.contains('active')) {
+                    icon.classList.remove('fa-bars');
+                    icon.classList.add('fa-times');
+                } else {
+                    icon.classList.remove('fa-times');
+                    icon.classList.add('fa-bars');
+                }
+            });
+
+            dropdownParents.forEach(link => {
+                link.addEventListener('click', function(e) {
+                    if (window.innerWidth <= 767) {
+                        e.preventDefault();
+                        const parent = this.parentElement;
+                        document.querySelectorAll('.dropdown-parent.dropdown-active').forEach(p => {
+                            if(p !== parent) p.classList.remove('dropdown-active');
+                        });
+                        parent.classList.toggle('dropdown-active');
+                    }
+                });
+            });
+        }
+
+        async function loadData() {
+            try {
+                const doc = await db.collection('vision').doc('schoolData').get();
+                if (doc.exists) {
+                    globalData = doc.data();
+                    renderUI();
+                } else {
+                    globalData = defaultData;
+                    await db.collection('vision').doc('schoolData').set(defaultData);
+                    renderUI();
+                }
+            } catch (error) {
+                console.error("Error:", error);
+                alert("Database connection failed.");
+            }
+        }
+
+        function renderUI() {
+            const mv = globalData.mission_vision || defaultData.mission_vision;
+            
+            // Hero Banner Logic (Dynamic Background with Gradient)
+            const bannerImg = mv.hero_banner_image || 'img/banner.jpg'; // Fallback to local default
+            const heroDiv = document.getElementById('main-hero-banner');
+            heroDiv.style.backgroundImage = `linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.6)), url('${bannerImg}')`;
+
+            // Vision
+            document.getElementById('vision-text').textContent = mv.vision;
+            document.getElementById('vision-img').src = mv.vision_image;
+            
+            // Mission
+            document.getElementById('mission-text').textContent = mv.mission;
+            document.getElementById('mission-img').src = mv.mission_image;
+            
+            // Core Banner
+            document.getElementById('core-img').src = mv.core_main_image;
+
+            // Core Values List
+            const container = document.getElementById('core-values-container');
+            container.innerHTML = '';
+            
+            const values = globalData.core_values || [];
+            values.sort((a,b) => a.order - b.order).forEach((val, index) => {
+                const item = document.createElement('div');
+                item.className = 'value-item';
+                item.innerHTML = `
+                    <div class="admin-controls">
+                        <button class="btn-admin btn-edit" onclick="openEditModal('edit_core', ${index})"><i class="fas fa-pen"></i></button>
+                        <button class="btn-admin btn-delete" onclick="deleteCoreValue(${index})"><i class="fas fa-trash"></i></button>
+                    </div>
+                    <img src="${val.image_url}" class="value-image" alt="${val.title}" 
+                         onclick="viewFullImage(this.src)"
+                         onerror="this.src='https://placehold.co/100/FFD700/a40028?text=Img'">
+                    <h3 class="value-title">${val.title}</h3>
+                    <p class="value-text">${val.description}</p>
+                `;
+                container.appendChild(item);
+            });
+        }
+
+        // --- LIGHTBOX LOGIC ---
+        function viewFullImage(src) {
+            if(!src) return;
+            document.getElementById('lightbox-img').src = src;
+            document.getElementById('lightbox').style.display = 'flex';
+        }
+
+        function closeLightbox() {
+            document.getElementById('lightbox').style.display = 'none';
+        }
+
+        // --- MODAL LOGIC ---
+        function openEditModal(type, index = null) {
+            editContext = type;
+            editIndex = index;
+            const modal = document.getElementById('admin-modal');
+            const body = document.getElementById('modal-body');
+            const title = document.getElementById('modal-title');
+            
+            let html = '';
+            const mv = globalData.mission_vision || {};
+
+            const fileInputHtml = `<div class="form-group"><label>Upload New Image (Optional)</label><input type="file" id="inp-file" accept="image/*"></div>`;
+
+            if (type === 'vision') {
+                title.innerText = "Edit Vision";
+                html = `
+                    <div class="form-group"><label>Vision Text</label><textarea id="inp-text">${mv.vision || ''}</textarea></div>
+                    ${fileInputHtml}
+                `;
+            } else if (type === 'mission') {
+                title.innerText = "Edit Mission";
+                html = `
+                    <div class="form-group"><label>Mission Text</label><textarea id="inp-text">${mv.mission || ''}</textarea></div>
+                    ${fileInputHtml}
+                `;
+            } else if (type === 'core_banner') {
+                title.innerText = "Edit Core Values Banner";
+                html = `${fileInputHtml}`;
+            } else if (type === 'hero_banner') { 
+                // ADDED CASE FOR HERO BANNER
+                title.innerText = "Edit Hero Cover Photo";
+                html = `<p style="margin-bottom:15px; font-size:0.9em; color:#666;">Select a high-quality image for the main page header.</p> ${fileInputHtml}`;
+            } else if (type === 'add_core' || type === 'edit_core') {
+                title.innerText = type === 'add_core' ? "Add Core Value" : "Edit Core Value";
+                const val = type === 'edit_core' ? globalData.core_values[index] : {};
+                html = `
+                    <div class="form-group"><label>Title</label><input type="text" id="inp-title" value="${val.title || ''}"></div>
+                    <div class="form-group"><label>Description</label><textarea id="inp-desc">${val.description || ''}</textarea></div>
+                    ${fileInputHtml}
+                `;
+            }
+
+            body.innerHTML = html;
+            modal.style.display = 'flex';
+        }
+
+        function closeModal() {
+            document.getElementById('admin-modal').style.display = 'none';
+        }
+
+        // --- UPLOAD LOGIC ---
+        async function uploadImage(file) {
+            if (!file) return null;
+            const fileExt = file.name.split('.').pop();
+            const fileName = `vision/${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
+
+            const { data, error } = await supabase.storage.from('zsnhs').upload(fileName, file);
+            if (error) throw new Error('Supabase Upload Error: ' + error.message);
+
+            const { data: publicData } = supabase.storage.from('zsnhs').getPublicUrl(fileName);
+            return publicData.publicUrl;
+        }
+
+        // --- SAVE LOGIC ---
+        async function saveChanges() {
+            document.getElementById('loading-overlay').style.display = 'flex';
+
+            try {
+                if(!globalData.mission_vision) globalData.mission_vision = {};
+                if(!globalData.core_values) globalData.core_values = [];
+
+                const fileInput = document.getElementById('inp-file');
+                const file = fileInput && fileInput.files[0];
+                let newImageUrl = null;
+
+                if (file) {
+                    newImageUrl = await uploadImage(file);
+                }
+
+                if (editContext === 'vision') {
+                    globalData.mission_vision.vision = document.getElementById('inp-text').value;
+                    if(newImageUrl) globalData.mission_vision.vision_image = newImageUrl;
+                } 
+                else if (editContext === 'mission') {
+                    globalData.mission_vision.mission = document.getElementById('inp-text').value;
+                    if(newImageUrl) globalData.mission_vision.mission_image = newImageUrl;
+                } 
+                else if (editContext === 'core_banner') {
+                    if(newImageUrl) globalData.mission_vision.core_main_image = newImageUrl;
+                } 
+                else if (editContext === 'hero_banner') {
+                    // SAVE LOGIC FOR HERO BANNER
+                    if(newImageUrl) globalData.mission_vision.hero_banner_image = newImageUrl;
+                }
+                else if (editContext === 'add_core' || editContext === 'edit_core') {
+                    let existingItem = {};
+                    if (editContext === 'edit_core') existingItem = globalData.core_values[editIndex];
+
+                    let orderId = (editContext === 'edit_core') ? existingItem.order : (globalData.core_values.length + 1);
+                    let finalImgUrl = newImageUrl || (editContext === 'edit_core' ? existingItem.image_url : "");
+
+                    const newVal = {
+                        title: document.getElementById('inp-title').value,
+                        description: document.getElementById('inp-desc').value,
+                        image_url: finalImgUrl,
+                        order: orderId
+                    };
+
+                    if(editContext === 'edit_core') {
+                        globalData.core_values[editIndex] = newVal;
+                    } else {
+                        globalData.core_values.push(newVal);
+                    }
+                }
+
+                await db.collection('vision').doc('schoolData').set(globalData);
+                
+                closeModal();
+                renderUI();
+                alert("Saved successfully!");
+
+            } catch (e) {
+                console.error(e);
+                alert("Error saving data: " + e.message);
+            } finally {
+                document.getElementById('loading-overlay').style.display = 'none';
+            }
+        }
+
+        async function deleteCoreValue(index) {
+            if(confirm("Delete this Core Value?")) {
+                globalData.core_values.splice(index, 1);
+                await db.collection('vision').doc('schoolData').set(globalData);
+                renderUI();
+            }
+        }
+    </script>
+</body>
+</html>

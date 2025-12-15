@@ -25,9 +25,9 @@
     <div class="dashboard">
       <div class="sidebar" id="sidebar">
         <div class="logo">
-            <div class="logo-placeholder">ZSNHS</div>
-            <h1>ZSNHS</h1>
-        </div>
+                <img src="../img/zsnhs.jpg" class="logo-placeholder hover-zoom">
+                <h1>ZSNHS</h1>
+            </div>
 
         <div class="nav-menu">
           <h2>Dashboard</h2>
@@ -36,14 +36,14 @@
             <i class="fas fa-tachometer-alt"></i> <span>Overview</span>
           </div>
 
-          <div class="nav-item" onclick="toggleDropdown('academics-dropdown', this)">
+          <div class="nav-item dropdown-open" onclick="toggleDropdown('academics-dropdown', this)">
             <div style="display:flex; align-items:center; gap: 15px;">
                 <i class="fas fa-graduation-cap"></i> 
                 <span>Academics</span>
             </div>
             <i class="fas fa-chevron-down chevron-icon"></i>
           </div>
-          <div class="nav-dropdown" id="academics-dropdown">
+          <div class="nav-dropdown show" id="academics-dropdown">
              <a href="teachers.html" class="nav-sub-item">Teacher Management</a>
              <a href="subjects.html" class="nav-sub-item">Subjects</a>
              <a href="sections.html" class="nav-sub-item">Grade Level & Sections</a>
@@ -56,9 +56,9 @@
           <div class="nav-item" onclick="window.location.href='students.html'">
             <i class="fas fa-user-graduate"></i> <span>Students</span>
           </div>
-          <div class="nav-item" onclick="window.location.href='parent.html'">
-            <i class="fas fa-users"></i> <span>Parents</span>
-          </div>
+          <!--<div class="nav-item" onclick="window.location.href='parent.html'">-->
+          <!--  <i class="fas fa-users"></i> <span>Parents</span>-->
+          <!--</div>-->
           <div class="nav-item" onclick="window.location.href='reports.html'">
             <i class="fas fa-chart-pie"></i> <span>Reports</span>
           </div>
@@ -88,7 +88,7 @@
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px;">
             <h2 style="color: var(--primary-color)">Master Schedule</h2>
 
-            <div style="display: flex; gap: 10px; align-items: center">
+            <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
               <select id="filter-grade" onchange="filterSchedules()" style="padding: 10px; border: 1px solid #ddd; border-radius: 5px; cursor: pointer; background: #fff;">
                 <option value="All">All Levels</option>
                 <option value="Grade 7">Grade 7</option>
@@ -99,30 +99,32 @@
                 <option value="Grade 12">Grade 12</option>
               </select>
 
-              <input type="text" id="search-input" onkeyup="filterSchedules()" placeholder="Search Teacher, Subject, or Section..." style="padding: 10px; border: 1px solid #ddd; border-radius: 5px; width: 250px;" />
+              <input type="text" id="search-input" onkeyup="filterSchedules()" placeholder="Search..." style="padding: 10px; border: 1px solid #ddd; border-radius: 5px; width: 200px;" />
 
               <button class="btn btn-primary" onclick="openScheduleModal()">
-                <i class="fas fa-plus"></i> Add Schedule
+                <i class="fas fa-plus"></i> Add schedule
               </button>
             </div>
           </div>
 
-          <table class="teachers-table">
-            <thead>
-              <tr>
-                <th>Section</th>
-                <th>Subject</th>
-                <th>Teacher</th>
-                <th>Day & Time</th>
-                <th style="text-align: right">Actions</th>
-              </tr>
-            </thead>
-            <tbody id="schedules-list-body">
-              <tr>
-                <td colspan="5" class="loading-cell">Loading schedules...</td>
-              </tr>
-            </tbody>
-          </table>
+          <div class="table-responsive">
+              <table class="teachers-table">
+                <thead>
+                  <tr>
+                    <th>Section</th>
+                    <th>Subject</th>
+                    <th>Teacher</th>
+                    <th>Day & Time</th>
+                    <th style="text-align: right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="schedules-list-body">
+                  <tr>
+                    <td colspan="5" class="loading-cell" style="text-align:center; padding: 20px;">Loading schedules...</td>
+                  </tr>
+                </tbody>
+              </table>
+          </div>
         </div>
       </div>
     </div>
@@ -138,21 +140,27 @@
             <input type="hidden" id="edit-doc-id" />
 
             <div class="form-group">
-              <label>Grade & Section (Type to Search)</label>
-              <input type="text" id="sel-section" list="list-section" class="form-control" placeholder="e.g. Grade 7 - Rizal" required autocomplete="off">
-              <datalist id="list-section"></datalist>
+              <label>Grade & Section</label>
+              <div class="dropdown-wrapper">
+                <input type="text" id="search-section" class="dropdown-input" placeholder="Type to search section..." autocomplete="off">
+                <input type="hidden" id="val-section"> <div id="options-section" class="dropdown-options"></div>
+              </div>
             </div>
 
             <div class="form-group">
-              <label>Subject (Type to Search)</label>
-              <input type="text" id="sel-subject" list="list-subject" class="form-control" placeholder="e.g. Mathematics" required autocomplete="off">
-              <datalist id="list-subject"></datalist>
+              <label>Subject</label>
+              <div class="dropdown-wrapper">
+                <input type="text" id="search-subject" class="dropdown-input" placeholder="Type to search subject..." autocomplete="off">
+                <input type="hidden" id="val-subject"> <div id="options-subject" class="dropdown-options"></div>
+              </div>
             </div>
 
             <div class="form-group">
-              <label>Teacher (Type to Search)</label>
-              <input type="text" id="sel-teacher" list="list-teacher" class="form-control" placeholder="e.g. Juan Dela Cruz" required autocomplete="off">
-              <datalist id="list-teacher"></datalist>
+              <label>Teacher</label>
+              <div class="dropdown-wrapper">
+                <input type="text" id="search-teacher" class="dropdown-input" placeholder="Type to search teacher..." autocomplete="off">
+                <input type="hidden" id="val-teacher"> <div id="options-teacher" class="dropdown-options"></div>
+              </div>
             </div>
 
             <div class="form-group">
@@ -160,14 +168,30 @@
               <input type="text" class="form-control" value="Daily (Mon-Fri)" readonly style="background-color: #e9ecef; color: #495057; cursor: not-allowed;" />
             </div>
 
-            <div class="form-group" style="display: flex; gap: 15px">
+            <div class="form-group form-row">
               <div style="flex: 1">
-                <label>Start Time <small style="color: #666; font-weight: normal">(AM/PM)</small></label>
-                <input type="time" id="sched-start" class="form-control" required />
+                <label>Start Time <small style="color: #d9534f; font-weight: normal">(7:00 AM - 5:00 PM)</small></label>
+                <input 
+                  type="time" 
+                  id="sched-start" 
+                  class="form-control" 
+                  min="07:00" 
+                  max="17:00" 
+                  required 
+                  onchange="validateTime(this)"
+                />
               </div>
               <div style="flex: 1">
-                <label>End Time <small style="color: #666; font-weight: normal">(AM/PM)</small></label>
-                <input type="time" id="sched-end" class="form-control" required />
+                <label>End Time <small style="color: #d9534f; font-weight: normal">(7:00 AM - 5:00 PM)</small></label>
+                <input 
+                  type="time" 
+                  id="sched-end" 
+                  class="form-control" 
+                  min="07:00" 
+                  max="17:00" 
+                  required 
+                  onchange="validateTime(this)"
+                />
               </div>
             </div>
           </form>
@@ -183,13 +207,415 @@
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
     <script src="admin-js/admin-config.js"></script>
+    <script src="admin-js/ui.js"></script>
+
     <script>
+      let allSchedules = [];
+      let sectionsData = [];
+      let subjectsData = [];
+      let teachersData = [];
+
+      document.addEventListener('DOMContentLoaded', () => {
+        const toggleBtn = document.getElementById('menu-toggle-btn');
+        const sidebar = document.getElementById('sidebar');
+        const overlay = document.getElementById('mobile-overlay');
+        
+        if(toggleBtn) {
+            toggleBtn.addEventListener('click', () => {
+                sidebar.classList.toggle('active');
+                overlay.classList.toggle('active');
+            });
+        }
+        
+        if(overlay) {
+            overlay.addEventListener('click', () => {
+                sidebar.classList.remove('active');
+                overlay.classList.remove('active');
+            });
+        }
+
+        setTimeout(() => {
+          if (window.db) {
+            console.log("Database connected.");
+            loadSchedulesFromDB();
+            populateDropdowns(); 
+          } else {
+            console.error("Firebase DB not initialized.");
+            document.querySelector('.loading-cell').innerText = "Error: Database connection failed.";
+          }
+          const preloader = document.getElementById('preloader');
+          if(preloader) {
+             preloader.classList.add('loader-hidden');
+             setTimeout(() => preloader.style.display = 'none', 500);
+          }
+        }, 500);
+
+        window.onclick = function(event) {
+          if (event.target.classList.contains('modal')) {
+            event.target.style.display = "none";
+          }
+          if (!event.target.closest('.action-menu-container')) {
+            const dropdowns = document.getElementsByClassName("action-dropdown");
+            for (let i = 0; i < dropdowns.length; i++) {
+              dropdowns[i].classList.remove('show');
+            }
+          }
+        }
+      });
+
       function toggleDropdown(id, el) {
         document.getElementById(id).classList.toggle("show");
         el.classList.toggle("dropdown-open");
       }
+
+      function formatTime(timeStr) {
+        if (!timeStr) return "";
+        const [hour, minute] = timeStr.split(':');
+        const h = parseInt(hour);
+        const ampm = h >= 12 ? 'PM' : 'AM';
+        const h12 = h % 12 || 12;
+        return `${h12}:${minute} ${ampm}`;
+      }
+
+      // --- TIME VALIDATION ---
+      function validateTime(input) {
+        const timeValue = input.value;
+        if (!timeValue) return;
+
+        // Block if earlier than 7:00 OR later than 17:00 (5:00 PM)
+        if (timeValue < "07:00" || timeValue > "17:00") {
+            alert("Restricted Time: Classes can only be scheduled between 7:00 AM and 5:00 PM.");
+            input.value = ""; 
+        }
+      }
+
+      async function populateDropdowns() {
+        try {
+          const [secSnap, subSnap, teachSnap] = await Promise.all([
+            window.db.collection('sections').orderBy('gradeLevel').get(),
+            window.db.collection('subjects').orderBy('subjectName').get(),
+            window.db.collection('users').where('role', '==', 'teacher').get()
+          ]);
+
+          sectionsData = [];
+          secSnap.forEach(doc => {
+            const s = doc.data();
+            sectionsData.push({
+              text: `${s.gradeLevel} - ${s.sectionName}`,
+              value: `${s.gradeLevel} - ${s.sectionName}`
+            });
+          });
+
+          subjectsData = [];
+          subSnap.forEach(doc => {
+            const s = doc.data();
+            subjectsData.push({
+              text: s.subjectName,
+              value: s.subjectName
+            });
+          });
+
+          teachersData = [];
+          teachSnap.forEach(doc => {
+            const t = doc.data();
+            const fullName = `${t.firstName} ${t.lastName}`;
+            teachersData.push({
+              text: fullName,
+              value: t.userId
+            });
+          });
+
+          setupSearchableDropdown('search-section', 'options-section', 'val-section', sectionsData);
+          setupSearchableDropdown('search-subject', 'options-subject', 'val-subject', subjectsData);
+          setupSearchableDropdown('search-teacher', 'options-teacher', 'val-teacher', teachersData);
+
+        } catch (error) {
+          console.error("Error populating dropdowns:", error);
+        }
+      }
+
+      function setupSearchableDropdown(inputId, listId, hiddenValId, dataArray) {
+        const input = document.getElementById(inputId);
+        const list = document.getElementById(listId);
+        const hiddenInput = document.getElementById(hiddenValId);
+
+        function renderOptions(filterText = '') {
+          list.innerHTML = '';
+          const lowerFilter = filterText.toLowerCase();
+          
+          const filtered = dataArray.filter(item => 
+            item.text.toLowerCase().includes(lowerFilter)
+          );
+
+          if (filtered.length === 0) {
+            list.innerHTML = '<div class="no-results">No results found</div>';
+          } else {
+            filtered.forEach(item => {
+              const div = document.createElement('div');
+              div.className = 'dropdown-option';
+              div.textContent = item.text;
+              div.onclick = () => {
+                input.value = item.text;       
+                hiddenInput.value = item.value;
+                list.classList.remove('show');
+              };
+              list.appendChild(div);
+            });
+          }
+          list.classList.add('show');
+        }
+
+        input.addEventListener('input', (e) => {
+          hiddenInput.value = '';
+          renderOptions(e.target.value);
+        });
+
+        input.addEventListener('focus', () => {
+          renderOptions(input.value);
+        });
+
+        document.addEventListener('click', (e) => {
+          if (!e.target.closest(`#${inputId}`) && !e.target.closest(`#${listId}`)) {
+            list.classList.remove('show');
+            if (hiddenInput.value === '') {
+              input.value = ''; 
+            }
+          }
+        });
+      }
+
+      function loadSchedulesFromDB() {
+        const tableBody = document.getElementById('schedules-list-body');
+        window.db.collection('classSessions').orderBy('section').get()
+          .then((querySnapshot) => {
+            allSchedules = [];
+            tableBody.innerHTML = '';
+
+            if (querySnapshot.empty) {
+              renderTable([]);
+              return;
+            }
+
+            querySnapshot.forEach((doc) => {
+              const data = doc.data();
+              allSchedules.push({ docId: doc.id, ...data });
+            });
+            renderTable(allSchedules);
+          })
+          .catch((error) => {
+            console.error("Error:", error);
+            tableBody.innerHTML = `<tr><td colspan="5" style="color:red; text-align:center;">Error: ${error.message}</td></tr>`;
+          });
+      }
+
+      function renderTable(data) {
+        const tableBody = document.getElementById('schedules-list-body');
+        tableBody.innerHTML = '';
+
+        if (data.length === 0) {
+          tableBody.innerHTML = '<tr><td colspan="5" style="text-align:center;">No schedules found.</td></tr>';
+          return;
+        }
+
+        data.forEach(s => {
+          const startDisplay = formatTime(s.startTime);
+          const endDisplay = formatTime(s.endTime);
+          const teacherName = s.teacherName || "Unknown Teacher";
+
+          const row = document.createElement('tr');
+          row.innerHTML = `
+            <td><strong>${s.section || 'N/A'}</strong></td>
+            <td>${s.subject || 'N/A'}</td>
+            <td>${teacherName}</td>
+            <td>
+              <span class="badge-success" style="background:#e3f2fd; color:#0d47a1; border:none; padding: 2px 8px; border-radius: 4px; font-size: 0.8rem;">${s.days || 'Daily'}</span><br>
+              <small style="color:#666;">${startDisplay} - ${endDisplay}</small>
+            </td>
+            <td style="text-align: right;">
+              <div class="action-menu-container">
+                <button class="btn-icon" onclick="toggleActionMenu('menu-${s.docId}')">
+                  <i class="fas fa-ellipsis-v"></i>
+                </button>
+                <div id="menu-${s.docId}" class="action-dropdown">
+                  <div onclick="deleteSchedule('${s.docId}')">
+                    <i class="fas fa-trash" style="color:#dc3545"></i> Delete
+                  </div>
+                </div>
+              </div>
+            </td>
+          `;
+          tableBody.appendChild(row);
+        });
+      }
+
+      function filterSchedules() {
+        const gradeFilter = document.getElementById('filter-grade').value;
+        const searchInput = document.getElementById('search-input').value.toLowerCase();
+
+        const filtered = allSchedules.filter(s => {
+          const sectionName = s.section || "";
+          const matchesGrade = (gradeFilter === 'All') || sectionName.startsWith(gradeFilter);
+          const teacherName = (s.teacherName || "").toLowerCase();
+
+          const matchesSearch =
+            (s.section && s.section.toLowerCase().includes(searchInput)) ||
+            (s.subject && s.subject.toLowerCase().includes(searchInput)) ||
+            teacherName.includes(searchInput);
+
+          return matchesGrade && matchesSearch;
+        });
+
+        renderTable(filtered);
+      }
+
+      // --- MAIN SAVE FUNCTION WITH VALIDATION LOGIC ---
+      async function saveSchedule() {
+        const section = document.getElementById('val-section').value;
+        const subject = document.getElementById('val-subject').value;
+        const teacherId = document.getElementById('val-teacher').value;
+        const teacherName = document.getElementById('search-teacher').value;
+        const start = document.getElementById('sched-start').value;
+        const end = document.getElementById('sched-end').value;
+
+        // 1. Basic Validation
+        if (!section || !subject || !teacherId || !start || !end) {
+          alert("Please select valid options from the dropdown list for all fields.");
+          return;
+        }
+
+        // 2. Strict Time Validation
+        if (start < "07:00" || start > "17:00" || end < "07:00" || end > "17:00") {
+             alert("Error: Schedules are strictly limited to school hours (7:00 AM - 5:00 PM).");
+             return;
+        }
+
+        if (start >= end) {
+            alert("Start time must be before end time.");
+            return;
+        }
+
+        // UI: Lock button
+        const btn = document.querySelector('#schedule-modal .btn-primary');
+        const originalText = btn.innerText;
+        btn.innerText = "Validating...";
+        btn.disabled = true;
+
+        try {
+          // --- VALIDATION A: Section + Subject Duplication ---
+          // "Is Mathematics already scheduled for Grade 7 - Diamond?"
+          const subjectConflictQuery = window.db.collection('classSessions')
+            .where('section', '==', section)
+            .where('subject', '==', subject)
+            .get();
+
+          // --- VALIDATION B: Teacher Time Overlap ---
+          // "Is Mr. Cruz busy during 8:00 - 9:00?"
+          const teacherScheduleQuery = window.db.collection('classSessions')
+            .where('teacherId', '==', teacherId)
+            .get();
+
+          // Run both queries at the same time
+          const [subjectSnap, teacherSnap] = await Promise.all([
+            subjectConflictQuery, 
+            teacherScheduleQuery
+          ]);
+
+          // Check A Results
+          if (!subjectSnap.empty) {
+            alert(`Conflict Error: The section "${section}" already has a schedule for ${subject}.`);
+            btn.innerText = originalText;
+            btn.disabled = false;
+            return;
+          }
+
+          // Check B Results (Manual Time Overlap Check)
+          let isTeacherBusy = false;
+          
+          teacherSnap.forEach(doc => {
+            const data = doc.data();
+            // Logic: Two ranges overlap if (StartA < EndB) and (EndA > StartB)
+            if (start < data.endTime && end > data.startTime) {
+              isTeacherBusy = true;
+            }
+          });
+
+          if (isTeacherBusy) {
+            alert(`Conflict Error: Teacher ${teacherName} already has a class scheduled during this time slot.`);
+            btn.innerText = originalText;
+            btn.disabled = false;
+            return;
+          }
+
+          // If no conflicts, Save
+          btn.innerText = "Saving...";
+          
+          await window.db.collection('classSessions').add({
+            section,
+            subject,
+            teacherId,
+            teacherName,
+            days: "Daily", 
+            startTime: start,
+            endTime: end,
+            createdAt: new Date()
+          });
+          
+          alert("Schedule Added Successfully!");
+          closeModal('schedule-modal');
+          loadSchedulesFromDB();
+
+        } catch (err) {
+          console.error(err);
+          alert("Error: " + err.message);
+        } finally {
+          btn.innerText = originalText;
+          btn.disabled = false;
+        }
+      }
+
+      function openScheduleModal() {
+        document.getElementById('schedule-form').reset();
+        
+        document.getElementById('val-section').value = "";
+        document.getElementById('search-section').value = "";
+        
+        document.getElementById('val-subject').value = "";
+        document.getElementById('search-subject').value = "";
+        
+        document.getElementById('val-teacher').value = "";
+        document.getElementById('search-teacher').value = "";
+
+        document.getElementById('modal-title').innerText = "Add Class Schedule";
+        document.getElementById('schedule-modal').style.display = 'block';
+      }
+
+      function deleteSchedule(docId) {
+        if (confirm("Are you sure you want to delete this schedule?")) {
+          window.db.collection('classSessions').doc(docId).delete()
+            .then(() => loadSchedulesFromDB())
+            .catch(err => alert("Error: " + err.message));
+        }
+      }
+
+      function toggleActionMenu(menuId) {
+        const dropdowns = document.getElementsByClassName("action-dropdown");
+        for (let i = 0; i < dropdowns.length; i++) {
+          if (dropdowns[i].id !== menuId) dropdowns[i].classList.remove('show');
+        }
+        document.getElementById(menuId).classList.toggle('show');
+      }
+
+      function closeModal(modalId) {
+        document.getElementById(modalId).style.display = 'none';
+      }
+
+      window.filterSchedules = filterSchedules;
+      window.openScheduleModal = openScheduleModal;
+      window.saveSchedule = saveSchedule;
+      window.deleteSchedule = deleteSchedule;
+      window.toggleActionMenu = toggleActionMenu;
+      window.closeModal = closeModal;
+      window.toggleDropdown = toggleDropdown;
     </script>
-    <script src="admin-js/ui.js"></script>
-    <script src="admin-js/schedules.js"></script>
   </body>
 </html>

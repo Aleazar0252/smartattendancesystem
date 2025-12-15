@@ -1,336 +1,1130 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Guidance Management - ZSNHS</title>
-
-    <link rel="stylesheet" href="admin-css/styles.css" />
-
-    <link
-      rel="stylesheet"
-      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
-    />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Playfair+Display:wght@700&display=swap"
-      rel="stylesheet"
-    />
-  </head>
-  <body>
-    <div id="preloader">
-      <div class="spinner"></div>
-      <div class="loading-text">ZSNHS...</div>
-    </div>
-    <div class="overlay" id="mobile-overlay"></div>
-    <div class="dashboard">
-      <div class="sidebar" id="sidebar">
-        <div class="logo">
-                <img src="../img/zsnhs.jpg" class="logo-placeholder hover-zoom">
-                <h1>ZSNHS</h1>
-            </div>
-
-        <div class="nav-menu">
-          <h2>Dashboard</h2>
-          
-          <div class="nav-item" onclick="window.location.href='admin.html'">
-            <i class="fas fa-tachometer-alt"></i> <span>Overview</span>
-          </div>
-
-          <div class="nav-item" onclick="toggleDropdown('academics-dropdown', this)">
-            <div style="display:flex; align-items:center; gap: 15px;">
-                <i class="fas fa-graduation-cap"></i> 
-                <span>Academics</span>
-            </div>
-            <i class="fas fa-chevron-down chevron-icon"></i>
-          </div>
-          <div class="nav-dropdown" id="academics-dropdown">
-             <a href="teachers.html" class="nav-sub-item">Teacher Management</a>
-             <a href="subjects.html" class="nav-sub-item">Subjects</a>
-             <a href="sections.html" class="nav-sub-item">Grade Level & Sections</a>
-             <a href="schedules.html" class="nav-sub-item">Class Schedules</a>
-          </div>
-
-          <div class="nav-item active" onclick="window.location.href='guidance.html'">
-            <i class="fas fa-hands-helping"></i> <span>Guidance</span>
-          </div>
-          <div class="nav-item" onclick="window.location.href='students.html'">
-            <i class="fas fa-user-graduate"></i> <span>Students</span>
-          </div>
-          <div class="nav-item" onclick="window.location.href='parent.html'">
-            <i class="fas fa-users"></i> <span>Parents</span>
-          </div>
-          <div class="nav-item" onclick="window.location.href='reports.html'">
-            <i class="fas fa-chart-pie"></i> <span>Reports</span>
-          </div>
-          <div class="nav-item" onclick="window.location.href='settings.html'">
-            <i class="fas fa-cog"></i> <span>Settings</span>
-          </div>
-        </div>
-
-        <div class="logout-container">
-            <button class="logout-btn" onclick="logout()">
-                <i class="fas fa-sign-out-alt"></i> Log out
-            </button>
-        </div>
+   <head>
+      <meta charset="UTF-8" />
+      <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <title>Guidance Management - ZSNHS</title>
+      <link rel="stylesheet" href="admin-css/styles.css" />
+      <link
+         rel="stylesheet"
+         href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+         />
+      <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" />
+   </head>
+   <body>
+      <div id="preloader">
+         <div class="spinner"></div>
+         <div class="loading-text">ZSNHS...</div>
       </div>
-
-      <div class="main-content">
-        <div class="header">
-          <i class="fas fa-bars menu-toggle" id="menu-toggle-btn"></i>
-          <h1>Guidance Management</h1>
-          <div class="user-profile">
-            <div class="avatar-placeholder">A</div>
-            <span>Admin</span>
-          </div>
-        </div>
-
-        <div class="content-section">
-          <div
-            style="
-              display: flex;
-              justify-content: space-between;
-              align-items: center;
-              margin-bottom: 20px;
-            "
-          >
-            <h2 style="color: var(--primary-color)">Guidance Staff List</h2>
-            <div style="display: flex; gap: 10px">
-              <input
-                type="text"
-                id="search-input"
-                onkeyup="searchGuidance()"
-                placeholder="Search by name or ID..."
-                style="
-                  padding: 10px;
-                  border: 1px solid #ddd;
-                  border-radius: 5px;
-                  width: 250px;
-                "
-              />
-              <button class="btn btn-primary" onclick="showAddGuidanceModal()">
-                <i class="fas fa-plus"></i> Add Staff
-              </button>
+      <div class="overlay" id="mobile-overlay"></div>
+      <div class="dashboard">
+         <div class="sidebar" id="sidebar">
+            <div class="logo">
+               <img src="../img/zsnhs.jpg" class="logo-placeholder hover-zoom">
+               <h1>ZSNHS</h1>
             </div>
-          </div>
-
-          <table class="teachers-table">
-            <thead>
-              <tr>
-                <th>ID</th>
-                <th>Name</th>
-                <th>Email</th>
-                <th>Phone</th>
-                <th style="text-align: right">Actions</th>
-              </tr>
-            </thead>
-            <tbody id="guidance-list-body">
-              <tr>
-                <td colspan="5" class="loading-cell">Loading data...</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
+            <div class="nav-menu">
+               <h2>Dashboard</h2>
+               <div class="nav-item" onclick="window.location.href='admin.html'">
+                  <i class="fas fa-tachometer-alt"></i> <span>Overview</span>
+               </div>
+               <div class="nav-item" onclick="toggleDropdown('academics-dropdown', this)">
+                  <div style="display:flex; align-items:center; gap: 15px;">
+                     <i class="fas fa-graduation-cap"></i> 
+                     <span>Academics</span>
+                  </div>
+                  <i class="fas fa-chevron-down chevron-icon"></i>
+               </div>
+               <div class="nav-dropdown" id="academics-dropdown">
+                  <a href="teachers.html" class="nav-sub-item">Teacher Management</a>
+                  <a href="subjects.html" class="nav-sub-item">Subjects</a>
+                  <a href="sections.html" class="nav-sub-item">Grade Level & Sections</a>
+                  <a href="schedules.html" class="nav-sub-item">Class Schedules</a>
+               </div>
+               <div class="nav-item active" onclick="window.location.href='guidance.html'">
+                  <i class="fas fa-hands-helping"></i> <span>Guidance</span>
+               </div>
+               <div class="nav-item" onclick="window.location.href='students.html'">
+                  <i class="fas fa-user-graduate"></i> <span>Students</span>
+               </div>
+               <div class="nav-item" onclick="window.location.href='parent.html'">
+                  <i class="fas fa-users"></i> <span>Parents</span>
+               </div>
+               <div class="nav-item" onclick="window.location.href='reports.html'">
+                  <i class="fas fa-chart-pie"></i> <span>Reports</span>
+               </div>
+               <div class="nav-item" onclick="window.location.href='settings.html'">
+                  <i class="fas fa-cog"></i> <span>Settings</span>
+               </div>
+            </div>
+            <div class="logout-container">
+               <button class="logout-btn" onclick="logout()">
+               <i class="fas fa-sign-out-alt"></i> Log out
+               </button>
+            </div>
+         </div>
+         <div class="main-content">
+            <div class="header">
+               <i class="fas fa-bars menu-toggle" id="menu-toggle-btn"></i>
+               <h1>Guidance Management</h1>
+               <div class="user-profile">
+                  <div class="avatar-placeholder">A</div>
+                  <span>Admin</span>
+               </div>
+            </div>
+            <div class="content-section">
+               <div
+                  style="
+                  display: flex;
+                  justify-content: space-between;
+                  align-items: center;
+                  margin-bottom: 20px;
+                  "
+                  >
+                  <h2 style="color: var(--primary-color)">Guidance Staff List</h2>
+                  <div style="display: flex; gap: 10px">
+                     <input
+                        type="text"
+                        id="search-input"
+                        onkeyup="searchGuidance()"
+                        placeholder="Search by name or ID..."
+                        style="
+                        padding: 10px;
+                        border: 1px solid #ddd;
+                        border-radius: 5px;
+                        width: 250px;
+                        "
+                        />
+                     <button class="btn btn-secondary" onclick="showArchivedModal()" style="background-color: #6c757d; color: white;">
+                     <i class="fas fa-archive"></i> View Archived
+                     </button>
+                     <button class="btn btn-primary" onclick="showAddGuidanceModal()">
+                     <i class="fas fa-plus"></i> Add Staff
+                     </button>
+                  </div>
+               </div>
+               <table class="teachers-table">
+                  <thead>
+                     <tr>
+                        <th>ID</th>
+                        <th>Name</th>
+                        <th>Email</th>
+                        <th>Phone</th>
+                        <th style="text-align: right">Actions</th>
+                     </tr>
+                  </thead>
+                  <tbody id="guidance-list-body">
+                     <tr>
+                        <td colspan="5" class="loading-cell">Loading data...</td>
+                     </tr>
+                  </tbody>
+               </table>
+            </div>
+         </div>
       </div>
-    </div>
-
-    <div id="add-guidance-modal" class="modal">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h2>Add New Guidance Staff</h2>
-          <span class="close-modal" onclick="closeModal('add-guidance-modal')"
-            >&times;</span
-          >
-        </div>
-        <div class="modal-body">
-          <form
-            id="add-guidance-form"
-            onsubmit="event.preventDefault(); addNewGuidance();"
-          >
-            <div class="form-group">
-              <label>Staff ID (Auto-Generated)</label>
-              <input
-                type="text"
-                id="new-id"
-                class="form-control"
-                readonly
-                style="
-                  background-color: #e9ecef;
-                  cursor: default;
-                  font-weight: bold;
-                  color: #333;
-                  pointer-events: none;
-                "
-              />
+      <div id="add-guidance-modal" class="modal">
+         <div class="modal-content">
+            <div class="modal-header">
+               <h2>Add New Guidance Staff</h2>
+               <span class="close-modal" onclick="closeModal('add-guidance-modal')"
+                  >&times;</span
+                  >
             </div>
-
-            <div class="form-row" style="display: flex; gap: 10px">
-              <div class="form-group" style="flex: 1">
-                <label>First Name</label>
-                <input
-                  type="text"
-                  id="new-firstname"
-                  class="form-control"
-                  required
-                />
-              </div>
-              <div class="form-group" style="flex: 1">
-                <label>Middle Name</label>
-                <input
-                  type="text"
-                  id="new-middlename"
-                  class="form-control"
-                  placeholder="Optional"
-                />
-              </div>
-              <div class="form-group" style="flex: 1">
-                <label>Last Name</label>
-                <input
-                  type="text"
-                  id="new-lastname"
-                  class="form-control"
-                  required
-                />
-              </div>
+            <div class="modal-body">
+               <form
+                  id="add-guidance-form"
+                  onsubmit="event.preventDefault(); addNewGuidance();"
+                  >
+                  <div class="form-group">
+                     <label>Staff ID (Auto-Generated)</label>
+                     <input
+                        type="text"
+                        id="new-id"
+                        class="form-control"
+                        readonly
+                        style="
+                        background-color: #e9ecef;
+                        cursor: default;
+                        font-weight: bold;
+                        color: #333;
+                        pointer-events: none;
+                        "
+                        />
+                  </div>
+                  <div class="form-row" style="display: flex; gap: 10px">
+                     <div class="form-group" style="flex: 1">
+                        <label>First Name</label>
+                        <input
+                           type="text"
+                           id="new-firstname"
+                           class="form-control"
+                           required
+                           />
+                     </div>
+                     <div class="form-group" style="flex: 1">
+                        <label>Middle Name</label>
+                        <input
+                           type="text"
+                           id="new-middlename"
+                           class="form-control"
+                           placeholder="Optional"
+                           />
+                     </div>
+                     <div class="form-group" style="flex: 1">
+                        <label>Last Name</label>
+                        <input
+                           type="text"
+                           id="new-lastname"
+                           class="form-control"
+                           required
+                           />
+                     </div>
+                  </div>
+                  <div class="form-group">
+                     <label>Email</label>
+                     <input
+                        type="email"
+                        id="new-email"
+                        class="form-control"
+                        placeholder="user@gmail.com"
+                        onkeyup="validateEmailInput()"
+                        required
+                        />
+                     <small
+                        id="email-error"
+                        style="color: #dc3545; font-size: 0.8rem; display: none"
+                        >
+                     <i class="fas fa-exclamation-circle"></i> Invalid format. Must
+                     end with <strong>@gmail.com</strong>
+                     </small>
+                  </div>
+                  <div class="form-group">
+                     <label>Phone Number</label>
+                     <input
+                        type="number"
+                        id="new-phone"
+                        class="form-control"
+                        placeholder="639xxxxxxxxx"
+                        onkeyup="validatePhoneInput()"
+                        required
+                        />
+                     <small
+                        id="phone-error"
+                        style="color: #dc3545; font-size: 0.8rem; display: none"
+                        >
+                     <i class="fas fa-exclamation-circle"></i> Invalid format. Must
+                     be exactly <strong>11 digits</strong>.
+                     </small>
+                  </div>
+               </form>
             </div>
-
-            <div class="form-group">
-              <label>Email</label>
-              <input
-                type="email"
-                id="new-email"
-                class="form-control"
-                placeholder="user@gmail.com"
-                onkeyup="validateEmailInput()"
-                required
-              />
-              <small
-                id="email-error"
-                style="color: #dc3545; font-size: 0.8rem; display: none"
-              >
-                <i class="fas fa-exclamation-circle"></i> Invalid format. Must
-                end with <strong>@gmail.com</strong>
-              </small>
+            <div class="modal-footer">
+               <button class="btn" onclick="closeModal('add-guidance-modal')">
+               Cancel
+               </button>
+               <button class="btn btn-primary" onclick="addNewGuidance()">
+               Save Staff
+               </button>
             </div>
-
-            <div class="form-group">
-              <label>Phone Number</label>
-              <input
-                type="number"
-                id="new-phone"
-                class="form-control"
-                placeholder="639xxxxxxxxx"
-                onkeyup="validatePhoneInput()"
-                required
-              />
-              <small
-                id="phone-error"
-                style="color: #dc3545; font-size: 0.8rem; display: none"
-              >
-                <i class="fas fa-exclamation-circle"></i> Invalid format. Must
-                be exactly <strong>11 digits</strong>.
-              </small>
-            </div>
-          </form>
-        </div>
-        <div class="modal-footer">
-          <button class="btn" onclick="closeModal('add-guidance-modal')">
-            Cancel
-          </button>
-          <button class="btn btn-primary" onclick="addNewGuidance()">
-            Save Staff
-          </button>
-        </div>
+         </div>
       </div>
-    </div>
-
-    <div id="view-guidance-modal" class="modal">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h2>Staff Details</h2>
-          <span class="close-modal" onclick="closeModal('view-guidance-modal')"
-            >&times;</span
-          >
-        </div>
-        <div class="modal-body">
-          <div class="profile-view">
-            <div class="profile-avatar-large" id="view-avatar"></div>
-            <h3
-              id="view-fullname"
-              style="color: var(--text-dark); margin-bottom: 5px"
-            ></h3>
-            <span
-              id="view-id"
-              style="color: var(--text-light); font-size: 0.9rem"
-            ></span>
-          </div>
-
-          <div class="detail-row">
-            <span class="detail-label">Middle Name:</span>
-            <span class="detail-value" id="view-middlename"></span>
-          </div>
-
-          <div class="detail-row">
-            <span class="detail-label">Phone:</span>
-            <span class="detail-value" id="view-phone"></span>
-          </div>
-
-          <div class="detail-row">
-            <span class="detail-label">Email:</span>
-            <span class="detail-value" id="view-email"></span>
-          </div>
-
-          <div class="detail-row" style="align-items: center">
-            <span class="detail-label">Password:</span>
-            <span
-              class="detail-value"
-              id="view-password"
-              style="
-                font-family: monospace;
-                letter-spacing: 1px;
-                color: #d63384;
-                font-weight: bold;
-                margin-right: 10px;
-              "
-            >
-              ********
-            </span>
-            <i
-              class="fas fa-eye"
-              id="toggle-password-btn"
-              onclick="togglePasswordView()"
-              style="cursor: pointer; color: #666"
-            ></i>
-          </div>
-
-          <div class="detail-row">
-            <span class="detail-label">Date Created:</span>
-            <span class="detail-value" id="view-timestamp"></span>
-          </div>
-
-          <div class="detail-row">
-            <span class="detail-label">Status:</span>
-            <span class="detail-value" id="view-status"></span>
-          </div>
-        </div>
-        <div class="modal-footer">
-          <button class="btn" onclick="closeModal('view-guidance-modal')">
-            Close
-          </button>
-        </div>
+      <div id="archive-guidance-modal" class="modal">
+         <div class="modal-content" style="max-width: 900px;">
+            <div class="modal-header">
+               <h2>Archived Guidance Staff</h2>
+               <span class="close-modal" onclick="closeModal('archive-guidance-modal')">&times;</span>
+            </div>
+            <div class="modal-body">
+               <p style="margin-bottom: 15px; color: #666;">
+                  <i class="fas fa-info-circle"></i> Archived staff can be restored or permanently deleted.
+               </p>
+               <table class="teachers-table">
+                  <thead>
+                     <tr>
+                        <th>Guidance ID</th>
+                        <th>Name</th>
+                        <th>Email</th>
+                        <th>Phone</th>
+                        <th>Archived Date</th>
+                        <th style="text-align: right; min-width: 200px;">Actions</th>
+                     </tr>
+                  </thead>
+                  <tbody id="archived-list-body">
+                     <tr>
+                        <td colspan="5" style="text-align:center;">Loading...</td>
+                     </tr>
+                  </tbody>
+               </table>
+            </div>
+            <div class="modal-footer">
+               <button class="btn" onclick="closeModal('archive-guidance-modal')">Close</button>
+            </div>
+         </div>
       </div>
-    </div>
-
-    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
-    <script src="admin-js/admin-config.js"></script>
-    <script>
-      function toggleDropdown(id, el) {
-        document.getElementById(id).classList.toggle("show");
-        el.classList.toggle("dropdown-open");
-      }
-    </script>
-    <script src="admin-js/ui.js"></script>
-    <script src="admin-js/guidance.js"></script>
-  </body>
+      <div id="view-guidance-modal" class="modal">
+         <div class="modal-content">
+            <div class="modal-header">
+               <h2>Staff Details</h2>
+               <span class="close-modal" onclick="closeModal('view-guidance-modal')"
+                  >&times;</span
+                  >
+            </div>
+            <div class="modal-body">
+               <div class="profile-view">
+                  <div class="profile-avatar-large" id="view-avatar"></div>
+                  <h3
+                     id="view-fullname"
+                     style="color: var(--text-dark); margin-bottom: 5px"
+                     ></h3>
+                  <span
+                     id="view-id"
+                     style="color: var(--text-light); font-size: 0.9rem"
+                     ></span>
+               </div>
+               <div class="detail-row">
+                  <span class="detail-label">Middle Name:</span>
+                  <span class="detail-value" id="view-middlename"></span>
+               </div>
+               <div class="detail-row">
+                  <span class="detail-label">Phone:</span>
+                  <span class="detail-value" id="view-phone"></span>
+               </div>
+               <div class="detail-row">
+                  <span class="detail-label">Email:</span>
+                  <span class="detail-value" id="view-email"></span>
+               </div>
+               <div class="detail-row" style="align-items: center">
+                  <span class="detail-label">Password:</span>
+                  <span
+                     class="detail-value"
+                     id="view-password"
+                     style="
+                     font-family: monospace;
+                     letter-spacing: 1px;
+                     color: #d63384;
+                     font-weight: bold;
+                     margin-right: 10px;
+                     "
+                     >
+                  ********
+                  </span>
+                  <i
+                     class="fas fa-eye"
+                     id="toggle-password-btn"
+                     onclick="togglePasswordView()"
+                     style="cursor: pointer; color: #666"
+                     ></i>
+               </div>
+               <div class="detail-row">
+                  <span class="detail-label">Date Created:</span>
+                  <span class="detail-value" id="view-timestamp"></span>
+               </div>
+               <div class="detail-row">
+                  <span class="detail-label">Status:</span>
+                  <span class="detail-value" id="view-status"></span>
+               </div>
+            </div>
+            <div class="modal-footer">
+               <button class="btn" onclick="closeModal('view-guidance-modal')">
+               Close
+               </button>
+            </div>
+         </div>
+      </div>
+      <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
+      <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
+      <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
+      <script src="admin-js/admin-config.js"></script>
+      <script>
+         function toggleDropdown(id, el) {
+           document.getElementById(id).classList.toggle("show");
+           el.classList.toggle("dropdown-open");
+         }
+      </script>
+      <script src="admin-js/ui.js"></script>
+      <!--<script src="admin-js/guidance.js?v=3"></script>-->
+      <script>
+         /**
+         * guidance.js
+         * Manages Guidance Counselors (Role: 'guidance')
+         */
+         
+         let allGuidance = []; 
+         let archivedGuidance = []; 
+         let currentViewPassword = ""; 
+         
+         document.addEventListener('DOMContentLoaded', () => {
+         setTimeout(() => {
+         if (window.db) {
+             console.log("Database connected. Fetching guidance staff...");
+             loadGuidanceList();
+             loadArchivedGuidance(); // Load archives in background
+         } else {
+             console.error("Firebase DB not initialized.");
+         }
+         }, 500);
+         
+         // Global Click Handler for Modals and Dropdowns
+         window.onclick = function(event) {
+         if (event.target.classList.contains('modal')) {
+             event.target.style.display = "none";
+         }
+         if (!event.target.closest('.action-menu-container') && !event.target.closest('#toggle-password-btn')) {
+             const dropdowns = document.getElementsByClassName("action-dropdown");
+             for (let i = 0; i < dropdowns.length; i++) {
+                 dropdowns[i].classList.remove('show');
+             }
+         }
+         }
+         
+         // Add input event listeners for validation
+         setTimeout(setupInputValidation, 1000);
+         });
+         
+         // --- INPUT VALIDATION SETUP ---
+         function setupInputValidation() {
+         // Add event listeners for name fields
+         const nameInputs = ['new-firstname', 'new-middlename', 'new-lastname'];
+         nameInputs.forEach(id => {
+         const input = document.getElementById(id);
+         if (input) {
+             input.addEventListener('input', function(e) {
+                 validateNameInput(this);
+             });
+             // Visual formatting (Title Case) while typing, but saved as Uppercase
+             input.addEventListener('blur', function(e) {
+                 formatNameInput(this);
+             });
+         }
+         });
+         
+         // Add event listener for phone field
+         const phoneInput = document.getElementById('new-phone');
+         if (phoneInput) {
+         phoneInput.addEventListener('input', function(e) {
+             validatePhoneInputRealTime(this);
+         });
+         }
+         }
+         
+         // --- VALIDATION FUNCTIONS ---
+         function validateNameInput(input) {
+         let value = input.value;
+         let originalValue = value;
+         
+         // Allow only letters, spaces, hyphens, and apostrophes
+         value = value.replace(/[^A-Za-z\s\-']/g, '');
+         
+         if (value !== originalValue) {
+         input.value = value;
+         showInputError(input, 'Letters only');
+         return false;
+         }
+         
+         clearInputError(input);
+         return true;
+         }
+         
+         function formatNameInput(input) {
+         // Visual formatting for the UI
+         let value = input.value.trim();
+         if (value) {
+         value = value.toLowerCase()
+             .split(' ')
+             .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+             .join(' ');
+             
+         input.value = value;
+         }
+         clearInputError(input);
+         }
+         
+         function validatePhoneInputRealTime(input) {
+         let value = input.value;
+         let originalValue = value;
+         
+         // Allow only numbers
+         value = value.replace(/\D/g, '');
+         
+         if (value !== originalValue) {
+         input.value = value;
+         showInputError(input, 'Numbers only');
+         return false;
+         }
+         
+         // Limit to 11 digits
+         if (value.length > 11) {
+         input.value = value.substring(0, 11);
+         showInputError(input, 'Maximum 11 digits');
+         return false;
+         }
+         
+         clearInputError(input);
+         return true;
+         }
+         
+         function showInputError(input, message) {
+         const errorId = input.id + '-error-realtime';
+         let errorElement = document.getElementById(errorId);
+         
+         if (!errorElement) {
+         errorElement = document.createElement('small');
+         errorElement.id = errorId;
+         errorElement.style.color = '#dc3545';
+         errorElement.style.fontSize = '0.8rem';
+         errorElement.style.display = 'block';
+         errorElement.style.marginTop = '5px';
+         input.parentNode.appendChild(errorElement);
+         }
+         
+         errorElement.innerHTML = `<i class="fas fa-exclamation-circle"></i> ${message}`;
+         errorElement.style.display = 'block';
+         input.style.borderColor = '#dc3545';
+         
+         setTimeout(() => {
+         if (input.value.match(/^[A-Za-z\s\-']*$/)) {
+             clearInputError(input);
+         }
+         }, 3000);
+         }
+         
+         function clearInputError(input) {
+         const errorId = input.id + '-error-realtime';
+         const errorElement = document.getElementById(errorId);
+         if (errorElement) {
+         errorElement.style.display = 'none';
+         }
+         input.style.borderColor = '#ddd';
+         }
+         
+         function validateEmailInput() {
+         const email = document.getElementById('new-email').value;
+         const errorMsg = document.getElementById('email-error');
+         if (email.length > 0 && !email.endsWith("@gmail.com")) {
+         errorMsg.style.display = 'block';
+         return false;
+         } else {
+         errorMsg.style.display = 'none';
+         return true;
+         }
+         }
+         
+         function validateFormFields() {
+         let isValid = true;
+         
+         // Validate names
+         const nameInputs = ['new-firstname', 'new-middlename', 'new-lastname'];
+         nameInputs.forEach(id => {
+         const input = document.getElementById(id);
+         if (input && input.value.trim()) {
+             const value = input.value.trim();
+             if (/[0-9!@#$%^&*()_+=\[\]{};:"\\|,.<>\/?]/.test(value)) {
+                 showInputError(input, 'Please enter letters only');
+                 isValid = false;
+             }
+         }
+         });
+         
+         // Validate phone
+         const phoneInput = document.getElementById('new-phone');
+         if (phoneInput && phoneInput.value) {
+         const phoneValue = phoneInput.value;
+         if (!/^\d+$/.test(phoneValue)) {
+             showInputError(phoneInput, 'Please enter numbers only');
+             isValid = false;
+         }
+         if (phoneValue.length !== 11) {
+             document.getElementById('phone-error').style.display = 'block';
+             isValid = false;
+         }
+         }
+         
+         if (!validateEmailInput()) isValid = false;
+         
+         return isValid;
+         }
+         
+         // --- GENERATORS ---
+         function generateGuidanceID() {
+         const sequence = Math.floor(100 + Math.random() * 900);
+         return `GUID-202630-${sequence}`;
+         }
+         
+         function generatePassword() {
+         const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+         let password = "";
+         for (let i = 0; i < 6; i++) {
+         password += chars.charAt(Math.floor(Math.random() * chars.length));
+         }
+         return password;
+         }
+         
+         // --- DUPLICATE CHECKING ---
+         async function checkForDuplicates(email, phone, firstName, lastName, guidanceId = null) {
+         try {
+         // 1. Check Email
+         const emailQuery = await window.db.collection('users')
+             .where('email', '==', email.toLowerCase())
+             .where('role', '==', 'guidance')
+             .get();
+         
+         let emailDuplicate = false;
+         emailQuery.forEach(doc => {
+             if (doc.data().status !== 'Archived') emailDuplicate = true;
+         });
+         
+         // 2. Check Phone
+         const phoneQuery = await window.db.collection('users')
+             .where('phone', '==', phone)
+             .where('role', '==', 'guidance')
+             .get();
+         
+         let phoneDuplicate = false;
+         phoneQuery.forEach(doc => {
+             if (doc.data().status !== 'Archived') phoneDuplicate = true;
+         });
+         
+         // 3. Check ID
+         let idDuplicate = false;
+         if (guidanceId) {
+             const idQuery = await window.db.collection('users')
+                 .where('guidanceId', '==', guidanceId)
+                 .where('role', '==', 'guidance')
+                 .get();
+             
+             idQuery.forEach(doc => {
+                 if (doc.data().status !== 'Archived') idDuplicate = true;
+             });
+         }
+         
+         // 4. Check Name (First + Last)
+         const nameQuery = await window.db.collection('users')
+             .where('firstName', '==', firstName) 
+             .where('lastName', '==', lastName) 
+             .where('role', '==', 'guidance')
+             .get();
+         
+         let nameDuplicate = false;
+         nameQuery.forEach(doc => {
+             if (doc.data().status !== 'Archived') nameDuplicate = true;
+         });
+         
+         return { 
+             email: emailDuplicate, 
+             phone: phoneDuplicate, 
+             id: idDuplicate, 
+             name: nameDuplicate 
+         };
+         
+         } catch (error) {
+         console.error("Error checking duplicates:", error);
+         return { email: false, phone: false, id: false, name: false };
+         }
+         }
+         // 1. FETCH ACTIVE GUIDANCE STAFF
+         function loadGuidanceList() {
+         const tableBody = document.getElementById('guidance-list-body');
+         if(allGuidance.length === 0) {
+         tableBody.innerHTML = '<tr><td colspan="5" class="loading-cell">Loading personnel...</td></tr>';
+         }
+         
+         window.db.collection('users')
+         .where('role', '==', 'guidance')
+         .where('status', '==', 'Active')
+         .get()
+         .then((querySnapshot) => {
+             allGuidance = [];
+             if (querySnapshot.empty) {
+                 tableBody.innerHTML = '<tr><td colspan="5" style="text-align:center;">No active guidance staff found.</td></tr>';
+                 return;
+             }
+         
+             querySnapshot.forEach((doc) => {
+                 const data = doc.data();
+                 const fullName = `${data.firstName} ${data.lastName}`;
+                 
+                 let createdStr = "N/A";
+                 if (data.createdAt && data.createdAt.toDate) {
+                     createdStr = data.createdAt.toDate().toLocaleDateString() + ' ' + data.createdAt.toDate().toLocaleTimeString();
+                 } else if (data.createdAt) {
+                     createdStr = new Date(data.createdAt).toLocaleDateString();
+                 }
+         
+                 allGuidance.push({
+                     docId: doc.id, 
+                     id: data.guidanceId || 'N/A',
+                     firstName: data.firstName || '',
+                     middleName: data.middleName || '',
+                     lastName: data.lastName || '',
+                     fullName: fullName,
+                     email: data.email || '',
+                     phone: data.phone || 'N/A', 
+                     status: data.status || 'Active',
+                     password: data.password || '******',
+                     createdAtStr: createdStr,
+                     archivedAt: data.archivedAt || null
+                 });
+             });
+             renderTable(allGuidance);
+         })
+         .catch((error) => {
+             console.error("Error:", error);
+             tableBody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:red;">Error: ${error.message}</td></tr>`;
+         });
+         }
+         
+         // 2. RENDER TABLE
+         function renderTable(data) {
+         const tableBody = document.getElementById('guidance-list-body');
+         tableBody.innerHTML = '';
+         
+         if (data.length === 0) {
+         tableBody.innerHTML = '<tr><td colspan="5" style="text-align:center;">No matches found.</td></tr>';
+         return;
+         }
+         
+         data.forEach(staff => {
+         const row = document.createElement('tr');
+         row.innerHTML = `
+             <td><strong>${staff.id}</strong></td>
+             <td>${staff.fullName}</td>
+             <td>${staff.email}</td>
+             <td>${staff.phone}</td>
+             <td style="text-align: right;">
+                 <div class="action-menu-container">
+                     <button class="btn-icon" onclick="toggleActionMenu('menu-${staff.docId}')">
+                         <i class="fas fa-ellipsis-v"></i>
+                     </button>
+                     <div id="menu-${staff.docId}" class="action-dropdown">
+                         <div onclick="viewGuidanceDetails('${staff.docId}')">
+                             <i class="fas fa-eye" style="color:#6c757d"></i> View Profile
+                         </div>
+                         <div onclick="archiveGuidance('${staff.docId}')">
+                             <i class="fas fa-archive" style="color:#dc3545"></i> Archive
+                         </div>
+                     </div>
+                 </div>
+             </td>
+         `;
+         tableBody.appendChild(row);
+         });
+         }
+         // 3. ADD NEW GUIDANCE WITH EMAIL NOTIFICATION (Updated error handling)
+         async function addNewGuidance() {
+         const id = document.getElementById("new-id").value;
+         let firstNameRaw = document.getElementById('new-firstname').value.trim();
+         let middleNameRaw = document.getElementById('new-middlename').value.trim();
+         let lastNameRaw = document.getElementById('new-lastname').value.trim();
+         const email = document.getElementById('new-email').value.trim();
+         const phone = document.getElementById('new-phone').value.trim();
+         
+         if(!id || !firstNameRaw || !lastNameRaw || !email || !phone) {
+         alert("Please fill in all required fields.");
+         return;
+         }
+         
+         if (/[0-9]/.test(firstNameRaw) || /[0-9]/.test(middleNameRaw) || /[0-9]/.test(lastNameRaw)) {
+         alert("Name fields cannot contain numbers.");
+         return;
+         }
+         
+         if (!validateFormFields()) {
+         alert("Please correct the errors in the form before submitting.");
+         return;
+         }
+         
+         // SAVE AS UPPERCASE
+         const firstName = firstNameRaw.toUpperCase();
+         const middleName = middleNameRaw.toUpperCase();
+         const lastName = lastNameRaw.toUpperCase();
+         
+         const duplicates = await checkForDuplicates(email, phone, firstName, lastName, id);
+         
+         let errorMessages = [];
+         if (duplicates.name) errorMessages.push(`The name "${firstName} ${lastName}" already exists.`);
+         if (duplicates.email) {
+         errorMessages.push(`The email "${email}" is already taken.`);
+         document.getElementById('email-error').style.display = 'block';
+         }
+         if (duplicates.phone) {
+         errorMessages.push(`The phone number "${phone}" is already taken.`);
+         document.getElementById('phone-error').style.display = 'block';
+         }
+         if (duplicates.id) errorMessages.push(`The ID "${id}" already exists.`);
+         
+         if (errorMessages.length > 0) {
+         alert("Unable to save staff:\n\n" + errorMessages.join("\n"));
+         return;
+         }
+         const password = generatePassword();
+         
+         const newStaff = {
+         guidanceId: id, // Unique field name for Guidance
+         password: password,
+         firstName: firstName,
+         middleName: middleName,
+         lastName: lastName,
+         email: email,
+         phone: phone,
+         status: 'Active',
+         role: 'guidance', // IMPORTANT: Role identifier
+         createdAt: new Date()
+         };
+         const btn = document.querySelector('#add-guidance-modal .btn-primary');
+         const originalText = btn.innerText;
+         btn.innerText = "Saving...";
+         btn.disabled = true;
+         
+         
+         try {
+         // Step 1: Save to Firebase
+         
+         await window.db.collection('users').add(newStaff)
+         
+         // Step 2: Try to send email
+         const emailResult = await sendGuidanceCredentials({
+         email: email,
+         id: id,
+         password: password,
+         firstName: firstName,
+         lastName: lastName
+         });
+         
+         if (emailResult.success) {
+         alert(`Guidance Added Successfully!\n\nID: ${id}\nPassword: ${password}\n\nCredentials have been sent to: ${email}`);
+         } else {
+         alert(`Guidance Added Successfully!\n\nID: ${id}\nPassword: ${password}\n\nBUT email failed to send: ${emailResult.message}\n\nPlease provide these credentials manually to the guidance.`);
+         }
+         
+         // Close modal and refresh
+         closeModal("add-guidance-modal");
+         loadGuidanceList();
+         
+         } catch (error) {
+         console.error("Error:", error);
+         
+         // Check if it's a Firebase error
+         if (error.message && error.message.includes("Firebase")) {
+         alert("Error saving guidance to database: " + error.message);
+         } else {
+         alert("Unexpected error: " + error.message);
+         }
+         } finally {
+         btn.innerText = originalText;
+         btn.disabled = false;
+         }
+         }
+         // 4. SEND EMAIL FUNCTION - FIXED PATH
+         async function sendGuidanceCredentials(guidanceData) {
+         try {
+         console.log('Attempting to send email...');
+         
+         // Try different possible paths
+         const possiblePaths = [
+         'send-guidance-credentials.php',
+         './send-guidance-credentials.php',
+         'admin-js/send-guidance-credentials.php',
+         '/admin/admin-js/send-guidance-credentials.php'
+         ];
+         
+         let response;
+         let successfulPath;
+         
+         // Try each path until one works
+         for (const path of possiblePaths) {
+         try {
+         console.log('Trying path:', path);
+         response = await fetch(path, {
+           method: 'POST',
+           headers: { 'Content-Type': 'application/json' },
+           body: JSON.stringify(guidanceData),
+           mode: 'cors'
+         });
+         
+         if (response.ok) {
+           successfulPath = path;
+           console.log('Success with path:', path);
+           break;
+         } else if (response.status !== 404) {
+           // If it's not 404, we found the file but it has an error
+           successfulPath = path;
+           break;
+         }
+         } catch (err) {
+         console.log('Failed with path', path, ':', err.message);
+         }
+         }
+         
+         if (!response) {
+         throw new Error('Could not find email endpoint. All paths failed.');
+         }
+         
+         console.log('Response status:', response.status);
+         
+         const text = await response.text();
+         console.log('Response text:', text.substring(0, 200));
+         
+         let result;
+         try {
+         result = JSON.parse(text);
+         } catch (e) {
+         throw new Error('Server returned invalid JSON: ' + text.substring(0, 100));
+         }
+         
+         if (!result.success) {
+         throw new Error(result.message || 'Email sending failed');
+         }
+         
+         return result;
+         
+         } catch (error) {
+         console.error('Email error:', error);
+         return {
+         success: false,
+         message: error.message,
+         credentials: {
+         id: guidanceData.id,
+         password: guidanceData.password
+         }
+         };
+         }
+         }
+         // --- ARCHIVE MANAGEMENT ---
+         
+         // A. Load Archived Data
+         function loadArchivedGuidance() {
+         window.db.collection('users')
+         .where('role', '==', 'guidance')
+         .where('status', '==', 'Archived')
+         .get()
+         .then((querySnapshot) => {
+             archivedGuidance = [];
+             querySnapshot.forEach((doc) => {
+                 const data = doc.data();
+                 const fullName = `${data.firstName} ${data.lastName}`;
+                 
+                 let archivedStr = "N/A";
+                 if (data.archivedAt && data.archivedAt.toDate) {
+                     archivedStr = data.archivedAt.toDate().toLocaleDateString() + ' ' + data.archivedAt.toDate().toLocaleTimeString();
+                 } else if (data.archivedAt) {
+                     archivedStr = new Date(data.archivedAt).toLocaleDateString();
+                 }
+         
+                 archivedGuidance.push({
+                     docId: doc.id,
+                     id: data.guidanceId || 'N/A',
+                     fullName: fullName,
+                     firstName: data.firstName || '',
+                     middleName: data.middleName || '',
+                     lastName: data.lastName || '',
+                     email: data.email || '',
+                     phone: data.phone || 'N/A',
+                     password: data.password || '******',
+                     archivedAt: data.archivedAt,
+                     archivedAtStr: archivedStr,
+                     createdAtStr: archivedStr // Fallback for view
+                 });
+             });
+             // If modal is currently open, refresh it
+             const modal = document.getElementById('archive-guidance-modal');
+             if(modal.style.display === 'block') {
+                 showArchivedModal();
+             }
+         })
+         .catch((error) => {
+             console.error("Error loading archived staff:", error);
+         });
+         }
+         
+         // B. Show Archived Modal
+         function showArchivedModal() {
+         const modal = document.getElementById('archive-guidance-modal');
+         const listBody = document.getElementById('archived-list-body');
+         
+         listBody.innerHTML = '';
+         
+         if (archivedGuidance.length === 0) {
+         listBody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding: 20px;">No archived staff found.</td></tr>';
+         } else {
+         archivedGuidance.forEach(staff => {
+             const row = document.createElement('tr');
+             row.innerHTML = `
+                 <td><strong>${staff.id}</strong></td>
+                 <td>${staff.fullName}</td>
+                 <td>${staff.email}</td>
+                 <td>${staff.phone}</td>
+                 <td>${staff.archivedAtStr}</td>
+                 <td style="text-align: right;">
+                     <div style="display: flex; gap: 8px; justify-content: flex-end;">
+                         <button onclick="viewGuidanceDetails('${staff.docId}')" title="View Details" 
+                                 style="background: #17a2b8; color: white; border: none; padding: 6px 10px; border-radius: 4px; cursor: pointer;">
+                             <i class="fas fa-eye"></i>
+                         </button>
+                         
+                         <button onclick="restoreGuidance('${staff.docId}')" title="Restore" 
+                                 style="background: #28a745; color: white; border: none; padding: 6px 10px; border-radius: 4px; cursor: pointer;">
+                             <i class="fas fa-undo"></i>
+                         </button>
+                         
+                         <button onclick="deleteGuidancePermanent('${staff.docId}')" title="Delete Permanently" 
+                                 style="background: #dc3545; color: white; border: none; padding: 6px 10px; border-radius: 4px; cursor: pointer;">
+                             <i class="fas fa-trash"></i>
+                         </button>
+                     </div>
+                 </td>
+             `;
+             listBody.appendChild(row);
+         });
+         }
+         
+         modal.style.display = 'block';
+         }
+         
+         // C. Archive Staff
+         function archiveGuidance(docId) {
+         if(confirm("Are you sure you want to archive this staff member?\n\nArchived staff will be moved to the Archive section.")) {
+         const archiveData = {
+             status: 'Archived',
+             archivedAt: new Date()
+         };
+         
+         window.db.collection('users').doc(docId).update(archiveData)
+         .then(() => {
+             alert("Staff archived successfully.");
+             loadGuidanceList();
+             loadArchivedGuidance();
+         })
+         .catch(err => {
+             console.error("Error archiving staff:", err);
+             alert("Error: " + err.message);
+         });
+         }
+         }
+         
+         // D. Restore Staff
+         function restoreGuidance(docId) {
+         if(confirm("Are you sure you want to restore this staff member?\n\nThey will be moved back to the active staff list.")) {
+         const restoreData = {
+             status: 'Active',
+             archivedAt: null
+         };
+         
+         window.db.collection('users').doc(docId).update(restoreData)
+         .then(() => {
+             alert("Staff restored successfully.");
+             loadGuidanceList();
+             loadArchivedGuidance();
+         })
+         .catch(err => {
+             console.error("Error restoring staff:", err);
+             alert("Error: " + err.message);
+         });
+         }
+         }
+         
+         // E. Delete Permanent
+         function deleteGuidancePermanent(docId) {
+         if(confirm("WARNING: This action cannot be undone!\n\nAre you sure you want to PERMANENTLY DELETE this staff member from the database?")) {
+         window.db.collection('users').doc(docId).delete()
+         .then(() => {
+             alert("Staff member permanently deleted.");
+             loadArchivedGuidance(); // Refresh list
+         })
+         .catch((error) => {
+             console.error("Error removing document: ", error);
+             alert("Error deleting staff: " + error.message);
+         });
+         }
+         }
+         // --- UI HELPERS ---
+         
+         function showAddGuidanceModal() {
+         document.getElementById('add-guidance-form').reset();
+         document.getElementById('email-error').style.display = 'none';
+         document.getElementById('phone-error').style.display = 'none';
+         
+         const idError = document.getElementById('id-error');
+         if (idError) idError.style.display = 'none';
+         
+         const errorElements = document.querySelectorAll('[id$="-error-realtime"]');
+         errorElements.forEach(el => el.style.display = 'none');
+         
+         const inputs = document.querySelectorAll('#add-guidance-form input');
+         inputs.forEach(input => {
+         input.style.borderColor = '#ddd';
+         });
+         
+         document.getElementById('new-id').value = generateGuidanceID();
+         document.getElementById('add-guidance-modal').style.display = 'block';
+         }
+         
+         function searchGuidance() {
+         const input = document.getElementById('search-input').value.toLowerCase();
+         const filtered = allGuidance.filter(t => 
+         t.firstName.toLowerCase().includes(input) || 
+         t.lastName.toLowerCase().includes(input) ||
+         t.id.toLowerCase().includes(input)
+         );
+         renderTable(filtered);
+         }
+         
+         // UPDATED: Works for both Active and Archived lists
+         function viewGuidanceDetails(docId) {
+         // Try finding in Active list first, then Archived list
+         let staff = allGuidance.find(t => t.docId === docId);
+         if (!staff) {
+         staff = archivedGuidance.find(t => t.docId === docId);
+         }
+         
+         if (staff) {
+         document.getElementById('view-avatar').innerText = staff.firstName.charAt(0);
+         document.getElementById('view-fullname').innerText = staff.fullName;
+         document.getElementById('view-id').innerText = staff.id;
+         document.getElementById('view-middlename').innerText = staff.middleName || '-';
+         document.getElementById('view-phone').innerText = staff.phone;
+         document.getElementById('view-email').innerText = staff.email;
+         document.getElementById('view-timestamp').innerText = staff.createdAtStr || staff.archivedAtStr;
+         
+         currentViewPassword = staff.password || 'Not Set';
+         const passField = document.getElementById('view-password');
+         const icon = document.getElementById('toggle-password-btn');
+         passField.innerText = "********"; 
+         icon.className = "fas fa-eye";
+         
+         const statusText = staff.status || (staff.archivedAt ? 'Archived' : 'Active');
+         document.getElementById('view-status').innerText = statusText;
+         
+         const viewModal = document.getElementById('view-guidance-modal');
+         // VITAL: Ensure this modal is on top of archive modal
+         viewModal.style.zIndex = "2000"; 
+         viewModal.style.display = 'block';
+         }
+         }
+         
+         function togglePasswordView() {
+         const passField = document.getElementById('view-password');
+         const icon = document.getElementById('toggle-password-btn');
+         
+         if (passField.innerText === "********") {
+         passField.innerText = currentViewPassword;
+         icon.className = "fas fa-eye-slash"; 
+         } else {
+         passField.innerText = "********";
+         icon.className = "fas fa-eye"; 
+         }
+         }
+         
+         function toggleActionMenu(menuId) {
+         const dropdowns = document.getElementsByClassName("action-dropdown");
+         for (let i = 0; i < dropdowns.length; i++) {
+         if (dropdowns[i].id !== menuId) dropdowns[i].classList.remove('show');
+         }
+         document.getElementById(menuId).classList.toggle('show');
+         }
+         
+         function closeModal(modalId) {
+         document.getElementById(modalId).style.display = 'none';
+         }
+      </script>
+   </body>
 </html>

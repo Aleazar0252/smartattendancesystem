@@ -2,6 +2,7 @@
  * sections.js
  * Logic for Grade Level & Sections Management
  * Features: Floating Action Menu, Excel Export, Batch Assign, Modal Search
+ * Updates: Added Duplicate Section Prevention
  */
 
 let allSections = [];
@@ -42,7 +43,7 @@ document.addEventListener("DOMContentLoaded", () => {
   };
 });
 
-// ... (Load & Render Sections functions same as before) ...
+// --- 1. LOAD SECTIONS (CRITICAL FOR DUPLICATE CHECK) ---
 function loadSectionsFromDB() {
   const container = document.getElementById("grade-levels-container");
   window.db
@@ -51,6 +52,7 @@ function loadSectionsFromDB() {
     .then((querySnapshot) => {
       allSections = [];
       querySnapshot.forEach((doc) => {
+        // We store the data globally so we can check it later without calling the DB again
         allSections.push({ docId: doc.id, ...doc.data() });
       });
       renderGradeGroups();
@@ -60,6 +62,7 @@ function loadSectionsFromDB() {
     });
 }
 
+// --- 2. RENDER UI ---
 function renderGradeGroups() {
   const container = document.getElementById("grade-levels-container");
   const searchInput = document
@@ -68,12 +71,14 @@ function renderGradeGroups() {
   container.innerHTML = "";
 
   STANDARD_GRADES.forEach((grade) => {
+    // Filter sections for this grade loop
     const gradeSections = allSections.filter((s) => {
       const matchesGrade = s.gradeLevel === grade;
       const matchesSearch = s.sectionName.toLowerCase().includes(searchInput);
       return matchesGrade && matchesSearch;
     });
 
+    // Sort alphabetically
     gradeSections.sort((a, b) => a.sectionName.localeCompare(b.sectionName));
 
     const groupDiv = document.createElement("div");
@@ -123,19 +128,141 @@ function renderGradeGroups() {
   });
 }
 
-// --- 3. VIEW CLASS LIST (Updated with Search Clear) ---
+// --- 3. SAVE SECTION (WITH ERROR HANDLER FOR DUPLICATES) ---
+function saveSection() {
+  const docId = document.getElementById("edit-doc-id").value;
+  const grade = document.getElementById("sec-grade-value").value;
+  const rawName = document.getElementById("sec-name").value;
+
+  // 1. Basic Validation
+  if (!rawName || rawName.trim() === "") {
+    alert("Please enter a Section Name");
+    return;
+  }
+
+  const name = rawName.trim(); // Remove leading/trailing spaces
+
+  // 2. Duplicate Check Logic
+  // We look through the 'allSections' array loaded in step 1
+  const duplicateExists = allSections.some((section) => {
+    // Only check against sections in the SAME Grade Level
+    if (section.gradeLevel !== grade) return false;
+
+    // Check if name matches (Case Insensitive: "Rizal" == "rizal")
+    if (section.sectionName.toLowerCase() === name.toLowerCase()) {
+      // Exception: If we are editing, allow the name if it belongs to the current ID
+      if (docId && section.docId === docId) {
+        return false;
+      }
+      return true; // Found a duplicate!
+    }
+    return false;
+  });
+
+  if (duplicateExists) {
+    alert(`Error: The section "${name}" already exists in ${grade}.`);
+    return; // STOP execution here. Do not save to DB.
+  }
+
+  // 3. Prepare to Save
+  const btn = document.querySelector("#section-modal .btn-primary");
+  const originalText = btn.innerText;
+  btn.innerText = "Saving...";
+  btn.disabled = true;
+
+  const sectionData = {
+    gradeLevel: grade,
+    sectionName: name,
+    updatedAt: new Date(),
+  };
+
+  let promise;
+  if (docId) {
+    // Update existing
+    promise = window.db.collection("sections").doc(docId).update(sectionData);
+  } else {
+    // Add new
+    sectionData.createdAt = new Date();
+    promise = window.db.collection("sections").add(sectionData);
+  }
+
+  promise
+    .then(() => {
+      alert(docId ? "Section updated!" : "Section added!");
+      closeModal("section-modal");
+      loadSectionsFromDB(); // Reload list to update UI and Duplicate Checker
+    })
+    .catch((err) => {
+      console.error(err);
+      alert("Error: " + err.message);
+    })
+    .finally(() => {
+      btn.innerText = originalText;
+      btn.disabled = false;
+    });
+}
+
+// --- 4. DELETE SECTION ---
+function deleteSection(docId) {
+  if (confirm("Delete this section? This action cannot be undone.")) {
+    window.db
+      .collection("sections")
+      .doc(docId)
+      .delete()
+      .then(() => loadSectionsFromDB());
+  }
+}
+
+// --- 5. MODAL HELPERS ---
+function openSectionModal(gradeLevel, docId = null) {
+  const modal = document.getElementById("section-modal");
+  const title = document.getElementById("modal-title");
+  const form = document.getElementById("section-form");
+  
+  // Set hidden inputs
+  document.getElementById("sec-grade-display").value = gradeLevel;
+  document.getElementById("sec-grade-value").value = gradeLevel;
+
+  if (docId) {
+    // Edit Mode
+    const section = allSections.find((s) => s.docId === docId);
+    if (section) {
+      document.getElementById("edit-doc-id").value = docId;
+      document.getElementById("sec-name").value = section.sectionName;
+      title.innerText = "Edit Section";
+    }
+  } else {
+    // Add Mode
+    form.reset();
+    document.getElementById("sec-grade-display").value = gradeLevel; // Reset display
+    document.getElementById("sec-grade-value").value = gradeLevel;   // Reset value
+    document.getElementById("edit-doc-id").value = "";
+    title.innerText = "Add Section to " + gradeLevel;
+  }
+  modal.style.display = "block";
+}
+
+function closeModal(modalId) {
+  document.getElementById(modalId).style.display = "none";
+}
+
+function toggleActionMenu(menuId) {
+  const dropdowns = document.getElementsByClassName("action-dropdown");
+  for (let i = 0; i < dropdowns.length; i++) {
+    if (dropdowns[i].id !== menuId) dropdowns[i].classList.remove("show");
+  }
+  document.getElementById(menuId).classList.toggle("show");
+}
+
+// --- 6. STUDENT LIST LOGIC ---
 function viewClassList(grade, sectionName) {
   currentGradeContext = grade;
   currentSectionContext = sectionName;
 
   const modal = document.getElementById("class-list-modal");
-  document.getElementById(
-    "class-list-title"
-  ).innerText = `${grade} - ${sectionName}`;
+  document.getElementById("class-list-title").innerText = `${grade} - ${sectionName}`;
 
-  // Clear the search input
   document.getElementById("search-class-list").value = "";
-
   document.getElementById("class-loader").style.display = "block";
   document.getElementById("class-content").style.display = "none";
   modal.style.display = "block";
@@ -162,8 +289,7 @@ function refreshClassListTable() {
       currentClassList = [];
 
       if (snapshot.empty) {
-        tbody.innerHTML =
-          '<tr><td colspan="4" style="text-align:center;">No students enrolled yet.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;">No students enrolled yet.</td></tr>';
         return;
       }
 
@@ -173,46 +299,50 @@ function refreshClassListTable() {
         currentClassList.push({ ...s, fullName });
 
         tbody.innerHTML += `
-                    <tr>
-                        <td>${s.lrn || "-"}</td>
-                        <td><strong>${fullName}</strong></td>
-                        <td>${s.gender || "-"}</td>
-                        <td>
-                            <button class="btn-icon" style="color:#dc3545;" title="Remove" onclick="removeStudentFromSection('${
-                              doc.id
-                            }')">
-                                <i class="fas fa-times"></i>
-                            </button>
-                        </td>
-                    </tr>
-                `;
+            <tr>
+                <td>${s.lrn || "-"}</td>
+                <td><strong>${fullName}</strong></td>
+                <td>${s.gender || "-"}</td>
+                <td>
+                    <button class="btn-icon" style="color:#dc3545;" title="Remove" onclick="removeStudentFromSection('${doc.id}')">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </td>
+            </tr>
+        `;
       });
     })
     .catch((err) => console.error(err));
 }
 
-// --- NEW FUNCTION: Filter the Class List Modal Table ---
 function filterClassListTable() {
-  const input = document
-    .getElementById("search-class-list")
-    .value.toLowerCase();
+  const input = document.getElementById("search-class-list").value.toLowerCase();
   const rows = document.querySelectorAll("#class-list-body tr");
-
   rows.forEach((row) => {
     const text = row.innerText.toLowerCase();
     row.style.display = text.includes(input) ? "" : "none";
   });
 }
 
-// ... (Rest of existing functions: Export, Batch Assign, etc.)
+function removeStudentFromSection(studentId) {
+  if (confirm("Remove this student from the section?")) {
+    window.db
+      .collection("users")
+      .doc(studentId)
+      .update({ gradeLevel: "Unassigned", section: "Unassigned" })
+      .then(() => {
+        refreshClassListTable();
+      });
+  }
+}
 
+// --- 7. EXPORT & BATCH LOGIC ---
 function downloadClassListCSV() {
   if (!currentClassList || currentClassList.length === 0) {
     alert("No students to export.");
     return;
   }
-  let csvContent =
-    "data:text/csv;charset=utf-8,LRN,Last Name,First Name,Middle Name,Gender,Grade Level,Section\n";
+  let csvContent = "data:text/csv;charset=utf-8,LRN,Last Name,First Name,Middle Name,Gender,Grade Level,Section\n";
   currentClassList.forEach((student) => {
     const row = [
       `"${student.lrn || ""}"`,
@@ -228,19 +358,14 @@ function downloadClassListCSV() {
   const encodedUri = encodeURI(csvContent);
   const link = document.createElement("a");
   link.setAttribute("href", encodedUri);
-  link.setAttribute(
-    "download",
-    `ClassList_${currentGradeContext}_${currentSectionContext}.csv`
-  );
+  link.setAttribute("download", `ClassList_${currentGradeContext}_${currentSectionContext}.csv`);
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
 }
 
 function openAssignModal() {
-  document.getElementById(
-    "assign-target-section"
-  ).innerText = `${currentGradeContext} - ${currentSectionContext}`;
+  document.getElementById("assign-target-section").innerText = `${currentGradeContext} - ${currentSectionContext}`;
   batchStudents = [];
   document.getElementById("search-student-dropdown").value = "";
   renderBatchList();
@@ -252,10 +377,7 @@ async function loadStudentsForDropdown() {
   const datalist = document.getElementById("students-datalist");
   datalist.innerHTML = "";
   if (allStudentsCache.length === 0) {
-    const snap = await window.db
-      .collection("users")
-      .where("role", "==", "student")
-      .get();
+    const snap = await window.db.collection("users").where("role", "==", "student").get();
     snap.forEach((doc) => {
       const data = doc.data();
       allStudentsCache.push({
@@ -277,9 +399,7 @@ function addStudentToBatchList() {
   const input = document.getElementById("search-student-dropdown");
   const val = input.value;
   if (!val) return;
-  const student = allStudentsCache.find(
-    (s) => `${s.fullName} (${s.lrn})` === val
-  );
+  const student = allStudentsCache.find((s) => `${s.fullName} (${s.lrn})` === val);
   if (!student) {
     alert("Please select a valid student from the dropdown list.");
     return;
@@ -301,8 +421,7 @@ function renderBatchList() {
   countSpan.innerText = batchStudents.length;
   confirmBtn.disabled = batchStudents.length === 0;
   if (batchStudents.length === 0) {
-    container.innerHTML =
-      '<div style="padding:15px; text-align:center; color:#999; font-style:italic;">No students added yet.</div>';
+    container.innerHTML = '<div style="padding:15px; text-align:center; color:#999; font-style:italic;">No students added yet.</div>';
     return;
   }
   let html = "";
@@ -324,13 +443,10 @@ async function confirmBatchAssignment() {
   btn.disabled = true;
   try {
     const updatePromises = batchStudents.map((student) => {
-      return window.db
-        .collection("users")
-        .doc(student.docId)
-        .update({
-          gradeLevel: currentGradeContext,
-          section: currentSectionContext,
-        });
+      return window.db.collection("users").doc(student.docId).update({
+        gradeLevel: currentGradeContext,
+        section: currentSectionContext,
+      });
     });
     await Promise.all(updatePromises);
     alert(`Successfully assigned ${batchStudents.length} student(s)!`);
@@ -345,94 +461,6 @@ async function confirmBatchAssignment() {
   }
 }
 
-function removeStudentFromSection(studentId) {
-  if (confirm("Remove this student from the section?")) {
-    window.db
-      .collection("users")
-      .doc(studentId)
-      .update({ gradeLevel: "Unassigned", section: "Unassigned" })
-      .then(() => {
-        refreshClassListTable();
-      });
-  }
-}
-
 function filterGroups() {
   renderGradeGroups();
-}
-function saveSection() {
-  const docId = document.getElementById("edit-doc-id").value;
-  const grade = document.getElementById("sec-grade-value").value;
-  const name = document.getElementById("sec-name").value;
-  if (!name) {
-    alert("Please enter a Section Name");
-    return;
-  }
-  const btn = document.querySelector("#section-modal .btn-primary");
-  btn.innerText = "Saving...";
-  btn.disabled = true;
-  const sectionData = {
-    gradeLevel: grade,
-    sectionName: name,
-    updatedAt: new Date(),
-  };
-  let promise;
-  if (docId) {
-    promise = window.db.collection("sections").doc(docId).update(sectionData);
-  } else {
-    sectionData.createdAt = new Date();
-    promise = window.db.collection("sections").add(sectionData);
-  }
-  promise
-    .then(() => {
-      alert(docId ? "Section updated!" : "Section added!");
-      closeModal("section-modal");
-      loadSectionsFromDB();
-    })
-    .catch((err) => alert("Error: " + err.message))
-    .finally(() => {
-      btn.innerText = "Save Section";
-      btn.disabled = false;
-    });
-}
-function deleteSection(docId) {
-  if (confirm("Delete this section?")) {
-    window.db
-      .collection("sections")
-      .doc(docId)
-      .delete()
-      .then(() => loadSectionsFromDB());
-  }
-}
-function openSectionModal(gradeLevel, docId = null) {
-  const modal = document.getElementById("section-modal");
-  const title = document.getElementById("modal-title");
-  const form = document.getElementById("section-form");
-  document.getElementById("sec-grade-display").value = gradeLevel;
-  document.getElementById("sec-grade-value").value = gradeLevel;
-  if (docId) {
-    const section = allSections.find((s) => s.docId === docId);
-    if (section) {
-      document.getElementById("edit-doc-id").value = docId;
-      document.getElementById("sec-name").value = section.sectionName;
-      title.innerText = "Edit Section";
-    }
-  } else {
-    form.reset();
-    document.getElementById("sec-grade-display").value = gradeLevel;
-    document.getElementById("sec-grade-value").value = gradeLevel;
-    document.getElementById("edit-doc-id").value = "";
-    title.innerText = "Add Section to " + gradeLevel;
-  }
-  modal.style.display = "block";
-}
-function toggleActionMenu(menuId) {
-  const dropdowns = document.getElementsByClassName("action-dropdown");
-  for (let i = 0; i < dropdowns.length; i++) {
-    if (dropdowns[i].id !== menuId) dropdowns[i].classList.remove("show");
-  }
-  document.getElementById(menuId).classList.toggle("show");
-}
-function closeModal(modalId) {
-  document.getElementById(modalId).style.display = "none";
 }
