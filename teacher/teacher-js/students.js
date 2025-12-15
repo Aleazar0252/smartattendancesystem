@@ -1,8 +1,8 @@
 /**
- * students.js (Teacher) - FIXED VERSION
- * Logic: References students by their Firestore Document ID.
- * 1. 'cacheAllStudents' saves doc.id as the userId.
- * 2. 'loadStudentsInClass' fetches details using .doc(id).get().
+ * students.js (Teacher) - FIELD ID VERSION
+ * Logic: 
+ * 1. Saves the specific 'userId' field from the user document.
+ * 2. Retrieves students by searching for that 'userId' field.
  */
 
 let currentActiveSection = null; 
@@ -31,7 +31,6 @@ async function loadTeacherClasses(teacherName) {
     const container = document.getElementById('classes-container');
     
     try {
-        // Support both "teacherName" and "teacher" fields for compatibility
         const [snap1, snap2] = await Promise.all([
             window.db.collection('classSessions').where('teacherName', '==', teacherName).get(),
             window.db.collection('classSessions').where('teacher', '==', teacherName).get()
@@ -120,7 +119,7 @@ function backToGrid() {
 }
 
 // ==========================================
-// 3. LOAD STUDENTS (DIRECT REFERENCE FETCH)
+// 3. LOAD STUDENTS (QUERY BY CUSTOM ID)
 // ==========================================
 async function loadStudentsInClass() {
     const tbody = document.getElementById('class-students-body');
@@ -143,20 +142,26 @@ async function loadStudentsInClass() {
 
         console.log(`Fetching details for ${storedUserIds.length} students...`);
 
-        // 2. Fetch all student documents directly using their Document ID
-        const studentPromises = storedUserIds.map(id => 
-            window.db.collection('users').doc(id).get()
+        // 2. FETCH BY QUERY (Because userId is a field, not the Doc ID)
+        // Since we cannot use .doc(id), we must search for the user where userId == storedId
+        
+        // Use Promise.all to run parallel queries
+        const studentPromises = storedUserIds.map(customId => 
+            window.db.collection('users').where('userId', '==', customId).get()
         );
 
-        const studentDocs = await Promise.all(studentPromises);
+        const snapshots = await Promise.all(studentPromises);
         
         let enrolledStudents = [];
 
-        studentDocs.forEach((doc, index) => {
-            if (doc.exists) {
+        snapshots.forEach((snap, index) => {
+            if (!snap.empty) {
+                const doc = snap.docs[0]; // Take the first match
                 const sData = doc.data();
+                
                 enrolledStudents.push({
-                    userId: doc.id, // The actual Document ID
+                    userId: sData.userId, // The Custom ID
+                    docId: doc.id,        // The Real Firestore ID (needed for removing?)
                     lrn: sData.lrn || 'N/A',
                     fullName: `${sData.firstName} ${sData.lastName}`,
                     gender: sData.gender || 'N/A',
@@ -166,7 +171,7 @@ async function loadStudentsInClass() {
                     lastName: sData.lastName || ''
                 });
             } else {
-                console.warn(`Student ID stored in class but missing in Users DB: ${storedUserIds[index]}`);
+                console.warn(`User ID '${storedUserIds[index]}' stored in class but not found in Users DB.`);
             }
         });
 
@@ -175,7 +180,7 @@ async function loadStudentsInClass() {
         
         if (enrolledStudents.length === 0) {
              tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:red;">
-                Students are enrolled, but their user profiles were not found in the database.
+                Students are enrolled, but their profiles could not be found.
              </td></tr>`;
              return;
         }
@@ -217,7 +222,7 @@ function filterStudentTable() {
 }
 
 // ==========================================
-// 4. BATCH ADD MODAL (Use Doc ID)
+// 4. BATCH ADD MODAL
 // ==========================================
 async function showAddStudentModal() {
     document.getElementById('modal-section-name').innerText = currentActiveSection;
@@ -239,9 +244,11 @@ async function cacheAllStudents() {
     
     snap.forEach(doc => {
         const d = doc.data();
+        // FIX: Grab the explicit 'userId' field from data
+        const customId = d.userId || doc.id; // Fallback to doc.id if missing
+        
         allDbStudents.push({
-            // CRITICAL: Save the Document ID as the userId
-            userId: doc.id, 
+            userId: customId, 
             fullName: `${d.firstName} ${d.lastName}`,
             lrn: d.lrn || 'N/A'
         });
@@ -249,7 +256,7 @@ async function cacheAllStudents() {
 
     allDbStudents.forEach(s => {
         const opt = document.createElement('option');
-        // The value contains the name + ID so we can look it up later
+        // Store Name and Custom ID in the value
         opt.value = `${s.fullName} (${s.userId})`;
         datalist.appendChild(opt);
     });
@@ -257,6 +264,8 @@ async function cacheAllStudents() {
 
 function addToBatch() {
     const val = document.getElementById('search-db-input').value;
+    
+    // Find based on the value string matching
     const student = allDbStudents.find(s => `${s.fullName} (${s.userId})` === val);
 
     if(!student) { alert("Please select a valid student from the list."); return; }
@@ -308,7 +317,7 @@ async function saveBatchStudents() {
 
         const classRef = window.db.collection('classSessions').doc(currentClassId);
         
-        // Extract just the IDs to save to the array
+        // Save the Custom IDs to the array
         const userIdsToAdd = batchList.map(s => s.userId);
 
         await classRef.update({

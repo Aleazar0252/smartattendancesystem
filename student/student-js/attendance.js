@@ -1,7 +1,9 @@
 /**
- * attendance.js (Student) - FINAL FIX
- * Logic: Fetches 'Schedule' first to map Subjects -> Teachers.
- * Then applies those Teacher names to the Attendance records based on Subject.
+ * attendance.js (Student) - FINAL SYNCED VERSION
+ * Logic:
+ * 1. Verifies the Custom Student ID (e.g., 202500006) exactly like schedule.js.
+ * 2. Uses that ID to find enrolled classes (to get Teacher Names).
+ * 3. Uses that ID to find Attendance Records.
  */
 
 let allAttendanceRecords = [];
@@ -12,38 +14,65 @@ document.addEventListener('DOMContentLoaded', () => {
         const user = window.sessionManager.getSession();
         document.getElementById('header-user-name').innerText = user.name || "Student";
         
-        const targetUserId = user.userId || user.uid || user.id;
-
-        if (!targetUserId) {
-            console.error("No valid User ID found in session.");
-            return;
-        }
-
-        // 1. First, load the Class List (Schedule) to get Teacher names
-        loadSubjectMap(user).then(() => {
-            // 2. Then load Attendance
-            loadStudentAttendance(targetUserId);
-        });
-
+        // Start the loading process with Identity Verification
+        initAttendanceLoad(user);
     } else {
         window.location.href = '../index.html';
     }
 });
 
 /**
- * Step 1: Fetch Enrolled Classes (Logic copied from schedule.js)
- * We build a map: { "Mathematics": "Mr. Teacher", "Science": "Mrs. Teacher" }
+ * STEP 0: VERIFY IDENTITY (Matches schedule.js logic)
+ * Ensures we have the correct "2025..." ID before doing anything.
  */
-async function loadSubjectMap(user) {
+async function initAttendanceLoad(user) {
+    const tbody = document.getElementById('attendance-list-body');
+    tbody.innerHTML = '<tr><td colspan="4" class="loading-cell">Verifying student identity...</td></tr>';
+
     try {
-        const myDocId = user.userId || user.uid || user.id;
+        let studentCustomId = user.userId || user.studentId || user.lrn;
+        const firestoreDocId = user.uid || user.id || user.userId;
+
+        // If session doesn't have the custom ID, fetch it from DB
+        if (!studentCustomId || studentCustomId.length > 20) {
+            console.log("⚠️ Custom ID missing in session. Fetching from database...");
+            const userDoc = await window.db.collection('users').doc(firestoreDocId).get();
+            if (userDoc.exists) {
+                const userData = userDoc.data();
+                studentCustomId = userData.userId || userData.lrn;
+            }
+        }
+
+        if (!studentCustomId) {
+            tbody.innerHTML = '<tr><td colspan="4" style="color:red; text-align:center;">Error: Could not determine Student ID.</td></tr>';
+            return;
+        }
+
+        console.log("✅ Using Verified Student ID:", studentCustomId);
+
+        // Now load data using the correct ID
+        await loadSubjectMap(studentCustomId, user);
+        await loadStudentAttendance(studentCustomId);
+
+    } catch (e) {
+        console.error("Identity Error:", e);
+        tbody.innerHTML = `<tr><td colspan="4" style="color:red; text-align:center;">Error: ${e.message}</td></tr>`;
+    }
+}
+
+/**
+ * STEP 1: LOAD SUBJECT MAP (To find Teachers)
+ * Queries 'classSessions' using the verified Custom ID.
+ */
+async function loadSubjectMap(studentCustomId, user) {
+    try {
         const queries = [];
 
-        // A. Direct Enrollment (Check 'classStudents' array)
-        if (myDocId) {
+        // A. Direct Enrollment (Check 'classStudents' for Custom ID)
+        if (studentCustomId) {
             queries.push(
                 window.db.collection('classSessions')
-                    .where('classStudents', 'array-contains', myDocId)
+                    .where('classStudents', 'array-contains', studentCustomId)
                     .get()
             );
         }
@@ -52,20 +81,17 @@ async function loadSubjectMap(user) {
         if (user.gradeLevel && user.section) {
             const userSection = `${user.gradeLevel} - ${user.section}`;
             queries.push(
-                window.db.collection('classSessions')
-                    .where('section', '==', userSection)
-                    .get()
+                window.db.collection('classSessions').where('section', '==', userSection).get()
             );
         }
 
         const snapshots = await Promise.all(queries);
 
-        // Process Results
+        // Build the Map
         snapshots.forEach(snap => {
             snap.forEach(doc => {
                 const data = doc.data();
                 const subject = data.subject;
-                // Get teacher name, or fallback
                 const teacher = data.teacherName || data.teacher || "Unknown";
                 
                 if (subject) {
@@ -82,15 +108,17 @@ async function loadSubjectMap(user) {
 }
 
 /**
- * Step 2: Load Attendance and Match Teachers
+ * STEP 2: LOAD ATTENDANCE RECORDS
+ * Queries 'attendance' collection using the verified Custom ID.
  */
-async function loadStudentAttendance(userId) {
+async function loadStudentAttendance(studentCustomId) {
     const tbody = document.getElementById('attendance-list-body');
     tbody.innerHTML = '<tr><td colspan="4" class="loading-cell">Loading your records...</td></tr>';
     
     try {
+        // Use the Custom ID here because Teacher Portal saves it as 'userId'
         const snap = await window.db.collection('attendance')
-            .where('userId', '==', userId)
+            .where('userId', '==', studentCustomId)
             .get();
 
         if (snap.empty) {
@@ -106,10 +134,8 @@ async function loadStudentAttendance(userId) {
         snap.forEach(doc => {
             const d = doc.data();
             
-            // SMART MATCH: Look up teacher using the Subject Name
-            // If the map has the teacher, use it. Otherwise fallback to record data or "Unknown"
+            // Match Teacher using the Subject Map
             let finalTeacher = "Faculty";
-            
             if (subjectTeacherMap[d.subject]) {
                 finalTeacher = subjectTeacherMap[d.subject];
             } else if (d.teacherName) {
@@ -120,7 +146,7 @@ async function loadStudentAttendance(userId) {
                 docId: doc.id,
                 ...d,
                 date: d.attendanceTime || '1970-01-01',
-                displayTeacher: finalTeacher // Store the found teacher here
+                displayTeacher: finalTeacher
             });
         });
 
@@ -171,7 +197,8 @@ function renderAttendanceTable(data) {
             <tr>
                 <td>${dateDisplay}</td>
                 <td><strong>${r.subject}</strong></td>
-                <td>${r.displayTeacher}</td> <td><span style="${badgeStyle} padding: 5px 10px; border-radius: 15px; font-size: 0.8rem; font-weight:600;">${statusText}</span></td>
+                <td>${r.displayTeacher}</td> 
+                <td><span style="${badgeStyle} padding: 5px 10px; border-radius: 15px; font-size: 0.8rem; font-weight:600;">${statusText}</span></td>
             </tr>
         `;
         tbody.innerHTML += row;

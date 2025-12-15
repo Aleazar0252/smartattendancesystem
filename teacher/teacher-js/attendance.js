@@ -1,7 +1,7 @@
 /**
  * attendance.js (Teacher) - FIXED VERSION
- * Logic: Fetches students directly by Reference ID (matching students.js fix).
- * Uses Firestore Doc ID as the primary key for reliable saving.
+ * Logic: Fetches students by searching for their custom 'userId' field.
+ * Ensures compatibility with the students.js enrollment logic.
  */
 
 let currentSection = "";
@@ -102,7 +102,7 @@ function backToGrid() {
     loadedStudents = [];
 }
 
-// --- 3. LOAD STUDENTS (DIRECT FETCH FIX) ---
+// --- 3. LOAD STUDENTS (QUERY FIX) ---
 async function loadStudentsForAttendance() {
     const tbody = document.getElementById('attendance-table-body');
     tbody.innerHTML = '<tr><td colspan="3" class="loading-cell">Loading student list...</td></tr>';
@@ -122,24 +122,26 @@ async function loadStudentsForAttendance() {
             return;
         }
 
-        console.log(`Fetching ${storedUserIds.length} students directly...`);
+        console.log(`Fetching ${storedUserIds.length} students...`);
 
-        // B. Fetch Student Details Directy (Using Doc ID)
-        const studentPromises = storedUserIds.map(id => 
-            window.db.collection('users').doc(id).get()
+        // B. Fetch Student Details (Query by custom 'userId' field)
+        // Since we saved the custom ID, we must search for it, not use .doc()
+        const studentPromises = storedUserIds.map(customId => 
+            window.db.collection('users').where('userId', '==', customId).get()
         );
 
-        const studentDocs = await Promise.all(studentPromises);
+        const snapshots = await Promise.all(studentPromises);
         
         // C. Build Student List
         loadedStudents = [];
-        studentDocs.forEach((doc, index) => {
-            if (doc.exists) {
+        snapshots.forEach((snap, index) => {
+            if (!snap.empty) {
+                const doc = snap.docs[0];
                 const d = doc.data();
                 loadedStudents.push({
-                    // CRITICAL: We track both the Firestore ID (userId) and the School ID (studentId/LRN)
-                    userId: doc.id, 
-                    studentIdDisplay: d.studentId || d.lrn || 'N/A', // For display only
+                    userId: d.userId, // The Custom ID
+                    docId: doc.id,    // The Real Firestore ID
+                    studentIdDisplay: d.lrn || 'N/A', 
                     firstName: d.firstName,
                     lastName: d.lastName,
                     fullName: `${d.firstName} ${d.lastName}`,
@@ -147,7 +149,7 @@ async function loadStudentsForAttendance() {
                     remarks: ''
                 });
             } else {
-                console.warn(`Student ID ${storedUserIds[index]} not found in users collection.`);
+                console.warn(`Student ID '${storedUserIds[index]}' not found in users collection.`);
             }
         });
 
@@ -180,11 +182,10 @@ async function checkExistingAttendance() {
             .get();
 
         if (!snap.empty) {
-            // Create a lookup map. Key = userId (Firestore Doc ID)
+            // Create a lookup map. Key = userId (Custom ID)
             const existingRecords = {};
             snap.forEach(doc => {
                 const d = doc.data();
-                // We use the userId (Doc ID) as the reliable key
                 if(d.userId) existingRecords[d.userId] = d;
             });
 
@@ -291,7 +292,6 @@ async function saveAttendance() {
         
         loadedStudents.forEach(s => {
             // Unique Doc ID: UserID_Subject_Date
-            // We use s.userId (Firestore ID) which is guaranteed unique and safe
             const docId = `${s.userId}_${currentSubject}_${dateStr}`.replace(/[\s\/]/g, '_');
             const docRef = window.db.collection('attendance').doc(docId);
 
@@ -304,8 +304,10 @@ async function saveAttendance() {
                 remarks: s.remarks || "",
                 subject: currentSubject,
                 teacherId: currentTeacherId,
-                userId: s.userId, // Link to User Doc
-                studentId: s.studentIdDisplay, // Save Display ID for easy reading
+                teacherName: document.getElementById('header-user-name').innerText, // Save Teacher Name for queries
+                userId: s.userId, // Save Custom ID for linking
+                sessionId: currentClassId, // Save Class Session ID for linking
+                studentId: s.studentIdDisplay, 
                 timestamp: firebase.firestore.FieldValue.serverTimestamp()
             };
 

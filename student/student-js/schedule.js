@@ -1,7 +1,9 @@
 /**
- * schedule.js (Student) - FIXED
- * Logic: Finds classes where 'classStudents' contains this user's Document ID.
- * Aligns with the Teacher Portal's new saving method.
+ * schedule.js (Student) - SMART FETCH VERSION
+ * Logic:
+ * 1. Checks if 'userId' (e.g. 202500006) is in the session.
+ * 2. If NOT, it fetches the user profile using the Document ID to find it.
+ * 3. Uses that ID to find classes in 'classStudents'.
  */
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -16,63 +18,87 @@ document.addEventListener('DOMContentLoaded', () => {
             
         document.getElementById('schedule-section-display').innerText = sectionStr;
         
-        loadStudentSchedule(user, sectionStr);
+        // Start the loading process
+        initScheduleLoad(user, sectionStr);
     } else {
         window.location.href = '../index.html';
     }
 });
 
-async function loadStudentSchedule(user, sectionStr) {
+async function initScheduleLoad(user, sectionStr) {
+    const tbody = document.getElementById('schedule-list-body');
+    tbody.innerHTML = '<tr><td colspan="4" class="loading-cell">Verifying student identity...</td></tr>';
+
+    try {
+        // STEP 1: GET THE CORRECT STUDENT ID (e.g., "202500006")
+        let studentCustomId = user.userId || user.studentId || user.lrn;
+        const firestoreDocId = user.uid || user.id || user.userId; // The long random string
+
+        // If the session didn't save the custom ID, let's fetch it now
+        if (!studentCustomId || studentCustomId.length > 20) {
+            // (Length check > 20 assumes it might be accidentally using the Doc ID)
+            console.log("⚠️ Custom ID missing in session. Fetching from database...");
+            
+            const userDoc = await window.db.collection('users').doc(firestoreDocId).get();
+            if (userDoc.exists) {
+                const userData = userDoc.data();
+                // Grab the field named 'userId' from the document
+                studentCustomId = userData.userId || userData.lrn;
+                console.log("✅ Found Student ID from DB:", studentCustomId);
+            }
+        } else {
+            console.log("✅ Using Session Student ID:", studentCustomId);
+        }
+
+        // STEP 2: LOAD SCHEDULE USING THAT ID
+        await loadStudentSchedule(studentCustomId, user, sectionStr);
+
+    } catch (e) {
+        console.error("Identity Error:", e);
+        tbody.innerHTML = `<tr><td colspan="4" style="color:red; text-align:center;">Error verifying identity: ${e.message}</td></tr>`;
+    }
+}
+
+async function loadStudentSchedule(studentCustomId, user, sectionStr) {
     const tbody = document.getElementById('schedule-list-body');
     tbody.innerHTML = '<tr><td colspan="4" class="loading-cell">Searching for your classes...</td></tr>';
 
     try {
         const queries = [];
 
-        // --- QUERY 1: DIRECT ENROLLMENT (The New Standard) ---
-        // The Teacher Portal now saves the Student's Document ID into the 'classStudents' array.
-        // We must check if that array contains OUR Document ID.
-        
-        const myDocId = user.userId || user.uid || user.id;
-
-        if (myDocId) {
+        // --- QUERY A: DIRECT ENROLLMENT (Priority) ---
+        // Checks if 'classStudents' array contains "202500006"
+        if (studentCustomId) {
             queries.push(
                 window.db.collection('classSessions')
-                    .where('classStudents', 'array-contains', myDocId)
+                    .where('classStudents', 'array-contains', studentCustomId)
                     .get()
             );
-        } else {
-            console.warn("No valid Document ID found in session for enrollment check.");
         }
 
-        // --- QUERY 2: SECTION BASED (Legacy/Fallback) ---
-        // If a teacher assigned a class to the whole "Grade 10 - Ruby" section
-        // without adding students individually, this catches it.
+        // --- QUERY B: SECTION BASED (Fallback) ---
+        // Checks if class is assigned to "Grade 10 - Ruby"
         if (user.gradeLevel && user.section) {
-            // Reconstruct the section string just to be safe (e.g., "Grade 10 - Ruby")
-            // Ensure this format matches what is saved in 'classSessions' field 'section'
             const userSection = `${user.gradeLevel} - ${user.section}`;
             
-            // Also check the raw section string passed in
+            queries.push(
+                window.db.collection('classSessions').where('section', '==', userSection).get()
+            );
+
             if (sectionStr && sectionStr !== userSection) {
                  queries.push(
                     window.db.collection('classSessions').where('section', '==', sectionStr).get()
                 );
             }
-            
-            queries.push(
-                window.db.collection('classSessions').where('section', '==', userSection).get()
-            );
         }
 
         // --- EXECUTE & MERGE ---
         const snapshots = await Promise.all(queries);
-
-        // Use a Map to prevent duplicates (if matched by both ID and Section)
         const scheduleMap = new Map();
 
         snapshots.forEach(snap => {
             snap.forEach(doc => {
+                // Prevent duplicates
                 if (!scheduleMap.has(doc.id)) {
                     scheduleMap.set(doc.id, {
                         id: doc.id, 
@@ -84,21 +110,22 @@ async function loadStudentSchedule(user, sectionStr) {
 
         // --- RENDER ---
         if (scheduleMap.size === 0) {
-            tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:20px; color:#666;">No classes found in your schedule.</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:20px; color:#666;">No classes found.</td></tr>';
             return;
         }
 
         const schedules = Array.from(scheduleMap.values());
         
-        // Sort by Time (Earliest first)
+        // Sort by Time
         schedules.sort((a, b) => (a.startTime || '').localeCompare(b.startTime || ''));
 
         tbody.innerHTML = '';
         schedules.forEach(s => {
+            const teacherDisplay = s.teacherName || s.teacher || 'TBA';
             const row = `
                 <tr>
                     <td><strong>${s.subject}</strong></td>
-                    <td>${s.teacherName || s.teacher || 'TBA'}</td>
+                    <td>${teacherDisplay}</td>
                     <td><span style="background:#e3f2fd; color:#0d47a1; padding:4px 8px; border-radius:4px; font-size:0.85rem;">${s.days || 'Daily'}</span></td>
                     <td>${formatTime(s.startTime)} - ${formatTime(s.endTime)}</td>
                 </tr>
